@@ -35,11 +35,11 @@ int main()
   servaddr.sin_port = htons(PORT);
   inet_pton(AF_INET, SERVERADDRESS, &(servaddr.sin_addr));
 
-  struct Rtp *packet = create_rtp_packet("abcdefghijklmnopqrstuvwxyz");
-  
-  //  printf("%s",*packet->payload);
-  convert_rtp_pkt_to_string(packet);
-  sendto(sockfd, packet, sizeof(struct Rtp) - sizeof(char) + strlen(packet->payload), MSG_CONFIRM,
+  struct Rtp *packet = create_rtp_packet("aaaaaaaaaaaaaaaaagaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaass");
+
+  // printf("%d",packet->v);
+  char *pkt_string = convert_rtp_pkt_to_string(packet);
+  sendto(sockfd, pkt_string, sizeof(struct Rtp) - sizeof(char) + strlen(pkt_string), MSG_CONFIRM,
          (const struct sockaddr *)&servaddr, sizeof(servaddr));
 
   close(sockfd);
