@@ -2,9 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
-
-// Client side implementation of UDP client-server model
-#include "rtp.c"
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stddef.h>
@@ -14,6 +11,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "rtp.c"
+
 #define PORT 8080
 #define SERVERADDRESS "192.168.0.105"
 
@@ -37,9 +36,9 @@ int main()
   inet_pton(AF_INET, SERVERADDRESS, &(servaddr.sin_addr));
 
   struct Rtp *packet = create_rtp_packet("abcdefghijklmnopqrstuvwxyz");
-
+  
   //  printf("%s",*packet->payload);
-
+  convert_rtp_pkt_to_string(packet);
   sendto(sockfd, packet, sizeof(struct Rtp) - sizeof(char) + strlen(packet->payload), MSG_CONFIRM,
          (const struct sockaddr *)&servaddr, sizeof(servaddr));
 
