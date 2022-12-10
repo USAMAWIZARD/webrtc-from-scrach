@@ -18,11 +18,13 @@
 #define SERVERADDRESS "192.168.0.105"
 
 // Driver code
-int main() {
+int main()
+{
   int sockfd;
   struct sockaddr_in servaddr;
   // Creating socket file descriptor
-  if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+  if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+  {
     perror("socket creation failed");
     exit(EXIT_FAILURE);
   }
@@ -34,13 +36,11 @@ int main() {
   servaddr.sin_port = htons(PORT);
   inet_pton(AF_INET, SERVERADDRESS, &(servaddr.sin_addr));
 
-  struct Rtp *packet = create_rtp_packet("abcdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+  struct Rtp *packet = create_rtp_packet("abcdefghijklmnopqrstuvwxyz");
 
+  //  printf("%s",*packet->payload);
 
-//  printf("%s",*packet->payload);
-
-
-  sendto(sockfd, packet, sizeof(struct Rtp) - sizeof (char) + strlen(packet->payload)  , MSG_CONFIRM,
+  sendto(sockfd, packet, sizeof(struct Rtp) - sizeof(char) + strlen(packet->payload), MSG_CONFIRM,
          (const struct sockaddr *)&servaddr, sizeof(servaddr));
 
   close(sockfd);

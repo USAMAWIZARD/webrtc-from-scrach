@@ -21,7 +21,7 @@ struct Rtp *create_rtp_packet(char *payload)
 {
   static long int seqno = 0;
   struct Rtp *rtp_packet;
-  rtp_packet = (struct Rtp *)malloc(sizeof(rtp_packet));
+  rtp_packet = (struct Rtp *)malloc(sizeof(rtp_packet) + (strlen(payload) * sizeof(char)) + sizeof(char));
   // mere wireshark me agar \0 hai to age ka data drop karderaha tha to ff rakha sab
   rtp_packet->v = 3;
   rtp_packet->padding = 1;
@@ -35,7 +35,7 @@ struct Rtp *create_rtp_packet(char *payload)
   rtp_packet->csrc = 0xffffffff;
   rtp_packet->hader_ex = 0xffffffff;
   //rtp_packet->payload = *payload;
-  memcpy(&rtp_packet->payload,payload, sizeof(payload));
+  memcpy(&rtp_packet->payload,payload, strlen(payload)+1);
 
   seqno++;
   return rtp_packet;
