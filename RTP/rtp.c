@@ -13,7 +13,7 @@ struct Rtp
   long int timestamp : 32;
   long int ssrc : 32;
   long int csrc : 32;
-  long int hader_ex : 32;
+  long int header_ext : 32;
   char payload[];
 };
 
@@ -33,7 +33,7 @@ struct Rtp *create_rtp_packet(char *payload)
   rtp_packet->timestamp = 1;
   rtp_packet->ssrc = 1;
   rtp_packet->csrc = 1;
-  rtp_packet->hader_ex = 1;
+  rtp_packet->header_ext = 1;
   memcpy(&rtp_packet->payload, payload, strlen(payload) + 1);
 
 
@@ -44,6 +44,6 @@ char *convert_rtp_pkt_to_string(struct Rtp *rtp_packet)
 {
   char *str=NULL;
   str = (char *)malloc(sizeof(*rtp_packet)); // yaha seg fault aa raha hai
-  sprintf(str, "%d %d %d %d %d %d %d  %ld %ld %ld %ld %s",rtp_packet->v,rtp_packet->padding,rtp_packet->ext,rtp_packet->csrc_count,rtp_packet->marker,rtp_packet->pt,rtp_packet->seq_no,rtp_packet->timestamp,rtp_packet->ssrc,rtp_packet->csrc,rtp_packet->hader_ex);
+  sprintf(str, "%d %d %d %d %d %d %d  %ld %ld %ld %ld %s",rtp_packet->v,rtp_packet->padding,rtp_packet->ext,rtp_packet->csrc_count,rtp_packet->marker,rtp_packet->pt,rtp_packet->seq_no,rtp_packet->timestamp,rtp_packet->ssrc,rtp_packet->csrc,rtp_packet->header_ext,rtp_packet->payload);
   return str;
 }

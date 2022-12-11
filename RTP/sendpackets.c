@@ -39,7 +39,7 @@ int main()
 
   // printf("%d",packet->v);
   char *pkt_string = convert_rtp_pkt_to_string(packet);
-  sendto(sockfd, pkt_string, sizeof(struct Rtp) - sizeof(char) + strlen(pkt_string), MSG_CONFIRM,
+  sendto(sockfd, pkt_string, strlen(pkt_string) , MSG_CONFIRM,
          (const struct sockaddr *)&servaddr, sizeof(servaddr));
 
   close(sockfd);
