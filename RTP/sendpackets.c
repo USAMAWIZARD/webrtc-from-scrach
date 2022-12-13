@@ -36,10 +36,11 @@ int main()
   inet_pton(AF_INET, SERVERADDRESS, &(servaddr.sin_addr));
 
   struct Rtp *packet = create_rtp_packet("aaaaaaaaaaaaaaaaagaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaass");
+  char packet_str[sizeof(packet)+1]; 
 
-  // printf("%d",packet->v);
-  char *pkt_string = convert_rtp_pkt_to_string(packet);
-  sendto(sockfd, pkt_string, strlen(pkt_string) , MSG_CONFIRM,
+  memcpy(packet_str, &packet, sizeof(packet_str)+1); 
+  printf("%s",packet);
+  sendto(sockfd, packet_str, strlen(packet_str) , MSG_CONFIRM,
          (const struct sockaddr *)&servaddr, sizeof(servaddr));
 
   close(sockfd);
