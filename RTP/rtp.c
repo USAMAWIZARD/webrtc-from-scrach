@@ -5,7 +5,7 @@ struct Rtp {
   unsigned int v : 2;
   unsigned int padding : 1;
   unsigned int ext : 1;
-  unsigned int csrc_count : 4;
+  unsigned int csrc_count : 3;
   unsigned int marker : 1;
   unsigned int pt : 7;
   unsigned int seq_no : 16;
