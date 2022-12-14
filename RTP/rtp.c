@@ -14,10 +14,12 @@
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 struct __attribute__((packed)) Rtp {
 #if G_BYTE_ORDER == G_LITTLE_ENDIAN
   unsigned int csrc_count : 4;
@@ -42,17 +44,15 @@ struct __attribute__((packed)) Rtp {
   long int ssrc : 32;
   long int csrc : 32;
   long int header_ext : 32;
+  char payloadpadding : 8;
   char payload[];
 };
 
 struct Rtp *create_rtp_packet(char *payload) {
   static long int seqno = 0;
   struct Rtp *rtp_packet;
-  rtp_packet =
-      (struct Rtp *)malloc(sizeof(*rtp_packet) +
-                           (strlen(payload) * sizeof(char)) + sizeof(char) * 2);
-  // mere wireshark me agar \0 hai to age ka data drop karderaha tha to ff rakha
-  // sab
+  rtp_packet = (struct Rtp *)malloc(sizeof(*rtp_packet) +
+                                    (strlen(payload) * sizeof(char)) * 2);
   rtp_packet->v = 2;
   rtp_packet->padding = 1;
   rtp_packet->ext = 1;
@@ -64,14 +64,14 @@ struct Rtp *create_rtp_packet(char *payload) {
   rtp_packet->ssrc = 1;
   rtp_packet->csrc = 1;
   rtp_packet->header_ext = 1;
-  char *newpay = malloc(strlen(payload) + 3);
-  newpay[0] = 0x00;
-  strcpy(newpay + 1, payload);
+  rtp_packet->payloadpadding = 0x00;
+  char *newpay = malloc(strlen(payload) + 2);
+  strcpy(newpay, payload);
   // ye padding count
-  newpay[strlen(payload) + 2] = 0x02;
+  newpay[strlen(payload) + 1] = 0x02;
   // ye padding data hai isme kuch bhi daal sakte
-  newpay[strlen(payload) + 3] = 0x0a;
-  memcpy(&rtp_packet->payload, newpay, strlen(payload) + 3);
+  newpay[strlen(payload)] = 0x0a;
+  memcpy(&rtp_packet->payload, newpay, strlen(payload) + 2);
   seqno++;
   return rtp_packet;
 }

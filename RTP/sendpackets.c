@@ -28,10 +28,9 @@ int main() {
   inet_pton(AF_INET, SERVERADDRESS, &(servaddr.sin_addr));
   char *payload = "abcdefg";
   struct Rtp *packet = create_rtp_packet(payload);
-  char packet_str[sizeof(struct Rtp) + strlen(payload) + 3];
-  memcpy(packet_str, packet, sizeof(packet_str) / sizeof(packet_str[0]));
-  sendto(sockfd, packet_str, (sizeof(packet_str) / sizeof(packet_str[0])),
-         MSG_CONFIRM, (const struct sockaddr *)&servaddr, sizeof(servaddr));
+  sendto(sockfd, packet,
+         sizeof(struct Rtp) - sizeof(char) + strlen(payload) + 3, MSG_CONFIRM,
+         (const struct sockaddr *)&servaddr, sizeof(servaddr));
   close(sockfd);
   return 0;
 }
