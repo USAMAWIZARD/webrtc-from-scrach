@@ -14,6 +14,7 @@
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,10 +64,14 @@ struct Rtp *create_rtp_packet(char *payload) {
   rtp_packet->ssrc = 1;
   rtp_packet->csrc = 1;
   rtp_packet->header_ext = 1;
-  char *newpay = malloc(strlen(payload) + 1);
+  char *newpay = malloc(strlen(payload) + 3);
   newpay[0] = 0x00;
   strcpy(newpay + 1, payload);
-  memcpy(&rtp_packet->payload, newpay, strlen(payload));
+  // ye padding count
+  newpay[strlen(payload) + 2] = 0x02;
+  // ye padding data hai isme kuch bhi daal sakte
+  newpay[strlen(payload) + 3] = 0x0a;
+  memcpy(&rtp_packet->payload, newpay, strlen(payload) + 3);
   seqno++;
   return rtp_packet;
 }
