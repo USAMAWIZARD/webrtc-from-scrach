@@ -1,0 +1,67 @@
+H264 Docs
+Credits 
+https://web.archive.org/web/20141016205250/http://www.szatmary.org:80/blog/25
+
+h264 file is divided into nal units
+A Video frame can be sliced into several NALU
+one or more NALU grouped togethehr called AU that contains a single frame
+
+nal units are of diffrent catagories vcl non vcl
+
+vcl - contians frame data
+non vlc - contains meta data that may be used for setting decoders
+
+there 18 diffrent type of nal unitys
+first byte of each NALU contains its type
+Each NALU start with 0
+
+important NALU types 
+**sps**  non-vcl configure decoder profile level res / fps (imporant for decoders)
+**pps**  non-vcl motioin predection and filter (importatant for decoders)
+**IDR**  VCL contains key frame
+
+0 Unspecified non-VCL
+1 Coded slice of a non-IDR picture VCL
+2 Coded slice data partition A VCL
+3 Coded slice data partition B VCL
+4 Coded slice data partition C VCL
+5 Coded slice of an IDR picture VCL
+6 Supplemental enhancement information (SEI) non-VCL
+7 Sequence parameter set non-VCL
+8 Picture parameter set non-VCL
+9 Access unit delimiter non-VCL
+10 End of sequence non-VCL
+11 End of stream non-VCL
+12 Filler data non-VCL
+13 Sequence parameter set extension non-VCL
+14 Prefix NAL unit non-VCL
+15 Subset sequence parameter set non-VCL
+16..18 Reserved non-VCL
+19 Coded slice of an auxiliary coded picture without partitioning non-VCL
+20 Coded slice extension non-VCL
+21 Coded slice extension for depth view components non-VCL
+22..23 Reserved non-VCL
+24..31 Unspecified non-VCL
+
+NALU does not contains its size
+therefore concatinating NALUs will not work
+How to know where each one starts and ends
+
+Therefore
+we use Statcode before each NALU
+Start Code :- 2 or 3 byte 0x00 followed by 0x01 byte  00 00 00 01 OR  00 00 01
+4 byte version is used for SPS PPS AUD and IDR
+0x000000, 0x000001 and 0x000002 are illegal within a NALU
+ encoder escape these values that could otherwise be confused with a start code
+Each NALU start with 0 (BIT) 
+Emulation Prevention’ byte 0x03, so that 0x000001 becomes 0x00000301
+
+Common H264 NALU Formating 
+Annex B  (used in live streaming)
+SPS and PPS periodically repeted 
+usually proceeding every IDR
+This enables the ability to join a stream already in progress
+
+AVCC  (used in local storing )
+each nalu is stored preceeding witth its leangth 
+Easy to  store  & parse

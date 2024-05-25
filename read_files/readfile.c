@@ -12,7 +12,6 @@ int open_file(char *file_name)
     {
         while (!feof(input))
         {
-            
                 fread(chunk, 1, 1, input);
                 printf("%d     %d\n", chunk[0],byte_count);
                 byte_count+=buffer_size;
@@ -22,7 +21,6 @@ int open_file(char *file_name)
         }
     }
 }
-    void main()
-    {
-        open_file("test.h264");
-    }
+void main(){
+   open_file("test.h264");
+}

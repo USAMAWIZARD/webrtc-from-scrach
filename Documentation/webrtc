@@ -1,0 +1,23 @@
+webrtc is nothing but collection of these protocols working togheter hand in hand. 
+
+rtp
+
+ice
+
+dtls
+
+rtcp
+
+stun
+
+turn
+
+send the sdp to each other with the informationj
+i will do stun to find out the public ip and port that i am connecting to 
+with Ice i will try to punch a hole in the NAT
+once ice is finished i will have a port to communicate with 
+i will start by negosiation of dtls over the opened communication channel 
+
+
+
+
