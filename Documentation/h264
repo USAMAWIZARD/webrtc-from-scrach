@@ -12,7 +12,7 @@ vcl - contians frame data
 non vlc - contains meta data that may be used for setting decoders
 
 there 18 diffrent type of nal unitys
-first byte of each NALU contains its type
+first byte of each NALU contains its type specifcally  bits 3 through 7. (bit 0 is always off, and bits 1-2 indicate weather is NALU is referenced by another NALU)
 Each NALU start with 0
 
 important NALU types 

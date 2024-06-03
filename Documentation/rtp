@@ -1,2 +1,8 @@
 https://datatracker.ietf.org/doc/html/rfc6184
         
+RTP PAYLOAD SPECS FOR H264
+first byte of a nal unit contials f NRI and   type 
+its treated as a payload header
+and then nal unit starts 
+
+first byte of each NALU contains its type specifcally  bits 3 through 7. (bit 0 is always off, and bits 1-2 indicate weather is NALU is referenced by another NALU)

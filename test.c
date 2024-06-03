@@ -23,6 +23,7 @@ int main(void){
     server_addr.sin_port = htons(2000);
     server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     // Get input from the user:
+    printf("Enter message: ");
     
     // Send the message to server:
     if(sendto(socket_desc, "aa",  2 , 0,

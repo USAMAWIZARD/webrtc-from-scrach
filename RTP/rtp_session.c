@@ -6,7 +6,7 @@ struct RtpSession* create_rtp_session(){
   struct RtpSession *newRtpSession;
   newRtpSession = malloc(sizeof(struct RtpSession));
   newRtpSession->totalStreams = -1;
-  return  newRtpSession;
+  return newRtpSession;
 }
 //number of streams started
 bool start_rtp_session(struct RtpSession *rtpSession) {
