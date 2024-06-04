@@ -45,7 +45,7 @@ RTP payload header.
 #include <unistd.h>
 
 void getdata(void *data);
-void rtp_sender_thread(struct RtpStream *rtpStream, char *payload);
+void rtp_sender_thread(struct RtpStream *rtpStream, char *payload , int payload_size);
 struct __attribute__((packed)) Rtp {
 #if G_BYTE_ORDER == G_LITTLE_ENDIAN
   unsigned int csrc_count : 4;
@@ -83,7 +83,7 @@ struct Rtp *init_rtp_packet() {
   rtp_packet_packet->ext = 0;
   rtp_packet_packet->marker = 0;
   rtp_packet_packet->padding = 0;
-  rtp_packet_packet->seq_no = htons(rand());
+  rtp_packet_packet->seq_no = 0; //htons(rand());
   rtp_packet_packet->csrc_count = 0;
   rtp_packet_packet->ssrc = 0;
   rtp_packet_packet->timestamp = 0;
@@ -124,21 +124,22 @@ bool start_rtp_stream(struct RtpStream *rtpStream) {
   return true;
 }
 
-void rtp_sender_thread(struct RtpStream *rtpStream, char *payload) {
+void rtp_sender_thread(struct RtpStream *rtpStream, char *payload, int payload_size) {
   int socket_len = rtpStream->socket_len;
   rtpStream->rtp_packet->seq_no = ntohs(rtpStream->rtp_packet->seq_no) ;
   rtpStream->rtp_packet->seq_no++;
   rtpStream->rtp_packet->seq_no = htons(rtpStream->rtp_packet->seq_no) ;
-  int payload_size = strlen(payload) +2;
-  memcpy(rtpStream->rtp_packet->payload, payload,payload_size); 
-  int bytes = sendto(rtpStream->sockdesc, rtpStream->rtp_packet,
-             sizeof(*rtpStream->rtp_packet) + payload_size , 0,
-             (struct sockaddr *)(rtpStream->socket_address), socket_len);
+//  int payload_size = strlen(payload);
+  
+  memcpy(rtpStream->rtp_packet->payload, payload,payload_size);
 
+  int bytes = sendto(rtpStream->sockdesc, rtpStream->rtp_packet, sizeof(*rtpStream->rtp_packet) + payload_size , 0,
+             (struct sockaddr *)(rtpStream->socket_address), socket_len);
+  //sleep(1);
   if (bytes == -1) {
-    printf("failed to send the data %d\n", errno);
+    printf("\n failed to send the data %d  %d  socket_len %d\n", errno, payload_size, socket_len );
   } else {
-    printf("send packet\n");
+    printf("\n sent data %d   %d  socket_len %d\n", errno, payload_size, socket_len );
   }
 }
 

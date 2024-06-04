@@ -29,7 +29,7 @@ int main(void){
     if(sendto(socket_desc, "aa",  2 , 0,
          (struct sockaddr*)&server_addr, server_struct_length) < 0){
         printf("Unable to send message\n");
-        return -1;
+        return -2;
     }
     
     close(socket_desc);

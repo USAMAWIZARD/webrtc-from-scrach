@@ -7,7 +7,7 @@
 
 
 struct RtpStream{
-  void (*media_data_callback)(void * , void(*rtp_sender_thread)(struct RtpStream *, char *),struct RtpStream *);
+  void (*media_data_callback)(void * , void(*rtp_sender_thread)(struct RtpStream *, char *, int),struct RtpStream *);
   void *callback_data;
   int port;
   char *ip;

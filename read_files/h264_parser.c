@@ -6,7 +6,7 @@
 #include <time.h>
 char *h264_parser_get_nal_unit(void *file,
                                void(rtp_sender_callback)(struct RtpStream *,
-                                                         char *),
+                                                         char *, int),
                                struct RtpStream *rtpStream) {
   int start_code[4] = {0, 0, 0, 1};
   int buffer_size = 10000;
@@ -39,9 +39,9 @@ char *h264_parser_get_nal_unit(void *file,
           memcpy(nal_buffer + nal_buffer_index, &buffer[0] + (start_code_1),
                  start_code_2 - start_code_1);
           nal_buffer_index += (start_code_2 - 4) - start_code_1;
-          nal_buffer[nal_buffer_index + 1] = '\0';
-          rtp_sender_callback(rtpStream, nal_buffer);
-          printf("\n=---------------------------------------------------\n");
+//          nal_buffer[nal_buffer_index + 1] = '\0';
+          rtp_sender_callback(rtpStream, nal_buffer, nal_buffer_index+1);
+          //printf("\n=---------------------------------------------------\n");
           //for (int b = 0; b <= nal_buffer_index; b++)
           //  printf(" %x", *(nal_buffer + b));
           start_code_1 = start_code_2 + 1;
@@ -65,3 +65,6 @@ char *h264_parser_get_nal_unit(void *file,
   }
   return NULL;
 }
+
+
+[0 0 0 0 2  4 4 5 6 6 6 6 ]   [ 123  324234 234 0 0 0 1]
