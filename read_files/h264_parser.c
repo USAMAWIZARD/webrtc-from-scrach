@@ -65,6 +65,3 @@ char *h264_parser_get_nal_unit(void *file,
   }
   return NULL;
 }
-
-
-[0 0 0 0 2  4 4 5 6 6 6 6 ]   [ 123  324234 234 0 0 0 1]

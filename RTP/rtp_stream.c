@@ -70,22 +70,24 @@ struct __attribute__((packed)) Rtp {
 #error "Byte order is not recognized it should either be big or little endian"
 #endif
   unsigned int seq_no : 16;
-  int timestamp : 32;
+  unsigned int timestamp : 32;
   unsigned int ssrc : 32;
+  unsigned int csrc :32;
 char *payload[];
 };
 
 struct Rtp *init_rtp_packet() {
   struct Rtp *rtp_packet_packet;
-  rtp_packet_packet = (struct Rtp *)malloc(sizeof(*rtp_packet_packet)+10000);
+  rtp_packet_packet = (struct Rtp *)malloc(sizeof(*rtp_packet_packet)+50000);
   rtp_packet_packet->v = 2;
   rtp_packet_packet->pt = 96;
   rtp_packet_packet->ext = 0;
   rtp_packet_packet->marker = 0;
   rtp_packet_packet->padding = 0;
   rtp_packet_packet->seq_no = 0; //htons(rand());
-  rtp_packet_packet->csrc_count = 0;
+  rtp_packet_packet->csrc_count = 1;
   rtp_packet_packet->ssrc = 0;
+  rtp_packet_packet->csrc = 1;
   rtp_packet_packet->timestamp = 0;
 
   //  strcpy(rtp_packet_packet->NAL,"faasdfasdfasdfasdfasdfasdfafdasdf");
@@ -129,17 +131,23 @@ void rtp_sender_thread(struct RtpStream *rtpStream, char *payload, int payload_s
   rtpStream->rtp_packet->seq_no = ntohs(rtpStream->rtp_packet->seq_no) ;
   rtpStream->rtp_packet->seq_no++;
   rtpStream->rtp_packet->seq_no = htons(rtpStream->rtp_packet->seq_no) ;
+  rtpStream->rtp_packet->timestamp = ntohl(rtpStream->rtp_packet->timestamp);
+  rtpStream->rtp_packet->timestamp = rtpStream->rtp_packet->timestamp + 2000;
+  rtpStream->rtp_packet->timestamp = htonl(rtpStream->rtp_packet->timestamp);
+
 //  int payload_size = strlen(payload);
   
   memcpy(rtpStream->rtp_packet->payload, payload,payload_size);
 
   int bytes = sendto(rtpStream->sockdesc, rtpStream->rtp_packet, sizeof(*rtpStream->rtp_packet) + payload_size , 0,
              (struct sockaddr *)(rtpStream->socket_address), socket_len);
-  //sleep(1);
+//  sleep(1);
   if (bytes == -1) {
-    printf("\n failed to send the data %d  %d  socket_len %d\n", errno, payload_size, socket_len );
+    printf("\n failed to send the data %d  %d  socket_len %d desc %d\n", errno, payload_size, socket_len, rtpStream->sockdesc );
+  
+  usleep(1000);
   } else {
-    printf("\n sent data %d   %d  socket_len %d\n", errno, payload_size, socket_len );
+    printf("\n sent data %d   %d  socket_len %d desc %d\n", errno, payload_size, socket_len , rtpStream->sockdesc);
   }
 }
 
