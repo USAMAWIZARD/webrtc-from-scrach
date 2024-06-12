@@ -1,4 +1,3 @@
-
 // https://datatracker.ietf.org/doc/html/rfc3550
 /*
 RTP Header
@@ -31,7 +30,6 @@ RTP payload header.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
 #include <string.h>
-#pragma pack(1)
 #include "../Network/network.h"
 #include "rtp.h"
 #include <errno.h>
@@ -46,35 +44,7 @@ RTP payload header.
 
 void getdata(void *data);
 void rtp_sender_thread(struct RtpStream *rtpStream, char *payload , int payload_size);
-struct __attribute__((packed)) Rtp {
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-  unsigned int csrc_count : 4;
-  unsigned int ext : 1;
-  unsigned int padding : 1;
-  unsigned int v : 2;
-#elif G_BYTE_ORDER == G_BIG_ENDIAN
-  unsigned int v : 2;
-  unsigned int padding : 1;
-  unsigned int ext : 1;
-  unsigned int csrc_count : 4;
-#else
-#error "Byte order is not recognized it should either be big or little endian"
-#endif
 
-#if G_BYTE_ORDER == G_LITTLE_ENDIAN
-  unsigned int pt : 7;
-  unsigned int marker : 1;
-#elif G_BYTE_ORDER == G_BIG_ENDIAN
-  unsigned int marker : 1;
-  unsigned int pt : 7;
-#error "Byte order is not recognized it should either be big or little endian"
-#endif
-  unsigned int seq_no : 16;
-  unsigned int timestamp : 32;
-  unsigned int ssrc : 32;
-  unsigned int csrc :32;
-char *payload[];
-};
 
 struct Rtp *init_rtp_packet() {
   struct Rtp *rtp_packet_packet;
@@ -110,8 +80,9 @@ struct RtpStream *create_rtp_stream(char *ip, int port,
   newRtpStream->callback_data = callback_data;
   newRtpStream->rtp_packet = init_rtp_packet();;
   newRtpStream->socket_len = sizeof(struct sockaddr_in);
+  newRtpStream->timestamp = rand();
   rtp_session->streams[++rtp_session->totalStreams] = newRtpStream;
-
+  
   return newRtpStream;
 }
 
@@ -131,23 +102,18 @@ void rtp_sender_thread(struct RtpStream *rtpStream, char *payload, int payload_s
   rtpStream->rtp_packet->seq_no = ntohs(rtpStream->rtp_packet->seq_no) ;
   rtpStream->rtp_packet->seq_no++;
   rtpStream->rtp_packet->seq_no = htons(rtpStream->rtp_packet->seq_no) ;
-  rtpStream->rtp_packet->timestamp = ntohl(rtpStream->rtp_packet->timestamp);
-  rtpStream->rtp_packet->timestamp = rtpStream->rtp_packet->timestamp + 2000;
-  rtpStream->rtp_packet->timestamp = htonl(rtpStream->rtp_packet->timestamp);
-
-//  int payload_size = strlen(payload);
-  
+  rtpStream->rtp_packet->timestamp = htonl(rtpStream->timestamp);
   memcpy(rtpStream->rtp_packet->payload, payload,payload_size);
-
+//  printf("%u\n",rtpStream->timestamp);
   int bytes = sendto(rtpStream->sockdesc, rtpStream->rtp_packet, sizeof(*rtpStream->rtp_packet) + payload_size , 0,
              (struct sockaddr *)(rtpStream->socket_address), socket_len);
-//  sleep(1);
-  if (bytes == -1) {
-    printf("\n failed to send the data %d  %d  socket_len %d desc %d\n", errno, payload_size, socket_len, rtpStream->sockdesc );
   
-  usleep(1000);
+  usleep(10000);
+  if (bytes == -1) {
+    printf("\n failed to send the data %s  %d  socket_len %d desc %d\n", strerror(errno), payload_size, socket_len, rtpStream->sockdesc );
+  
   } else {
-    printf("\n sent data %d   %d  socket_len %d desc %d\n", errno, payload_size, socket_len , rtpStream->sockdesc);
+    //printf("\n sent data %d   %d  socket_len %d desc %d\n", errno, payload_size, socket_len , rtpStream->sockdesc);
   }
 }
 

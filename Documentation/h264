@@ -10,7 +10,7 @@ nal units are of diffrent catagories vcl non vcl
 
 vcl - contians frame data
 non vlc - contains meta data that may be used for setting decoders
-
+ bins stored right left
 there 18 diffrent type of nal unitys
 first byte of each NALU contains its type specifcally  bits 3 through 7. (bit 0 is always off, and bits 1-2 indicate weather is NALU is referenced by another NALU)
 Each NALU start with 0
@@ -19,6 +19,15 @@ important NALU types
 **sps**  non-vcl configure decoder profile level res / fps (imporant for decoders)
 **pps**  non-vcl motioin predection and filter (importatant for decoders)
 **IDR**  VCL contains key frame
+
+
+100  100 100 100 100 100 AU 
+first byte after start code 
+      +---------------+
+      |0|1|2|3|4|5|6|7|
+      +-+-+-+-+-+-+-+-+
+      |F|NRI|  Type   |
+      +---------------+
 
 0 Unspecified non-VCL
 1 Coded slice of a non-IDR picture VCL
