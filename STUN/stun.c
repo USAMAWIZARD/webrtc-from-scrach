@@ -32,8 +32,7 @@
   stun_request.msg_len = 0;
 
   stun_request.magic_cookie = htonl(0x2112A442);
-  char *stun_server_ip = "74.125.250.129";
-  socklen_t socklen = sizeof(struct sockaddr_in);
+  char *stun_server_ip = "74.125.250.129"; socklen_t socklen = sizeof(struct sockaddr_in);
   char *transaction_id =  "123456789012\0";
   strncpy(stun_request.transaction_id, transaction_id, 12);
 

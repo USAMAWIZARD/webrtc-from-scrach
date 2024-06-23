@@ -19,7 +19,6 @@
 #ifndef _STUNH_
 #define _STUNH_ 
 
-#pragma pack(1)
 struct __attribute__((packed)) Stun {
   int zerobits : 2;
   uint16_t msg_type : 14;

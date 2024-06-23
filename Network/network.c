@@ -19,7 +19,6 @@ struct sockaddr_in * get_network_socket(char *ip , int port){
   printf("allocating ip %s port %d for RTP \n",ip , port);
   return socket_address;
 }
-
 int get_udp_sock_desc(){
   int socket_desc = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if(socket_desc < 0){

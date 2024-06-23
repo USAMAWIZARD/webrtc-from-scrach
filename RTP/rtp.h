@@ -5,10 +5,9 @@
 
 #ifndef _RTPH_
 #define _RTPH_
-#pragma pack(1)
 
 struct RtpStream{
-  void (*media_data_callback)(void * , void(*rtp_sender_thread)(struct RtpStream *, char *, int),struct RtpStream *);
+  void (*media_data_callback)(void * , void(*parsed_data_callback)(struct RtpStream *, char *, int),struct RtpStream *);
   void *callback_data;
   int port;
   char *ip;
@@ -59,5 +58,7 @@ struct RtpStream* create_rtp_stream(char* ip, int port ,struct RtpSession *rtp_s
 bool start_rtp_session(struct RtpSession *rtpSession); 
 bool start_rtp_stream(struct RtpStream *rtpStream);
 int get_udp_sock_desc();
+//void send_rtp_packet(struct RtpStream *rtpStream, char *payload, int payload_size);
+
 
 #endif

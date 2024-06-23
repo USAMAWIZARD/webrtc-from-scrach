@@ -18,11 +18,9 @@ void main() {
   avcodec_open2(codec_ctx, dec, NULL);
 
   AVPacket *pkt = av_packet_alloc();
-  FILE *fptr = fopen("write1.h264", "w");
 
   while (av_read_frame(ctx, pkt) >= 0) {
     printf(" %ld %ld %d \n ", pkt->pts, pkt->duration, pkt->size);
-    fwrite(pkt->data, 1, pkt->size,fptr);
   }
 
   printf("%d", ctx->nb_streams);
