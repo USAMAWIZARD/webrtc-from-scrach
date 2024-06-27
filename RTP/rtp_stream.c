@@ -57,14 +57,13 @@ struct Rtp *init_rtp_packet() {
   rtp_packet_packet->padding = 0;
   rtp_packet_packet->seq_no = 0; //htons(rand());
   rtp_packet_packet->csrc_count = 1;
-  rtp_packet_packet->ssrc = 0;
+  rtp_packet_packet->ssrc = 12343;
   rtp_packet_packet->csrc = 1;
   rtp_packet_packet->timestamp = 0;
 
   //  strcpy(rtp_packet_packet->NAL,"faasdfasdfasdfasdfasdfasdfafdasdf");
   //  memset(rtp_packet_packet,0,sizeof(*rtp_packet_packet)+34);
 
-  printf("%ld size of a ", sizeof(*rtp_packet_packet));
   return rtp_packet_packet;
 }
 
@@ -106,8 +105,8 @@ void send_rtp_packet(struct RtpStream *rtpStream, char *payload, int payload_siz
   memcpy(rtpStream->rtp_packet->payload, payload,payload_size);
   int bytes = sendto(rtpStream->sockdesc, rtpStream->rtp_packet, sizeof(*rtpStream->rtp_packet) + payload_size , 0,
              (struct sockaddr *)(rtpStream->socket_address), socket_len);
-  
-  usleep(10000);
+  //printf("%d\n",rtpStream->rtp_packet->marker);  
+  usleep(15000);
   if (bytes == -1) {
     printf("\n failed to send the data %s  %d  socket_len %d desc %d\n", strerror(errno), payload_size, socket_len, rtpStream->sockdesc );
   

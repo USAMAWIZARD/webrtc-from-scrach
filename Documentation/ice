@@ -1,0 +1,81 @@
+https://datatracker.ietf.org/doc/html/rfc8445#page-5
+
+
+                               +---------+
+             +--------+        |Signaling|         +--------+
+             | STUN   |        |Server   |         | STUN   |
+             | Server |        +---------+         | Server |
+             +--------+       /           \        +--------+
+                             /             \
+                            /               \
+                           / <- Signaling -> \
+                          /                   \
+                   +--------+               +--------+
+                   |  NAT   |               |  NAT   |
+                   +--------+               +--------+
+                      /                             \
+                     /                               \
+                 +-------+                       +-------+
+                 | Agent |                       | Agent |
+                 |   L   |                       |   R   |
+                 +-------+                       +-------+
+
+                     Figure 1: ICE Deployment Scenario
+
+
+
+
+Keranen, et al.              Standards Track                    [Page 7]
+
+RFC 8445                           ICE                         July 2018
+
+
+   The basic idea behind ICE is as follows: each agent has a variety of
+   candidate transport addresses (combination of IP address and port for
+   a particular transport protocol, which is always UDP in this
+   specification) it could use to communicate with the other agent.
+   These might include:
+
+   o  A transport address on a directly attached network interface
+
+   o  A translated transport address on the public side of a NAT (a
+      "server-reflexive" address)
+
+   o  A transport address allocated from a TURN server (a "relayed
+      address")
+
+   Potentially, any of L's candidate transport addresses can be used to
+   communicate with any of R's candidate transport addresses.  In
+   practice, however, many combinations will not work.  For instance, if
+   L and R are both behind NATs, their directly attached interface
+   addresses are unlikely to be able to communicate directly (this is
+   why ICE is needed, after all!).  The purpose of ICE is to discover
+   which pairs of addresses will work.  The way that ICE does this is to
+   systematically try all possible pairs (in a carefully sorted order)
+   until it finds one or more that work.     address")
+
+
+   With both agents performing a check on a candidate pair, the result
+   is a 4-way handshake:
+
+                  L                        R
+                  -                        -
+                  STUN request ->             \  L's
+                            <- STUN response  /  check
+
+                             <- STUN request  \  R's
+                  STUN response ->            /  check
+
+                    Figure 3: Basic Connectivity Check
+   With both agents performing a check on a candidate pair, the result
+   is a 4-way handshake:
+
+                  L                        R
+                  -                        -
+                  STUN request ->             \  L's
+                            <- STUN response  /  check
+
+                             <- STUN request  \  R's
+                  STUN response ->            /  check
+
+                    Figure 3: Basic Connectivity Check

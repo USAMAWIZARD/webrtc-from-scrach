@@ -1,0 +1,20 @@
+{
+  "name": "webrtc_browser_app",
+  "version": "1.0.0",
+  "description": "a basic application to make a peer to peer webrtc session",
+  "main": "serv.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./serv.js"
+  },
+  "keywords": [
+    "webrtc",
+    "p2p",
+    "minimal"
+  ],
+  "author": "usamawizard",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

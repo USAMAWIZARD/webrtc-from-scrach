@@ -25,3 +25,9 @@ Once the receiver is started, run your program with the following command:
 ```sh
 ./webrtc
 ```
+
+
+limitations
+ipv4
+no turn support will fail on symitric nat
+

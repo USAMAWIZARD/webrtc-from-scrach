@@ -6,3 +6,49 @@ its treated as a payload header
 and then nal unit starts 
 
 first byte of each NALU contains its type specifcally  bits 3 through 7. (bit 0 is always off, and bits 1-2 indicate weather is NALU is referenced by another NALU)
+
+
+RTP PAYLOAD paketizastion mode in RTP H264
+
+   The payload format defines three different basic payload structures.
+   A receiver can identify the payload structure by the first byte of
+   the RTP packet payload, which co-serves as the RTP payload header
+   and, in some cases, as the first byte of the payload.  This byte is
+   always structured as a NAL unit header.  The NAL unit type field
+   indicates which structure is present.  The possible structures are as
+   follows.
+
+   Single NAL Unit Packet: Contains only a single NAL unit in the
+   payload.  The NAL header type field is equal to the original NAL unit
+   type, i.e., in the range of 1 to 23, inclusive.  Specified in Section
+   5.6.
+
+   Aggregation Packet: Packet type used to aggregate multiple NAL units
+   into a single RTP payload.  This packet exists in four versions, the
+   Single-Time Aggregation Packet type A (STAP-A), the Single-Time
+   Aggregation Packet type B (STAP-B), Multi-Time Aggregation Packet
+   (MTAP) with 16-bit offset (MTAP16), and Multi-Time Aggregation Packet
+   (MTAP) with 24-bit offset (MTAP24).  The NAL unit type numbers
+   assigned for STAP-A, STAP-B, MTAP16, and MTAP24 are 24, 25, 26, and
+   27, respectively.  Specified in Section 5.7.
+
+   Fragmentation Unit: Used to fragment a single NAL unit over multiple
+   RTP packets.  Exists with two versions, FU-A and FU-B, identified
+   with the NAL unit type numbers 28 and 29, respectively.  Specified in
+   Section 5.8.
+
+ Table 1.  Summary of NAL unit types and the corresponding packet
+                types
+
+      NAL Unit  Packet    Packet Type Name               Section
+      Type      Type
+      -------------------------------------------------------------
+      0        reserved                                     -
+      1-23     NAL unit  Single NAL unit packet             5.6
+      24       STAP-A    Single-time aggregation packet     5.7.1
+      25       STAP-B    Single-time aggregation packet     5.7.1
+      26       MTAP16    Multi-time aggregation packet      5.7.2
+      27       MTAP24    Multi-time aggregation packet      5.7.2
+      28       FU-A      Fragmentation unit                 5.8
+      29       FU-B      Fragmentation unit                 5.8
+      30-31    reserved                                     -

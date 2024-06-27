@@ -19,6 +19,7 @@ struct RtpStream{
   int payload_type;
   int clock_rate;
   uint32_t timestamp;
+  uint8_t marker:1;
 };
 struct RtpSession{
   struct RtpStream *streams[10];
@@ -42,6 +43,7 @@ struct __attribute__((packed)) Rtp {
 #if G_BYTE_ORDER == G_LITTLE_ENDIAN
   unsigned int pt : 7;
   unsigned int marker : 1;
+
 #elif G_BYTE_ORDER == G_BIG_ENDIAN
   unsigned int marker : 1;
   unsigned int pt : 7;

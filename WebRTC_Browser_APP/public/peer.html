@@ -1,0 +1,36 @@
+<html>
+  <head>
+
+ <script  src="./signalling_client.js" defer>
+    </script>
+
+
+    <title>peer</title>
+     </head>
+  <body>
+    <h1>WEBRTC PEER TO PEER</h1>
+  <h4>
+   this is a basic test page which only supports two peers a time for qucikly testing the webrtc library
+  
+   simply open the page on two diffrent browser pages or run the native client and browser page and webrtc connection will be establisished between both the client
+
+  one way communication one client will send and other will recive  
+
+  </h4>
+  <h2 id="mode">
+  </h2> 
+  <video width="500" height="300" muted controls id="video_player" controls="true" autoplay="true">
+  </video>
+  <script> 
+
+var urlparams = new URLSearchParams(window.location.search);
+var mode = urlparams.get("mode");
+document.getElementById("mode").innerText = "mode : "+ mode;
+
+
+    </script>
+  </body>
+
+
+
+</html>

@@ -1,5 +1,6 @@
 #include "../../RTP/rtp.h"
 #include <fcntl.h>
+#include <netinet/in.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,7 +20,7 @@ enum NAL_TYPE check_if_nal(unsigned char buffer, int *start_code_index) {
   if (buffer == start_code[*start_code_index] ||
       (*start_code_index == 2 && buffer == 1)) {
     if (*start_code_index == 2 && buffer == 1) {
-      //printf("got three start index in nal unit %d \n", buffer);
+      // printf("got three start index in nal unit %d \n", buffer);
       *start_code_index += 2;
       nal_type = NAL_THREE;
     } else {
@@ -43,8 +44,8 @@ unsigned char get_nal_type(char nal_first_byte) {
 }
 
 char *h264_parser_get_nal_unit(char *au_buffer, int buffer_size,
-                               void(on_parsed_data)(struct RtpStream *,unsigned char *,
-                                                    int),
+                               void(on_parsed_data)(struct RtpStream *,
+                                                    unsigned char *, int),
                                struct RtpStream *rtpStream) {
   unsigned char *nal_buffer;
   int start_code_1 = -1;
@@ -53,32 +54,43 @@ char *h264_parser_get_nal_unit(char *au_buffer, int buffer_size,
 
   nal_buffer = (unsigned char *)malloc(buffer_size);
 
-  
   for (int i = 0; i < buffer_size; i++) {
     int start_code_len = (i == buffer_size - 1)
-                             ? NAL_BUFFER_END 
+                             ? NAL_BUFFER_END
                              : check_if_nal(au_buffer[i], &start_code_index);
     if (start_code_len != -1) {
       if (start_code_1 < 0) {
         start_code_1 = i + 1;
-        // get_nal_type(buffer[start_code_1]);
       } else if (start_code_2 < 0) {
         start_code_2 = i;
 
+        if (start_code_len == NAL_BUFFER_END) {
+          rtpStream->rtp_packet->marker = 1;
+          //printf("1 -- %d\n", rtpStream->rtp_packet->marker);
+        } else {
+          rtpStream->rtp_packet->marker = 0;
+          //printf("0 -- %d\n", rtpStream->rtp_packet->marker);
+        }
+
         int nal_size = ((start_code_2 - start_code_1) - start_code_len) + 1;
-        memcpy(nal_buffer, &au_buffer[0] + (start_code_1),nal_size);
+        memcpy(nal_buffer, &au_buffer[0] + (start_code_1), nal_size);
         // get_nal_type(nal_buffer[-1]);
         on_parsed_data(rtpStream, nal_buffer, nal_size);
-        printf("\n=---------------------------------------------------\n");
-        for (int b = 0; b < nal_size; b++)
-          printf(" %x ", *(nal_buffer + b));
-        //  exit(0);
-        //         sleep(4);
+        // printf("\n=---------------------------------------------------\n");
+        // for (int b = 0; b < nal_size; b++)
+        //   printf(" %x ", *(nal_buffer + b));
+        //   exit(0);
+        //          sleep(4);
         start_code_1 = start_code_2 + 1;
         start_code_2 = -1;
       }
     }
   }
+  // printf("-0-00000000000000000000000000000000000000");
+  //  printf("\n=---------------------------------------------------\n");
+  //        for (int b = 0; b < buffer_size; b++)
+  //          printf(" %x ", *(au_buffer + b));
+       
   return NULL;
 }
 
