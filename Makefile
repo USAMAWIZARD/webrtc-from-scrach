@@ -1,10 +1,22 @@
 CC=gcc
-CFLAGS= -Wall -Werror
-SRC=src
-BIN=bin
+CFLAGS= 
+LIBS=-lavutil -lavcodec -lavformat
+PKG_CONFIG=`pkg-config --cflags --libs libsoup-2.4 json-glib-1.0`
+SRC=$(shell find . -name "*.c" -not -path "./SignallingServer/*")
+
+OBJECTS=$(SRC:.c=.o)
+
+$(info src files $(SRC))
+$(info obj files $(OBJECTS))
+
+all:webrtc
 
 
-all: rtp
+webrtc:$(OBJECTS)
+	$(CC) -o  $@ $(addprefix ./build/,$(^F)) $(LIBS) $(PKG_CONFIG)
+ 
+%.o:%.c
+	$(CC) $(CFLAGS) -c -o $(addprefix ./build/,$(@F)) $^ $(PKG_CONFIG)
 
-rtp:./RTP/rtp_stream.c ./RTP/rtp_session.c
-	gcc ./Network/network.c ./RTP/rtp_session.c ./RTP/rtp_stream.c  ./parser/h264_parser/h264_parser.c ./STUN/stun.c  ./ICE/ice.c ./webrtc.c -o webrtc  -lavutil -lavcodec -lavformat 
+clean:
+	rm -rf ./build/*

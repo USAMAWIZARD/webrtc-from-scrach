@@ -79,3 +79,6 @@ RFC 8445                           ICE                         July 2018
                   STUN response ->            /  check
 
                     Figure 3: Basic Connectivity Check
+
+
+                    STUN RTP RTCP SAME PORT

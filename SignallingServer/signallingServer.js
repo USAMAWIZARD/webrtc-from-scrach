@@ -25,7 +25,8 @@ wsServer.getUniqueID = function() {
 };
 
 wsServer.on('request', function(wsrequest) {
-  var connection = wsrequest.accept('echo-protocol', wsrequest.origin);
+  console.log(wsrequest);
+  var connection = wsrequest.accept("",wsrequest.origin);
 
   var socket_id = wsServer.getUniqueID();
   connection.id = socket_id;
@@ -59,7 +60,7 @@ wsServer.on('request', function(wsrequest) {
   });
 
   connection.on('close', function(reasonCode, description) {
-    console.log(' Peer ' + connection.remoteAddress + ' disconnected.');
+    console.log( ' Peer ' + connection.remoteAddress + ' disconnected.');
     if (connection.id == last_joined_id) {
       last_joined_id = null;
     }

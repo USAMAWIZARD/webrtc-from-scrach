@@ -40,17 +40,16 @@ struct stun_binding *stun_bind_request(char *src_ip) {
 
   int sock_desc = get_udp_sock_desc();
   struct sockaddr_in *dest_addr = get_network_socket(stun_server_ip, 19302);
-  // struct sockaddr_in *srcaddr = get_network_socket(NULL,5020);
-  //
-  // if (bind(sock_desc, (struct sockaddr *)srcaddr, sizeof(*srcaddr)) < 0) {
-  //   perror("bindig ip for stun failed");
-  //   exit(1);
-  // }
-  int bytes;
-  for (int i = 0; i <= 4; i++)
-    bytes = sendto(sock_desc, &stun_request, sizeof(stun_request), 0,
-                   (struct sockaddr *)dest_addr, sizeof(struct sockaddr_in));
+  struct sockaddr_in *srcaddr = get_network_socket(NULL, 5020);
 
+  if (bind(sock_desc, (struct sockaddr *)srcaddr, sizeof(*srcaddr)) < 0) {
+    perror("binding ip for stun failed");
+    exit(1);
+  }
+  int bytes;
+  bytes = sendto(sock_desc, &stun_request, sizeof(stun_request), 0,
+                 (struct sockaddr *)dest_addr, sizeof(struct sockaddr_in));
+  // close(sock_desc);
   printf("stun packet sent server :%s with local IP: %s \n", stun_server_ip,
          src_ip);
   char *udp_packet = malloc(1000);

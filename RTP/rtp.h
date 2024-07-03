@@ -20,7 +20,9 @@ struct RtpStream{
   int clock_rate;
   uint32_t timestamp;
   uint8_t marker:1;
+  struct MediaStreamTrack *track;
 };
+
 struct RtpSession{
   struct RtpStream *streams[10];
   int totalStreams;
@@ -56,7 +58,7 @@ struct __attribute__((packed)) Rtp {
 char *payload[];
 };
 struct RtpSession* create_rtp_session();
-struct RtpStream* create_rtp_stream(char* ip, int port ,struct RtpSession *rtp_session,void *video_data_callback,void *callback_data);
+struct RtpStream* create_rtp_stream(char* ip, int port ,struct RtpSession *rtp_session,struct MediaStreamTrack *track);
 bool start_rtp_session(struct RtpSession *rtpSession); 
 bool start_rtp_stream(struct RtpStream *rtpStream);
 int get_udp_sock_desc();

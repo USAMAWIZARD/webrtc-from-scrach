@@ -1,4 +1,4 @@
-var websocket = new WebSocket("ws://192.168.0.115:3001", "echo-protocol");
+var websocket = new WebSocket("ws://192.168.0.115:3001");
 var remote_peer = null;
 var peer;
 websocket.onopen = () => {
@@ -20,7 +20,7 @@ websocket.onmessage = async (message) => {
       break;
 
     case "offer":
-      console.log("recived offer +", message.offer.sdp);
+      console.log("recived offer +", message.offer);
       peer.setRemoteDescription(message.offer).then(() => {
         send_answer();
       });
@@ -65,11 +65,10 @@ websocket.onmessage = async (message) => {
 
 async function add_media() {
   var media = await navigator.mediaDevices.getUserMedia({ video: true });
-
-  if (mode == "sender") {
     setVideo(media);
     peer.addTrack(media.getVideoTracks()[0]);
-  }
+    stream1 =  media.getVideoTracks()[0].clone();
+    peer.addTrack(stream1);
 
 }
 function send_offer() {
@@ -85,7 +84,7 @@ function send_answer() {
     await peer.setLocalDescription(answer).then(() => {
       websocket.send(JSON.stringify({ "command": "answer", "answer": answer, "peer": remote_peer }));
     })
-  })
+  });
 }
 function setVideo(video_stream) {
   let video_player = document.getElementById("video_player");

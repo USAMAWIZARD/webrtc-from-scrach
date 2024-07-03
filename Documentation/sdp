@@ -1,0 +1,29 @@
+every line in sdp is a keyvalue pair
+https://datatracker.ietf.org/doc/html/rfc8866
+
+
+
+key=value
+key=value
+........
+....
+a single letter is used as key
+all the valid keys are defined in rfc8866
+can contain 0 or more media description
+
+Not all key values defined by the Session Description Protocol are used by WebRTC. Only keys used in the JavaScript Session Establishment Protocol (JSEP), defined in RFC 8829, are important.
+
+
+v - Version, should be equal to 0.
+o - Origin, contains a unique ID useful for renegotiations.
+s - Session Name, should be equal to -.
+t - Timing, should be equal to 0 0.
+m - Media Description (m=<media> <port> <proto> <fmt> ...), described in detail below.
+a - Attribute, a free text field. This is the most common line in WebRTC.
+c - Connection Data, should be equal to IN IP4 0.0.0.0.
+
+
+transriver have a sender and revier and its defined in sdp as
+a=mid:0
+
+
