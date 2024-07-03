@@ -1,4 +1,11 @@
 ./test.c
-./SignallingServer/node_modules/
-./WebRTC_Browser_APP/node_modules/
-./build/
+./SignallingServer/node_modules
+./WebRTC_Browser_APP/node_modules
+./build
+./compile_commands.json
+./webrtc
+./video.h264
+./minimal_offer.txt
+./.vscode
+./.cache
+./minimal_offer.txt
