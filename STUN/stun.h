@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <stdint.h>
-
 /*
 0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -16,18 +13,38 @@
 |                             Data                              |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
+/*
+      0                   1                   2                   3
+       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      |         Type                  |            Length             |
+      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      |                         Value (variable)                ....
+      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+                    Figure 4: Format of STUN Attributes
+*/
+#include "../ICE/ice.h"
+#include <stdint.h>
+#include <stdlib.h>
+#include <sys/types.h>
+
 #ifndef _STUNH_
-#define _STUNH_ 
+#define _STUNH_
 
 struct __attribute__((packed)) Stun {
   int zerobits : 2;
   uint16_t msg_type : 14;
   uint16_t msg_len : 16;
-  uint32_t magic_cookie: 32;
+  uint32_t magic_cookie : 32;
   char transaction_id[12];
-  //data
+  // data
   char data[];
 };
+
+// client binding request
+// server icecandidate   
+
 struct __attribute__((packed)) StunPayload {
   uint16_t att_type;
   uint16_t att_len;
@@ -41,6 +58,13 @@ struct stun_binding {
   char *bound_ip;
   uint16_t bound_port;
 };
-struct stun_binding* stun_bind_request(char* src_ip);
-
+struct stun_attribute {
+  uint16_t type;
+  uint16_t length;
+  char value[];
+};
+struct stun_binding *
+stun_bind_request(struct RTCIecCandidates *local_candidate,
+                  struct RTCIecCandidates *remote_candidate, char *stun_ip,
+                  int stun_port);
 #endif // !_STUNH_

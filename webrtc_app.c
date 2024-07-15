@@ -61,18 +61,10 @@ gint main(gint argc, gchar **argv) {
   // stun_bind_request(loopback_ip);
   // gather_ice_candidate(NULL);
   //  start_rtp_session(rtpSession);
-
+  //stun_bind_request(NULL, NULL, NULL, NULL);
   websocket_connect("127.0.0.1", 3001);
-
-  struct RTCPeerConnection *peer = NEW_RTCPeerConnection();
-  struct MediaStreamTrack *video_track = NEW_MediaTrack(
-      "video", "video NEW_MediaTrack", &user_defined_read_data, NULL);
-
-  add_track(peer, video_track);
-  create_offer(peer);
 
   main_loop = g_main_loop_new(NULL, FALSE);
   g_main_loop_run(main_loop);
   g_main_loop_unref(main_loop);
-
 }

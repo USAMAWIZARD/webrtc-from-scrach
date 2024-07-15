@@ -25,17 +25,17 @@ wsServer.getUniqueID = function() {
 };
 
 wsServer.on('request', function(wsrequest) {
-  console.log(wsrequest);
+ // console.log(wsrequest);
   var connection = wsrequest.accept("",wsrequest.origin);
 
   var socket_id = wsServer.getUniqueID();
   connection.id = socket_id;
   socket_id_map.set(socket_id, connection);
 
+   console.log(connection.id);
   if (last_joined_id != null) {
     last_ws_connection = socket_id_map.get(last_joined_id);
     if (last_ws_connection != null && last_ws_connection) {
-      console.log(last_joined_id);
       connection.send(JSON.stringify({ "command": "start", "peer": last_joined_id }));
       last_ws_connection.send(JSON.stringify({ "command": "start", "peer": socket_id }));
     }
@@ -52,6 +52,7 @@ wsServer.on('request', function(wsrequest) {
     var message = JSON.parse(message.utf8Data);
     peer_pair = socket_id_map.get(message.peer);
     if (peer_pair != undefined) {
+      console.log("send to ", message.peer,message);
       peer_pair.send(JSON.stringify(message));
     }
     else {

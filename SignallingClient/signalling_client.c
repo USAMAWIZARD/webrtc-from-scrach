@@ -1,3 +1,7 @@
+#include "../ICE/ice.h"
+#include "../SDP/sdp.h"
+#include "../WebRTC/webrtc.h"
+#include "libsoup/soup-types.h"
 #include <glib.h>
 #include <json-glib/json-glib.h>
 #include <libsoup/soup.h>
@@ -5,7 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-const gchar *peer;
+
+const gchar *peer_pair;
+struct RTCPeerConnection *peer;
+SoupWebsocketConnection *ws_conn;
 static gchar *get_string_from_json_object(JsonObject *object) {
   JsonNode *root;
   JsonGenerator *generator;
@@ -21,8 +28,36 @@ static gchar *get_string_from_json_object(JsonObject *object) {
   json_node_free(root);
   return text;
 }
+
+ 
+void on_ice_candidate(struct RTCPeerConnection *peer,
+                      struct RTCIecCandidates *candidate) {
+
+  JsonObject *candidate_message = json_object_new();
+  json_object_set_string_member(candidate_message, "command", "candidate");
+  json_object_set_string_member(candidate_message, "peer", peer_pair);
+
+  JsonObject *candidate_obj = NULL;
+  if (candidate != NULL) {
+
+    candidate_obj = json_object_new();
+    json_object_set_string_member(candidate_obj, "candidate",
+                                  candidate->candidate);
+    char *sdpmid = g_strdup_printf("%d", candidate->sdpMid);
+    json_object_set_string_member(candidate_obj, "sdpMid", sdpmid);
+    json_object_set_int_member(candidate_obj, "sdpMLineIndex", 0);
+  }
+
+  json_object_set_object_member(candidate_message, "candidate", candidate_obj);
+
+  char *candidate_message_str = get_string_from_json_object(candidate_message);
+  printf("send %s\n", candidate_message_str);
+  soup_websocket_connection_send_text(ws_conn, candidate_message_str);
+}
+
 static void on_message(SoupWebsocketConnection *conn, gint type,
                        GBytes *message, gpointer data) {
+  printf("message\n");
   if (type == SOUP_WEBSOCKET_DATA_TEXT) {
     gsize sz;
     const gchar *ptr;
@@ -36,63 +71,53 @@ static void on_message(SoupWebsocketConnection *conn, gint type,
     gboolean is_parsed = json_parser_load_from_data(json_parser, ptr, -1, NULL);
     if (!is_parsed)
       return;
+
     root = json_parser_get_root(json_parser);
     object = json_node_get_object(root);
     const gchar *command = json_object_get_string_member(object, "command");
     if (strcmp(command, "start") == 0) {
 
-      peer = json_object_get_string_member(object, "peer");
+      peer_pair = json_object_get_string_member(object, "peer");
+      peer = NEW_RTCPeerConnection();
+      peer->on_ice_candidate = &on_ice_candidate;
+
+      struct MediaStreamTrack *video_track =
+          NEW_MediaTrack("video", "video NEW_MediaTrack", NULL, NULL);
+      add_track(peer, video_track);
 
       JsonObject *offer_message = json_object_new();
-      char *sdp =
-          "v=0\n"
-          "o=- 4395291772417888753 2 IN IP4 127.0.0.1\n"
-          "s=-\n"
-          "t=0 0\n"
-          "a=group:BUNDLE 0\n"
-          "a=msid-semantic: WMS\n"
-          "m=video 9 UDP/TLS/RTP/SAVPF 102 103\n"
-          "c=IN IP4 0.0.0.0\n"
-          "a=rtcp:9 IN IP4 0.0.0.0\n"
-          "a=ice-ufrag:H0Tz\n"
-          "a=ice-pwd:HXeKrqNxtoH7MLYV/gQXytWJ\n"
-          "a=ice-options:trickle\n"
-          "a=fingerprint:sha-256 "
-          "3C:4A:AA:DA:3A:F5:7F:B1:60:B2:1A:BB:59:20:22:DB:FC:44:FB:71:BB:88:"
-          "6D:E5:"
-          "BB:2E:C6:7F:6A:9E:0B:83\n"
-          "a=setup:actpass\n"
-          "a=mid:0\n"
-          "a=sendrecv\n"
-          "a=msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n"
-          "a=rtcp-mux\n"
-          "a=rtcp-rsize\n"
-          "a=rtpmap:102 H264/90000\n"
-          "a=fmtp:102 "
-          "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id="
-          "42001f\n"
-          "a=rtpmap:103 rtx/90000\n"
-          "a=fmtp:103 apt=102\n"
-          "a=ssrc:1044859037 cname:Dp9Bc6LU+k7YLLrs\n"
-          "a=ssrc:1044859037 msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n";
+      json_object_set_object_member(offer_message, "offer", get_test_ofer());
 
       json_object_set_string_member(offer_message, "command", "offer");
-      json_object_set_string_member(offer_message, "peer", peer);
-      JsonObject *sdp_object = json_object_new();
-
-      json_object_set_string_member(sdp_object, "sdp", sdp);
-      json_object_set_string_member(sdp_object, "type", "offer");
-      json_object_set_object_member(offer_message, "offer", sdp_object);
+      json_object_set_string_member(offer_message, "peer", peer_pair);
 
       char *str_offer_message = get_string_from_json_object(offer_message);
       printf("%s\n", str_offer_message);
-      soup_websocket_connection_send_text(conn, str_offer_message);
-    } else if (strcmp(command, "answer")) {
 
-    } else if (strcmp(command, "candidate")) {
+      soup_websocket_connection_send_text(conn, str_offer_message);
+      create_offer(peer);
+
+      set_local_description(peer, NULL);
+
+    } else if (strcmp(command, "answer") == 0) {
+
+    } else if (strcmp(command, "candidate") == 0) {
+      JsonObject *candidate_obj =
+          json_object_get_object_member(object, "candidate");
+      struct RTCIecCandidates *remote_candidate = NULL;
+
+      if (candidate_obj != NULL) {
+        remote_candidate = calloc(1,sizeof(struct RTCIecCandidates));
+        remote_candidate->candidate =
+            (char *)json_object_get_string_member(candidate_obj, "candidate");
+        remote_candidate->sdpMid =
+            atoi(json_object_get_string_member(candidate_obj, "sdpMid"));
+      }
+      add_ice_candidate(peer, remote_candidate);
     }
   }
 }
+
 static void on_close(SoupWebsocketConnection *conn, gpointer data) {
   soup_websocket_connection_close(conn, SOUP_WEBSOCKET_CLOSE_NORMAL, NULL);
   g_print("WebSocket connection closed\n");
@@ -110,6 +135,7 @@ static void on_connection(SoupSession *session, GAsyncResult *res,
     g_error_free(error);
     return;
   }
+  ws_conn = conn;
   g_signal_connect(conn, "message", G_CALLBACK(on_message), NULL);
   g_signal_connect(conn, "closed", G_CALLBACK(on_close), NULL);
 

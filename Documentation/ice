@@ -82,3 +82,36 @@ RFC 8445                           ICE                         July 2018
 
 
                     STUN RTP RTCP SAME PORT
+he initiating agent that started the ICE
+      processing MUST take the controlling role, and the other MUST take
+      the controlled role.  Both agents will form checklists, run the
+      ICE state machines, and generate connectivity checks.  The
+      controlling agent will execute the logic in Section 8.1 to
+      nominate pairs that will become (if the connectivity checks
+      associated with the nominations succeed) the selected pairs, and
+      then both agents end ICE as described in Section 8.1.2.
+
+
+
+
+
+      tickel ICE
+
+
+an endpoint using ICE needs to gather candidates, prioritize them, choose default ones, exchange them with the remote party, pair them and order into check lists. Once all this have been completed, and only then, the endpoints can begin a phase of connectivity checks and eventually select the pair of address candidates that will be used in the session
+
+
+
+hypotisis to confirm 
+if one client is behind nat and another directly have a public ip then when 
+
+
+  natted client -------binding req------>stun server 
+  natted client  <-------binding res-----stun server
+  
+
+  natted client ---------stun req-------->public client
+  natted client <---------stun res--------public client
+
+we discover a new candidate here which is not known to us yet its a peer peer reflexive candidate
+

@@ -1,0 +1,3 @@
+The most significant 2 bits of every STUN message MUST be zeroes.
+   This can be used to differentiate STUN packets from other protocols
+   when STUN is multiplexed with other protocols on the same port.

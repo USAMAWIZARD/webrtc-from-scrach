@@ -7,18 +7,24 @@ websocket.onopen = () => {
 websocket.onclose = () => {
   console.log("websocket connection close ");
 }
+function is_sender_mode(mode) {
+  return mode.includes("send")
+}
 websocket.onmessage = async (message) => {
   message = JSON.parse(message.data);
   switch (message.command) {
     case "start":
       console.log("start")
       remote_peer = message.peer;
-      if (mode == "sender") {
+      if (is_sender_mode(mode)) {
+        await add_media();
         await add_media();
         send_offer();
       }
+      //else
+      //  await add_media();
+      //await add_media("audio");
       break;
-
     case "offer":
       console.log("recived offer +", message.offer);
       peer.setRemoteDescription(message.offer).then(() => {
@@ -31,11 +37,11 @@ websocket.onmessage = async (message) => {
       break;
     case "candidate":
       if (message.candidate != null)
-        console.log("recived ice candidate \n" + message.candidate.candidate);
+        console.log("recived ice candidate \n");
+      console.log(message.candidate);
       await peer.addIceCandidate(message.candidate);
   }
 }
-
 
 (async () => {
 
@@ -63,16 +69,27 @@ websocket.onmessage = async (message) => {
   }
 })();
 
-async function add_media() {
-  var media = await navigator.mediaDevices.getUserMedia({ video: true });
+async function add_media(type) {
+  if (type == "video" || type == undefined || type == null) {
+    media = await navigator.mediaDevices.getUserMedia({ video: true });
     setVideo(media);
     peer.addTrack(media.getVideoTracks()[0]);
-    stream1 =  media.getVideoTracks()[0].clone();
-    peer.addTrack(stream1);
+    return;
+  }
+  else if (type == "audio") {
+    media = await navigator.mediaDevices.getUserMedia({ audio: true });
+    peer.addTrack(media.getAudioTracks()[0]);
+    console.warn("audio aded");
+    return;
+  }
+
+  //stream1 = media.getVideoTracks()[0].clone();
+  //peer.addTrack(stream1);
 
 }
 function send_offer() {
-  peer.createOffer().then(async (localdesc) => { console.log("create and send offer " + localdesc.sdp);
+  peer.createOffer().then(async (localdesc) => {
+    console.log("create and send offer " + localdesc.sdp);
     peer.setLocalDescription(localdesc).then(() => {
       websocket.send(JSON.stringify({ "command": "offer", "offer": localdesc, "peer": remote_peer }));
     });

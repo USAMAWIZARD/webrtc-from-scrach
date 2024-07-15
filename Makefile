@@ -20,3 +20,6 @@ webrtc:$(OBJECTS)
 
 clean:
 	rm -rf ./build/*
+
+run:
+	./webrtc

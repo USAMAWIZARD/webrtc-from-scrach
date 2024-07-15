@@ -1,6 +1,7 @@
 #include "./webrtc.h"
 #include "../ICE/ice.h"
 #include "../SDP/sdp.h"
+#include "glib.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +26,7 @@ struct MediaStreamTrack *NEW_MediaTrack(char *kind, char *label,
   track->kind = kind;
   track->label = label;
   track->next_track = NULL;
-  track->id = random();
+  track->id = "random trackid";
   track->userdata = userdata;
   return track;
 }
@@ -33,7 +34,7 @@ struct MediaStreamTrack *NEW_MediaTrack(char *kind, char *label,
 bool add_track(struct RTCPeerConnection *peer, struct MediaStreamTrack *track) {
   if (peer->media_tracks == NULL) {
     peer->media_tracks = track;
-    printf("New Track Added to WebRTC Session id:%d Kind: %s Label: %s\n",
+    printf("New Track Added to WebRTC Session id:%s Kind: %s Label: %s\n",
            track->id, track->kind, track->label);
     add_transceivers(peer, peer->media_tracks);
   } else {
@@ -41,38 +42,52 @@ bool add_track(struct RTCPeerConnection *peer, struct MediaStreamTrack *track) {
   }
   return true;
 }
+
 struct RTCRtpTransceivers *add_transceivers(struct RTCPeerConnection *peer,
                                             struct MediaStreamTrack *track) {
   struct RTCRtpTransceivers *transceiver = peer->transceiver;
+  if (transceiver != NULL)
+    for (; transceiver->next_trans != NULL;
+         transceiver = transceiver->next_trans)
+      ;
 
-  if (transceiver == NULL) {
-  new_trans:
-    transceiver = malloc(sizeof(struct RTCRtpTransceivers));
-  settrans:
-    transceiver->mid = transceiver != NULL ? transceiver->mid + 1 : 0;
-    transceiver->direction = SEND_RECV;
-    transceiver->next_trans = NULL;
-    //transceiver->sender = ;
+  struct RTCRtpTransceivers *new_transceiver =
+      calloc(1, sizeof(struct RTCRtpTransceivers));
+  new_transceiver->mid = transceiver != NULL ? transceiver->mid + 1 : 0;
+  new_transceiver->direction = SEND_RECV;
+  new_transceiver->next_trans = NULL;
+  new_transceiver->ice_ufrag = "lfasjd";
+  new_transceiver->ice_password = "dsfasldj";
 
+  struct Transport *sender = calloc(1, sizeof(struct Transport));
+  sender->track = track;
+  sender->state = TRANSPORT_STATE_NEW;
+  new_transceiver->sender = sender;
+
+  if (peer->transceiver == NULL) {
+    peer->transceiver = new_transceiver;
   } else {
-    while (transceiver != NULL) {
-      transceiver = peer->transceiver;
-      if (transceiver->sender == NULL) {
-        goto settrans;
-      }
-      goto new_trans;
-    }
+    transceiver->next_trans = new_transceiver;
   }
   return transceiver;
 }
 
 struct RTCSessionDescription *create_offer(struct RTCPeerConnection *peer) {
   struct RTCRtpTransceivers *transceiver = peer->transceiver;
-  static char *offer_constants = "";
-  while (transceiver != NULL) {
+  peer->ice_role = ICE_AGENT_CONTROLLING;
 
-    transceiver = transceiver->next_trans;
+  char *offer_constants = get_sdp_constants();
+  printf("%s", offer_constants);
+  char *transceiver_sdp = "";
+  if (peer->current_remote_desc != NULL) {
+    // generate a maching description
+    //
+  } else {
+    if (peer->transceiver != NULL) {
+      transceiver_sdp = generate_unmached_desc(peer->transceiver);
+    }
   }
+
   return NULL;
 }
 
@@ -81,10 +96,46 @@ create_answer(struct RTCSessionDescription *peer) {
 
   return NULL;
 }
-void *set_local_description(struct RTCSessionDescription *peer) { return NULL; }
+void set_local_description(struct RTCPeerConnection *peer,
+                           struct RTCSessionDescription *sdp) {
+  peer->current_local_desc = sdp;
+
+  gather_ice_candidate(peer);
+}
 void *set_remote_discription(struct RTCSessionDescription *peer) {
 
   return NULL;
 }
-void *add_ice_candidates() { return NULL; }
-void on_ice_candidate() {}
+void add_ice_candidate(struct RTCPeerConnection *peer,
+                       struct RTCIecCandidates *candidate) {
+
+  if (candidate == NULL) {
+    // signal remote ice gathering compleated
+    return;
+  }
+
+  parse_ice_candidate(candidate);
+  struct RTCRtpTransceivers *transceiver =
+      get_transceiver(peer->transceiver, candidate->sdpMid);
+
+  printf("1---------------------------------------\n");
+  if (transceiver == NULL)
+    return;
+
+  if (transceiver->remote_ice_candidate == NULL) {
+    transceiver->remote_ice_candidate = candidate;
+  } else {
+    struct RTCIecCandidates *lastcandidate = transceiver->remote_ice_candidate;
+
+    for (; lastcandidate->next_candidate != NULL;
+         lastcandidate = lastcandidate->next_candidate)
+      ;
+    lastcandidate->next_candidate = candidate;
+  }
+  struct args *arg = malloc(sizeof(struct args));
+  arg->transceiver = transceiver;
+  arg->candidate = candidate;
+
+  g_timeout_add_full(G_PRIORITY_HIGH, 500, (GSourceFunc)do_ice_handshake, arg,
+                     (GDestroyNotify)ice_handshake_ended);
+}

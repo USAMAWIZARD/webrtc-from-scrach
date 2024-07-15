@@ -1,30 +1,30 @@
-#include<stdbool.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
 #include <stdint.h>
-
 
 #ifndef _RTPH_
 #define _RTPH_
 
-struct RtpStream{
-  void (*media_data_callback)(void * , void(*parsed_data_callback)(struct RtpStream *, char *, int),struct RtpStream *);
+struct RtpStream {
+  void (*media_data_callback)(void *,
+                              void (*parsed_data_callback)(struct RtpStream *,
+                                                           char *, int),
+                              struct RtpStream *);
   void *callback_data;
   int port;
   char *ip;
   char *streamState;
   struct sockaddr_in *socket_address;
   int sockdesc;
-  struct Rtp * rtp_packet; 
+  struct Rtp *rtp_packet;
   int socket_len;
   int payload_type;
   int clock_rate;
   uint32_t timestamp;
-  uint8_t marker:1;
+  uint8_t marker : 1;
   struct MediaStreamTrack *track;
 };
-
-struct RtpSession{
-  struct RtpStream *streams[10];
+struct RtpSession { struct RtpStream *streams[10];
   int totalStreams;
 };
 struct __attribute__((packed)) Rtp {
@@ -54,15 +54,17 @@ struct __attribute__((packed)) Rtp {
   unsigned int seq_no : 16;
   unsigned int timestamp : 32;
   unsigned int ssrc : 32;
-  unsigned int csrc :32;
-char *payload[];
+  unsigned int csrc : 32;
+  char *payload[];
 };
-struct RtpSession* create_rtp_session();
-struct RtpStream* create_rtp_stream(char* ip, int port ,struct RtpSession *rtp_session,struct MediaStreamTrack *track);
-bool start_rtp_session(struct RtpSession *rtpSession); 
+struct RtpSession *create_rtp_session();
+struct RtpStream *create_rtp_stream(char *ip, int port,
+                                    struct RtpSession *rtp_session,
+                                    struct MediaStreamTrack *track);
+bool start_rtp_session(struct RtpSession *rtpSession);
 bool start_rtp_stream(struct RtpStream *rtpStream);
 int get_udp_sock_desc();
-//void send_rtp_packet(struct RtpStream *rtpStream, char *payload, int payload_size);
-
+// void send_rtp_packet(struct RtpStream *rtpStream, char *payload, int
+// payload_size);
 
 #endif
