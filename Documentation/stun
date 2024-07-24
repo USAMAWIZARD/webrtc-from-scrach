@@ -1,3 +1,8 @@
 The most significant 2 bits of every STUN message MUST be zeroes.
    This can be used to differentiate STUN packets from other protocols
    when STUN is multiplexed with other protocols on the same port.
+
+a STUN server on the public Internet supporting ICE would
+   have no authentication, whereas the STUN server functionality in an
+   agent supporting connectivity checks would utilize short-term
+   credentials.  An overview of these two mechanisms is given in

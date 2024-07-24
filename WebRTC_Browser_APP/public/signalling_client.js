@@ -18,7 +18,7 @@ websocket.onmessage = async (message) => {
       remote_peer = message.peer;
       if (is_sender_mode(mode)) {
         await add_media();
-        await add_media();
+        //await add_media();
         send_offer();
       }
       //else
@@ -46,6 +46,7 @@ websocket.onmessage = async (message) => {
 (async () => {
 
   peer = new RTCPeerConnection({
+    bundlePolicy: "max-bundle",
     iceServers: [
       {
         urls: "stun:stun.l.google.com:19302"
@@ -99,7 +100,7 @@ function send_answer() {
   peer.createAnswer().then(async (answer) => {
     console.log(" create and send answer : " + answer.sdp);
     await peer.setLocalDescription(answer).then(() => {
-      websocket.send(JSON.stringify({ "command": "answer", "answer": answer, "peer": remote_peer }));
+      //websocket.send(JSON.stringify({ "command": "answer", "answer": answer, "peer": remote_peer }));
     })
   });
 }

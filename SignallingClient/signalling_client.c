@@ -95,7 +95,7 @@ static void on_message(SoupWebsocketConnection *conn, gint type,
       printf("%s\n", str_offer_message);
 
       soup_websocket_connection_send_text(conn, str_offer_message);
-      create_offer(peer);
+      //create_offer(peer);
 
       set_local_description(peer, NULL);
 

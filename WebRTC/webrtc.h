@@ -1,4 +1,6 @@
+#include <pthread.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifndef _WEBRTCH_
 #define _WEBRTCH_
@@ -17,6 +19,7 @@ enum RTC_CONNECTION_STATE {
 
 struct RTCPeerConnection {
   char *connection_state;
+  pthread_t *listener_thread_id;
   struct RTCSessionDescription *current_local_desc;
   struct RTCSessionDescription *current_remote_desc;
   char *ice_connection_state;
@@ -60,6 +63,7 @@ struct RTCRtpTransceivers {
   char *ice_password;
   char *dtls_fingeprint;
   bool stoped;
+  bool handshake_sending_started;
   struct RTCRtpTransceivers *next_trans;
 };
 

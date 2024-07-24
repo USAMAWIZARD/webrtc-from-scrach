@@ -115,3 +115,10 @@ if one client is behind nat and another directly have a public ip then when
 
 we discover a new candidate here which is not known to us yet its a peer peer reflexive candidate
 
+
+IF MAX BUNDLE THEN one the ice candidate with mid 0 will be descovered 
+
+
+balanced	Gather ICE candidates for each media type in use (audio, video, and data). If the remote endpoint is not bundle-aware, negotiate only one audio and video track on separate transports.
+max-compat	Gather ICE candidates for each track. If the remote endpoint is not bundle-aware, negotiate all media tracks on separate transports.
+max-bundle	Gather ICE candidates for only one track. If the remote endpoint is not bundle-aware, negotiate only one media track.

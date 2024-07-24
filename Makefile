@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS= 
-LIBS=-lavutil -lavcodec -lavformat
+LIBS=-lavutil -lavcodec -lavformat -lgsasl -lz
 PKG_CONFIG=`pkg-config --cflags --libs libsoup-2.4 json-glib-1.0`
 SRC=$(shell find . -name "*.c" -not -path "./SignallingServer/*")
 
@@ -22,4 +22,10 @@ clean:
 	rm -rf ./build/*
 
 run:
+	make
 	./webrtc
+
+startservers:
+	nohup npm start --prefix ./WebRTC_Browser_APP/ &
+	npm start --prefix ./SignallingServer/
+

@@ -5,7 +5,7 @@
   "main": "signallingServer.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx nodemon ./signallingServer.js"    
+    "start": "npx nodemon ./signallingServer.js"
   },
   "author": "usamawizard",
   "license": "GPL-3.0",

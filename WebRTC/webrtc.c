@@ -58,7 +58,6 @@ struct RTCRtpTransceivers *add_transceivers(struct RTCPeerConnection *peer,
   new_transceiver->next_trans = NULL;
   new_transceiver->ice_ufrag = "lfasjd";
   new_transceiver->ice_password = "dsfasldj";
-
   struct Transport *sender = calloc(1, sizeof(struct Transport));
   sender->track = track;
   sender->state = TRANSPORT_STATE_NEW;
@@ -106,6 +105,7 @@ void *set_remote_discription(struct RTCSessionDescription *peer) {
 
   return NULL;
 }
+// remote ice
 void add_ice_candidate(struct RTCPeerConnection *peer,
                        struct RTCIecCandidates *candidate) {
 
@@ -118,7 +118,8 @@ void add_ice_candidate(struct RTCPeerConnection *peer,
   struct RTCRtpTransceivers *transceiver =
       get_transceiver(peer->transceiver, candidate->sdpMid);
 
-  printf("1---------------------------------------\n");
+  printf("\n----------added remote candidate %s://%s:%d-------------\n",
+         candidate->transport, candidate->address, candidate->port);
   if (transceiver == NULL)
     return;
 
@@ -136,6 +137,12 @@ void add_ice_candidate(struct RTCPeerConnection *peer,
   arg->transceiver = transceiver;
   arg->candidate = candidate;
 
-  g_timeout_add_full(G_PRIORITY_HIGH, 500, (GSourceFunc)do_ice_handshake, arg,
-                     (GDestroyNotify)ice_handshake_ended);
+  g_timeout_add_full(G_PRIORITY_HIGH, 499, (GSourceFunc)make_candidate_pair,
+                     arg, (GDestroyNotify)ice_handshake_ended);
+
+  if (!transceiver->handshake_sending_started) {
+    transceiver->handshake_sending_started = true;
+    g_timeout_add_full(G_PRIORITY_HIGH, 499, (GSourceFunc)do_ice_handshake,
+                       transceiver, (GDestroyNotify)ice_handshake_ended);
+  }
 }

@@ -2,6 +2,7 @@
 #include "stdbool.h"
 #include <glib.h>
 #include <json-glib/json-glib.h>
+#include <stdint.h>
 #ifndef _ICEH_
 #define _ICEH_
 
@@ -24,41 +25,55 @@
 
 #define ICE_AGENT_CONTROLLING "controlling"
 #define ICE_AGENT_CONROLLED "controlled"
+
+#define HOST_CANDIDATE "host"
+#define SRFLX_CANDIDATE "srflx"
+#define PRFLX_CANDIDATE "prflx"
+#define RELAY_CANDIDATE "relay"
 struct RTCIecCandidates {
   char *address;
   char *candidate;
   int component_id;
   int foundation;
   int port;
-  int priority;
+  uint32_t priority;
   char *transport;
   int sdpMid;
   char *type;
   char *raddr;
   int rport;
-  char *uuid;
+  uint32_t id;
+  int sock_desc;
+  char *ufrag;
+  char *password;
+  struct sockaddr_in *src_socket;
   struct RTCIecCandidates *next_candidate;
 };
 
 struct CandidataPair {
   struct RTCIecCandidates *p0;
   struct RTCIecCandidates *p1;
-  int id;
+  uint32_t xored_id;
   char *state;
   bool isvalid;
-  int request_sent_count;
+  uint32_t request_sent_count;
+  uint32_t priority;
   struct CandidataPair *next_pair;
 };
 
 void gather_ice_candidate(struct RTCPeerConnection *peer);
 bool parse_ice_candidate(struct RTCIecCandidates *candidate);
 void listen_for_ice_handshake(struct RTCIecCandidates *local_candidate);
-guint do_ice_handshake(struct args *arg);
+guint make_candidate_pair(struct args *arg);
 void add_candidate_for_each_transiver(struct RTCPeerConnection *peer,
                                       struct RTCIecCandidates *candidate);
+
+guint do_ice_handshake(struct RTCRtpTransceivers *transceiver);
 void ice_handshake_ended(struct RTCIecCandidates *local_candidate,
                          struct RTCIecCandidates *remote_candidate);
 struct RTCRtpTransceivers *get_transceiver(struct RTCRtpTransceivers *trans,
                                            int mid);
-
+void add_local_icecandidate(struct RTCPeerConnection *peer,
+                            struct RTCIecCandidates *candidate);
+int get_type_pref(char *candidate_type);
 #endif // !_ICEH_
