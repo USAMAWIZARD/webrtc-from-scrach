@@ -100,7 +100,7 @@ function send_answer() {
   peer.createAnswer().then(async (answer) => {
     console.log(" create and send answer : " + answer.sdp);
     await peer.setLocalDescription(answer).then(() => {
-      //websocket.send(JSON.stringify({ "command": "answer", "answer": answer, "peer": remote_peer }));
+      websocket.send(JSON.stringify({ "command": "answer", "answer": answer, "peer": remote_peer }));
     })
   });
 }

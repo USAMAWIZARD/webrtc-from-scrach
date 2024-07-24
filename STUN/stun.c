@@ -123,7 +123,7 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
     guchar *stun_message_hmac = generate_HMAC(pair->p0->password, stun_message);
 
     add_stun_attribute(stun_message, STUN_ATTRIBUTE_MESSAGE_INTIGRITY,
-                       stun_message_hmac, NULL);
+                       stun_message_hmac, 20);
 
     uint32_t stun_message_crc32 =
         crc32(0, (const Bytef *)&stun_message, ntohs(stun_message->msg_len)) ^
@@ -136,14 +136,14 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
   int bytes = sendto(sock_desc, stun_message,
                      sizeof(struct Stun) + ntohs(stun_message->msg_len), 0,
                      (struct sockaddr *)dest_addr, sizeof(struct sockaddr_in));
-
-  if (bytes != -1 && bytes != 0)
-    printf("\n-stun Packet sent client : stun://%s:%d with   server/Cliet : "
-           "%s:%d \n",
-           pair->p0->address, pair->p0->port, pair->p1->address,
-           pair->p1->port);
-  else
-    printf("something went wrong  while sending stun \n ");
+  if (sender_candidate == NULL && (message_class == STUN_RESPONSE_CLASS))
+    if (bytes != -1 && bytes != 0)
+      printf("\n-stun Packet sent client : stun://%s:%d with   server/Cliet : "
+             "%s:%d \n",
+             pair->p0->address, pair->p0->port, pair->p1->address,
+             pair->p1->port);
+    else
+      printf("something went wrong  while sending stun \n ");
 
   free(stun_message);
   return true;
@@ -154,14 +154,19 @@ guchar *generate_HMAC(const gchar *key, struct Stun *stun_message) {
   gsasl_saslprep(key, GSASL_ALLOW_UNASSIGNED, &sasl, NULL);
 
   char *stun_hmac = g_compute_hmac_for_data(
-      G_CHECKSUM_SHA1, (const guchar *)sasl, strlen(sasl),
-      (const guchar *)stun_message, ntohs(stun_message->msg_len));
+      G_CHECKSUM_SHA1, sasl, strlen(sasl), stun_message,
+      ntohs(stun_message->msg_len) + sizeof(struct Stun));
 
-  // printf("HMAC HASH ---%s\n", stun_hmac);
-  // printf("HMAC KEY %s --\n", sasl);
-  // memcpy(stun_message, "\0", 1);
-  // print_hex((const guchar *)stun_message, stun_message->msg_len);
+  printf("HMAC HASH ---%s\n", stun_hmac);
+  printf("HMAC KEY %s --\n", sasl);
+  print_hex(sasl, strlen(sasl));
+  printf("stunmsage len %d --\n",
+         ntohs(stun_message->msg_len) + sizeof(struct Stun));
+
+  print_hex((const guchar *)stun_message,
+            sizeof(struct Stun) + ntohs(stun_message->msg_len));
   guchar *binhmac = hexstr_to_char(stun_hmac);
+
   free(sasl);
   return binhmac;
 }
@@ -173,7 +178,7 @@ struct TVL *add_stun_attribute(struct Stun *stun, uint16_t type, char *value,
   int padding_bytes = rem != 0 ? 4 - rem : 0;
   int total_attribute_size = sizeof(struct TVL) + len + padding_bytes;
 
-  struct TVL *tvl_attribute = calloc(1, total_attribute_size);
+  struct TVL *tvl_attribute = calloc(0, total_attribute_size);
   tvl_attribute->att_type = htons(type);
   tvl_attribute->att_len = htons(len);
 

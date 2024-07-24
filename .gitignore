@@ -7,3 +7,6 @@ minimal_offer.txt
 .vscode/
 .cache/
 webrtc
+SignallingServer/nohup.out
+nohup.out
+
