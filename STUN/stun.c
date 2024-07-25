@@ -61,10 +61,6 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
 
   stun_message->magic_cookie = htonl(STUN_MAGIC_COOKIE);
   socklen_t socklen = sizeof(struct sockaddr_in);
-  char *transaction_id = g_uuid_string_random();
-
-  strncpy(stun_message->transaction_id, transaction_id, 12);
-  strncpy(stun_message->transaction_id, &pair->p0->id, sizeof(uint32_t));
 
   int sock_desc = pair->p0->sock_desc;
 
@@ -75,6 +71,11 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
 
   if (sender_candidate == NULL && message_class == STUN_REQUEST_CLASS) {
     // username:username
+
+    char *transaction_id = g_uuid_string_random();
+    strncpy(stun_message->transaction_id, transaction_id, 12);
+    strncpy(stun_message->transaction_id, &pair->p0->id, sizeof(uint32_t));
+    free(transaction_id);
 
     char *usernamekeys =
         g_strdup_printf("%s:%s", pair->p1->ufrag, pair->p0->ufrag);
@@ -94,12 +95,16 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
   }
 
   if (message_class == STUN_RESPONSE_CLASS) {
+
     if (data == NULL) {
       printf("cannot send binding rsponse data is null\n");
       return false;
     }
     struct stun_binding *binding = (struct stun_binding *)data;
     struct StunPayload *payload = malloc(sizeof(struct StunPayload));
+
+    strncpy(stun_message->transaction_id, binding->transaction_id,
+            sizeof(stun_message->transaction_id));
     guchar *payload_str = malloc(sizeof(struct StunPayload));
 
     uint16_t mapped_port = htons(
@@ -126,11 +131,11 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
                        stun_message_hmac, 20);
 
     uint32_t stun_message_crc32 =
-        crc32(0, (const Bytef *)&stun_message, ntohs(stun_message->msg_len)) ^
-        0x5354554e;
-
+        htonl(calculate_crc32(stun_message) ^ 0x5354554e);
     add_stun_attribute(stun_message, STUN_ATTRIBUTE_FINGERPRINT,
                        (guchar *)&stun_message_crc32, sizeof(uint32_t));
+
+    // exit(0);
   }
 
   int bytes = sendto(sock_desc, stun_message,
@@ -151,26 +156,46 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
 
 guchar *generate_HMAC(const gchar *key, struct Stun *stun_message) {
   char *sasl;
+  int actual_len = ntohs(stun_message->msg_len);
+  int presumed_len = ntohs(stun_message->msg_len) + 20 + 4;
+
   gsasl_saslprep(key, GSASL_ALLOW_UNASSIGNED, &sasl, NULL);
 
-  char *stun_hmac = g_compute_hmac_for_data(
-      G_CHECKSUM_SHA1, sasl, strlen(sasl), stun_message,
-      ntohs(stun_message->msg_len) + sizeof(struct Stun));
+  stun_message->msg_len = htons(presumed_len);
+
+  char *stun_hmac =
+      g_compute_hmac_for_data(G_CHECKSUM_SHA1, sasl, strlen(sasl), stun_message,
+                              actual_len + sizeof(struct Stun));
 
   printf("HMAC HASH ---%s\n", stun_hmac);
   printf("HMAC KEY %s --\n", sasl);
   print_hex(sasl, strlen(sasl));
-  printf("stunmsage len %d --\n",
-         ntohs(stun_message->msg_len) + sizeof(struct Stun));
+  printf("stunmsage len %d --\n", actual_len + sizeof(struct Stun));
 
-  print_hex((const guchar *)stun_message,
-            sizeof(struct Stun) + ntohs(stun_message->msg_len));
+  print_hex(stun_message, sizeof(struct Stun) + actual_len);
+
+  stun_message->msg_len = htons(actual_len);
+
   guchar *binhmac = hexstr_to_char(stun_hmac);
 
   free(sasl);
   return binhmac;
 }
+uint32_t calculate_crc32(struct Stun *stun_message) {
 
+  uLong crc = crc32(0L, Z_NULL, 0);
+  int actual_len = ntohs(stun_message->msg_len);
+  int presumed_len = ntohs(stun_message->msg_len) + 4 + 4;
+
+  stun_message->msg_len = htons(presumed_len);
+  uint32_t stun_message_crc32 =
+      (crc32(crc, stun_message, actual_len + sizeof(struct Stun)));
+  // printf("\n crc32 %x ", stun_message_crc32);
+  // print_hex(stun_message, actual_len + sizeof(struct Stun));
+
+  stun_message->msg_len = htons(actual_len);
+  return stun_message_crc32;
+}
 struct TVL *add_stun_attribute(struct Stun *stun, uint16_t type, char *value,
                                uint16_t size) {
   uint16_t len = size != NULL ? size : strlen(value);
@@ -218,8 +243,10 @@ void on_stun_packet(struct NetworkPacket *packet,
                     struct RTCPeerConnection *peer) {
   if (peer == NULL || packet == NULL)
     return;
+
   struct Stun *stun_header = packet->header.stun_header;
   struct StunPayload *stun_respose = packet->payload.stun_payload;
+
   if (packet->subtype == BINDING_RESPONSE) {
     struct in_addr ip_add;
     ip_add.s_addr = stun_respose->x_ip;
@@ -260,7 +287,8 @@ void on_stun_packet(struct NetworkPacket *packet,
           struct stun_binding *binding = malloc(sizeof(struct stun_binding));
           binding->bound_port = checklist->p1->port;
           binding->bound_ip = checklist->p1->address;
-
+          memcpy(binding->transaction_id, stun_header->transaction_id,
+                 sizeof(stun_header->transaction_id));
           send_stun_bind(checklist, STUN_RESPONSE_CLASS, NULL, binding);
           break;
         }
