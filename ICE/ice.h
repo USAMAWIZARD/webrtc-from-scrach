@@ -5,7 +5,8 @@
 #include <stdint.h>
 #ifndef _ICEH_
 #define _ICEH_
-
+#define SDP_TYPE_OFFER "offer"
+#define SDP_TYPE_ANSWER "answer"
 #define TRANSPORT_STATE_NEW "new"
 #define TRANSPORT_STATE_CONNECTING "connecting"
 #define TRANSPORT_STATE_CONNECTED "connected"
@@ -16,12 +17,13 @@
 #define ICE_GATHRING "gathring"
 #define ICE_COMPLEATE "complete"
 
-#define ICE_PAIR_WAITING "waiting"       // check not sent
-#define ICE_PAIR_INPROGRESS "inprogress" // check sent response not recived
-#define ICE_PAIR_SUCCEEDED "succeeded"
-#define ICE_PAIR_FAILED                                                        \
-  "failed" // check sent no respose or unfavorable response
-#define ICE_PAIR_FROZEN "frozen"
+enum pair_state {
+  ICE_PAIR_WAITING,    // check not sent
+  ICE_PAIR_INPROGRESS, // check sent response not recived
+  ICE_PAIR_SUCCEEDED,  // response recived
+  ICE_PAIR_FAILED,     // check sent no respose or unfavorable response
+  ICE_PAIR_FROZEN
+};
 
 #define ICE_AGENT_CONTROLLING "controlling"
 #define ICE_AGENT_CONROLLED "controlled"
@@ -54,11 +56,12 @@ struct CandidataPair {
   struct RTCIecCandidates *p0;
   struct RTCIecCandidates *p1;
   uint32_t xored_id;
-  char *state;
+  enum pair_state state;
   bool isvalid;
   uint32_t request_sent_count;
   uint32_t priority;
   struct CandidataPair *next_pair;
+  char transaction_id[12];
 };
 
 void gather_ice_candidate(struct RTCPeerConnection *peer);
@@ -68,7 +71,7 @@ guint make_candidate_pair(struct args *arg);
 void add_candidate_for_each_transiver(struct RTCPeerConnection *peer,
                                       struct RTCIecCandidates *candidate);
 
-guint do_ice_handshake(struct RTCRtpTransceivers *transceiver);
+guint do_ice_handshake(struct RTCPeerConnection *peer);
 void ice_handshake_ended(struct RTCIecCandidates *local_candidate,
                          struct RTCIecCandidates *remote_candidate);
 struct RTCRtpTransceivers *get_transceiver(struct RTCRtpTransceivers *trans,

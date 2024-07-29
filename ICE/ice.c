@@ -117,7 +117,9 @@ bool parse_ice_candidate(struct RTCIecCandidates *candidate) {
     }
     ufrag = strtok(0, " ");
   }
-  candidate->password = "";
+  if (ufrag == NULL)
+    return false;
+
   return true;
 }
 
@@ -181,6 +183,9 @@ void add_local_icecandidate(struct RTCPeerConnection *peer,
     return;
   }
 
+  transceiver->local_ice_password = "HXeKrqNxtoH7MLYV/gQXytWJ";
+  transceiver->local_ice_ufrag = candidate->ufrag;
+
   if (transceiver->local_ice_candidate == NULL) {
     transceiver->local_ice_candidate = candidate;
     transceiver->local_ice_candidate->next_candidate = NULL;
@@ -242,7 +247,6 @@ void gather_ice_candidate(struct RTCPeerConnection *peer) {
     local_ice_candidate->src_socket = get_network_socket(local_ip, port);
     local_ice_candidate->ufrag = ufrag;
     local_ice_candidate->password = "HXeKrqNxtoH7MLYV/gQXytWJ";
-
     local_ice_candidate->priority =
         (int)pow(2, 24) * (get_type_pref(candidate_type)) +
         (int)pow(2, 8) *
@@ -255,9 +259,10 @@ void gather_ice_candidate(struct RTCPeerConnection *peer) {
       perror("binding ip for stun failed");
     }
 
-    parse_ice_candidate(local_ice_candidate);
-
-    add_local_icecandidate(peer, local_ice_candidate);
+    if (parse_ice_candidate(local_ice_candidate))
+      add_local_icecandidate(peer, local_ice_candidate);
+    else
+      printf("failed to parse ice candidate");
 
     // listen_for_handshake(local_ip, port);
     priority--;
@@ -333,6 +338,9 @@ bool make_pair(struct RTCRtpTransceivers *transceiver,
       candidate_pair->isvalid = false;
       candidate_pair->state = ICE_PAIR_WAITING;
       candidate_pair->xored_id = lcandidate->id ^ rcandidate->id;
+
+      strncpy(candidate_pair->transaction_id, g_uuid_string_random(), 12);
+
       printf("---------\n new candidate pair made for trans%d %s://%s:%d  "
              "%s://%s:%d ----------\n",
              transceiver->mid, candidate_pair->p0->transport,
@@ -348,7 +356,6 @@ bool make_pair(struct RTCRtpTransceivers *transceiver,
           ;
         endlist->next_pair = candidate_pair;
       }
-
       newpairmade = true;
     }
   }
@@ -363,14 +370,23 @@ guint make_candidate_pair(struct args *arg) {
   make_pair(transceiver, candidate);
   return true;
 }
-guint do_ice_handshake(struct RTCRtpTransceivers *transceiver) {
-  for (struct CandidataPair *pair = transceiver->pair_checklist; pair != NULL;
-       pair = pair->next_pair) {
-    // printf("\n ice handshake request sent form %s://%s:%d to %s://%s:%d\n",
-    //        pair->p0->transport, pair->p0->address, pair->p0->port,
-    //        pair->p1->transport, pair->p1->address, pair->p1->port);
-    // send_stun_bind(pair, STUN_REQUEST_CLASS, NULL);
-  }
+guint do_ice_handshake(struct RTCPeerConnection *peer) {
+
+  for (struct RTCRtpTransceivers *transceiver = peer->transceiver;
+       transceiver != NULL; transceiver = transceiver->next_trans)
+    for (struct CandidataPair *pair = transceiver->pair_checklist; pair != NULL;
+         pair = pair->next_pair) {
+      pair->p1->password = transceiver->remote_ice_password;
+      pair->p1->ufrag = transceiver->remote_ice_ufrag;
+
+      send_stun_bind(pair, STUN_REQUEST_CLASS, NULL, NULL);
+
+      printf("\n ice handshake request sent form %s://%s:%d to %s://%s:%d\n",
+             pair->p0->transport, pair->p0->address, pair->p0->port,
+             pair->p1->transport, pair->p1->address, pair->p1->port);
+      if (pair->state == ICE_PAIR_WAITING)
+        pair->state = ICE_PAIR_INPROGRESS;
+    }
   return true;
 }
 void ice_handshake_ended(struct RTCIecCandidates *local_candidate,

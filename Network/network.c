@@ -92,11 +92,10 @@ void *packet_listner_thread(void *peer_v) {
 
   send_stun_bind(NULL, STUN_REQUEST_CLASS,
                  peer->transceiver->local_ice_candidate, NULL);
-  
-  
+
   while (true) {
 
-    int bytes = recvfrom(sock_desc, udp_packet, 998, 0, sender_addr, &socklen);
+    int bytes = recvfrom(sock_desc, udp_packet, 1000, 0, sender_addr, &socklen);
 
     if (bytes == -1)
       printf("error something went wrong when reciving stun response %d",
@@ -126,7 +125,7 @@ void *packet_listner_thread(void *peer_v) {
 
     packet->sender_sock = sender_addr;
     packet->receiver_sock = receiver_addr;
-    //
+
     if (packet->protocol == STUN) {
       on_stun_packet(packet, peer);
     } else if (packet->protocol == RTP) {
@@ -163,7 +162,7 @@ struct NetworkPacket *get_parsed_packet(char *packet, int bytes) {
 
       memcpy(stun_respose_payload,
              packet + stun_header_size + sizeof(struct TVL),
-             bytes - stun_header_size);
+             sizeof(struct StunPayload));
 
       network_packet->payload.stun_payload = stun_respose_payload;
 
@@ -176,20 +175,17 @@ struct NetworkPacket *get_parsed_packet(char *packet, int bytes) {
       uint32_t mapped_ip = ntohl(ntohl(stun_respose_payload->x_ip) ^ (magic));
 
       stun_respose_payload->x_ip = mapped_ip;
-      stun_respose_payload->x_port = mapped_port;
     }
-    if (class == STUN_REQUEST_CLASS && method == STUN_BINDING_METHOD) {
-      printf("stun biding request\n");
-      network_packet->subtype = BINDING_REQUEST;
 
-      return network_packet;
+    if (class == STUN_REQUEST_CLASS && method == STUN_BINDING_METHOD) {
+      printf("received stun biding request\n");
+      network_packet->subtype = BINDING_REQUEST;
     }
 
     // if (class == method ==) {
     // }
     //
 
-    printf("packet detected as nll\n");
     return network_packet;
   }
 
@@ -203,14 +199,12 @@ bool check_if_stun(struct Stun *stun_header) {
   int zerobits = stun_header->msg_type & 0xC000; // 1100000
 
   if (zerobits != 0) {
-    printf("------not a stun packet \n");
     return false;
   }
 
   uint32_t magic_cookie = ntohl(stun_header->magic_cookie);
 
   if (magic_cookie != STUN_MAGIC_COOKIE) {
-    printf("-------not a stun packet \n");
     return false;
   }
 

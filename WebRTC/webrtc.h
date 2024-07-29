@@ -16,14 +16,14 @@ enum RTC_CONNECTION_STATE {
   PEER_DISCONNECTED,
   PEER_CLOSED
 };
-
+enum RTC_SIGNALLING_STATE { STABLE, HAVE_LOCAL_OFFER,HAVE_LOCAL_ANSWER, HAVE_REMOTE_OFFER ,HAVE_REMOTE_ANSWER};
 struct RTCPeerConnection {
   char *connection_state;
   pthread_t *listener_thread_id;
   struct RTCSessionDescription *current_local_desc;
   struct RTCSessionDescription *current_remote_desc;
   char *ice_connection_state;
-  char *signalling_state;
+  enum RTC_SIGNALLING_STATE signalling_state;
   struct MediaStreamTrack *media_tracks;
   struct RTCRtpTransceivers *transceiver;
   void *on_ice_candidate;
@@ -59,8 +59,10 @@ struct RTCRtpTransceivers {
   int mid;
   struct Transport *sender;
   struct Transport *recvier;
-  char *ice_ufrag;
-  char *ice_password;
+  char *local_ice_ufrag;
+  char *remote_ice_ufrag;
+  char *local_ice_password;
+  char *remote_ice_password;
   char *dtls_fingeprint;
   bool stoped;
   bool handshake_sending_started;
@@ -85,6 +87,8 @@ struct RTCRtpTransceivers *add_transceivers(struct RTCPeerConnection *peer,
 
 void set_local_description(struct RTCPeerConnection *peer,
                            struct RTCSessionDescription *sdp);
+bool set_remote_discription(struct RTCPeerConnection *peer,
+                            struct RTCSessionDescription *sdp);
 
 void add_ice_candidate(struct RTCPeerConnection *peer,
                        struct RTCIecCandidates *candidate);

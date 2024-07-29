@@ -29,7 +29,6 @@ static gchar *get_string_from_json_object(JsonObject *object) {
   return text;
 }
 
- 
 void on_ice_candidate(struct RTCPeerConnection *peer,
                       struct RTCIecCandidates *candidate) {
 
@@ -86,7 +85,8 @@ static void on_message(SoupWebsocketConnection *conn, gint type,
       add_track(peer, video_track);
 
       JsonObject *offer_message = json_object_new();
-      json_object_set_object_member(offer_message, "offer", get_test_ofer());
+      JsonObject *sdp = get_test_ofer();
+      json_object_set_object_member(offer_message, "offer", sdp);
 
       json_object_set_string_member(offer_message, "command", "offer");
       json_object_set_string_member(offer_message, "peer", peer_pair);
@@ -95,11 +95,21 @@ static void on_message(SoupWebsocketConnection *conn, gint type,
       printf("%s\n", str_offer_message);
 
       soup_websocket_connection_send_text(conn, str_offer_message);
-      //create_offer(peer);
+      // create_offer(peer);
+      struct RTCSessionDescription *local_sdp =
+          json_object_to_sdp(sdp);
 
-      set_local_description(peer, NULL);
+      set_local_description(peer, local_sdp);
 
     } else if (strcmp(command, "answer") == 0) {
+      JsonObject *answer_obj = json_object_get_object_member(object, "answer");
+      struct RTCSessionDescription *session_desc =
+          json_object_to_sdp(answer_obj);
+      if (session_desc == NULL) {
+        printf("invalid sdp");
+        return;
+      }
+      set_remote_discription(peer, session_desc);
 
     } else if (strcmp(command, "candidate") == 0) {
       JsonObject *candidate_obj =
@@ -107,7 +117,7 @@ static void on_message(SoupWebsocketConnection *conn, gint type,
       struct RTCIecCandidates *remote_candidate = NULL;
 
       if (candidate_obj != NULL) {
-        remote_candidate = calloc(1,sizeof(struct RTCIecCandidates));
+        remote_candidate = calloc(1, sizeof(struct RTCIecCandidates));
         remote_candidate->candidate =
             (char *)json_object_get_string_member(candidate_obj, "candidate");
         remote_candidate->sdpMid =

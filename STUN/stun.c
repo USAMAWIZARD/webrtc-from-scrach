@@ -51,7 +51,7 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
     pair->p1->port = STUN_PORT;
   }
 
-  // bind request contains only header
+  // bind request contains only header for stun server
   char *stun_server_ip = STUN_IP;
   int stun_server_port = STUN_PORT;
 
@@ -68,17 +68,15 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
 
   struct sockaddr_in *dest_addr =
       get_network_socket(pair->p1->address, pair->p1->port);
+  char *ice_password;
 
   if (sender_candidate == NULL && message_class == STUN_REQUEST_CLASS) {
     // username:username
-
-    char *transaction_id = g_uuid_string_random();
-    strncpy(stun_message->transaction_id, transaction_id, 12);
-    strncpy(stun_message->transaction_id, &pair->p0->id, sizeof(uint32_t));
-    free(transaction_id);
+    ice_password = pair->p1->password;
 
     char *usernamekeys =
         g_strdup_printf("%s:%s", pair->p1->ufrag, pair->p0->ufrag);
+    strncpy(stun_message->transaction_id, pair->transaction_id, 12);
 
     add_stun_attribute(stun_message, STUN_ATTRIBUTE_USERNAME, usernamekeys,
                        NULL);
@@ -91,11 +89,12 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
     }
     // check here
     add_stun_attribute(stun_message, STUN_ATTRIBUTE_PRIORITY,
-                       (guchar *)pair->p0->priority, sizeof(uint32_t));
+                       (guchar *)&pair->p0->priority, sizeof(uint32_t));
   }
 
   if (message_class == STUN_RESPONSE_CLASS) {
 
+    ice_password = pair->p0->password;
     if (data == NULL) {
       printf("cannot send binding rsponse data is null\n");
       return false;
@@ -124,8 +123,7 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
   }
   if (sender_candidate == NULL && (message_class == STUN_RESPONSE_CLASS ||
                                    message_class == STUN_REQUEST_CLASS)) {
-
-    guchar *stun_message_hmac = generate_HMAC(pair->p0->password, stun_message);
+    guchar *stun_message_hmac = generate_HMAC(ice_password, stun_message);
 
     add_stun_attribute(stun_message, STUN_ATTRIBUTE_MESSAGE_INTIGRITY,
                        stun_message_hmac, 20);
@@ -159,26 +157,26 @@ guchar *generate_HMAC(const gchar *key, struct Stun *stun_message) {
   int actual_len = ntohs(stun_message->msg_len);
   int presumed_len = ntohs(stun_message->msg_len) + 20 + 4;
 
-  gsasl_saslprep(key, GSASL_ALLOW_UNASSIGNED, &sasl, NULL);
+  //  gsasl_saslprep(key, GSASL_ALLOW_UNASSIGNED, &sasl, NULL);
 
   stun_message->msg_len = htons(presumed_len);
 
   char *stun_hmac =
-      g_compute_hmac_for_data(G_CHECKSUM_SHA1, sasl, strlen(sasl), stun_message,
+      g_compute_hmac_for_data(G_CHECKSUM_SHA1, key, strlen(key), stun_message,
                               actual_len + sizeof(struct Stun));
 
-  printf("HMAC HASH ---%s\n", stun_hmac);
-  printf("HMAC KEY %s --\n", sasl);
-  print_hex(sasl, strlen(sasl));
-  printf("stunmsage len %d --\n", actual_len + sizeof(struct Stun));
-
-  print_hex(stun_message, sizeof(struct Stun) + actual_len);
-
+  // printf("HMAC HASH ---%s\n", stun_hmac);
+  // printf("HMAC KEY %s --\n", sasl);
+  // print_hex(sasl, strlen(sasl));
+  // printf("stunmsage len %d --\n", actual_len + sizeof(struct Stun));
+  //
+  // print_hex(stun_message, sizeof(struct Stun) + actual_len);
+  //
   stun_message->msg_len = htons(actual_len);
 
   guchar *binhmac = hexstr_to_char(stun_hmac);
 
-  free(sasl);
+  // free(sasl);
   return binhmac;
 }
 uint32_t calculate_crc32(struct Stun *stun_message) {
@@ -203,7 +201,7 @@ struct TVL *add_stun_attribute(struct Stun *stun, uint16_t type, char *value,
   int padding_bytes = rem != 0 ? 4 - rem : 0;
   int total_attribute_size = sizeof(struct TVL) + len + padding_bytes;
 
-  struct TVL *tvl_attribute = calloc(0, total_attribute_size);
+  struct TVL *tvl_attribute = calloc(1, total_attribute_size);
   tvl_attribute->att_type = htons(type);
   tvl_attribute->att_len = htons(len);
 
@@ -253,27 +251,34 @@ void on_stun_packet(struct NetworkPacket *packet,
     struct stun_binding *stun_binding = malloc(sizeof(struct stun_binding));
     stun_binding->bound_ip = inet_ntoa(ip_add);
     stun_binding->bound_port = stun_respose->x_port;
-    stun_binding->candidate_type = "srflx";
-    uint32_t candidate_id;
-    memcpy(&candidate_id, stun_header->transaction_id, sizeof(uint32_t));
 
-    for (struct RTCIecCandidates *candidate =
-             peer->transceiver->local_ice_candidate;
-         candidate != NULL; candidate = candidate->next_candidate) {
-      if (candidate->id == candidate_id) {
-        stun_binding->local_ip = candidate->address;
+    // on_reflexive_candidates(peer, stun_binding);
+    if (strcmp(packet->sender_ip, STUN_IP) == 0) {
+      stun_binding->candidate_type = "srflx";
+      printf("\n-----public NAT Mapping is  : PORT %d  IP , %s %s-----\n",
+             stun_binding->bound_port, stun_binding->bound_ip,
+             stun_binding->candidate_type);
+    } else {
+      stun_binding->candidate_type = "prflx";
+    }
+
+    for (struct RTCRtpTransceivers *transceiver = peer->transceiver;
+         transceiver != NULL; transceiver = transceiver->next_trans) {
+      for (struct CandidataPair *pair = transceiver->pair_checklist;
+           pair != NULL; pair = pair->next_pair) {
+        if (strncmp(pair->transaction_id, stun_header->transaction_id, 12) ==
+            0) {
+          printf("ice pair succeeded %s:%d %s:%d \n", pair->p0->address,
+                 pair->p0->port, pair->p1->address, pair->p1->port);
+          pair->state = ICE_PAIR_SUCCEEDED;
+        }
       }
     }
-    // on_reflexive_candidates(peer, stun_binding);
-    printf("\n-----public NAT Mapping is  : PORT %d  IP , %s  %s %s-----\n",
-           stun_binding->bound_port, stun_binding->bound_ip,
-           stun_binding->local_ip, stun_binding->candidate_type);
-    //    exit(0);
   }
+
   if (packet->subtype == BINDING_REQUEST) {
 
     if (packet->sender_ip != NULL) {
-
       // checking on only  first trans candidate pair for max bundle
       struct CandidataPair *checklist = peer->transceiver->pair_checklist;
 
@@ -301,9 +306,8 @@ char *get_stun_attributes(struct RTCIecCandidates *local_candidate,
 
   // struct stun_attribute *username= mall;
   // username->type = 0x0006;
-  // username->length = htons(10);
+  // username->length = htons(9);
   // strcpy(username.value,"usama:usam1");
-  //
   return NULL;
 }
 guchar *hexstr_to_char(const char *hexstr) {

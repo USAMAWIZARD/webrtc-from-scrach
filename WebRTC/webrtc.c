@@ -5,11 +5,13 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 struct RTCPeerConnection *NEW_RTCPeerConnection() {
   struct RTCPeerConnection *peer =
       (struct RTCPeerConnection *)calloc(1, sizeof(struct RTCPeerConnection));
+  peer->signalling_state = STABLE;
   if (peer == NULL) {
     perror("Failed to allocate memory for RTCPeerConnection");
     return NULL;
@@ -56,8 +58,7 @@ struct RTCRtpTransceivers *add_transceivers(struct RTCPeerConnection *peer,
   new_transceiver->mid = transceiver != NULL ? transceiver->mid + 1 : 0;
   new_transceiver->direction = SEND_RECV;
   new_transceiver->next_trans = NULL;
-  new_transceiver->ice_ufrag = "lfasjd";
-  new_transceiver->ice_password = "dsfasldj";
+
   struct Transport *sender = calloc(1, sizeof(struct Transport));
   sender->track = track;
   sender->state = TRANSPORT_STATE_NEW;
@@ -97,13 +98,55 @@ create_answer(struct RTCSessionDescription *peer) {
 }
 void set_local_description(struct RTCPeerConnection *peer,
                            struct RTCSessionDescription *sdp) {
+  // icreated the offer
+  // imporove spegetti
+  if (peer == NULL || sdp == NULL)
+    return;
+
+  bool is_offer = strncmp(sdp->type, SDP_TYPE_OFFER, 4) == 0;
+  bool is_answer = strncmp(sdp->type, SDP_TYPE_ANSWER, 5) == 0;
+  if ((is_offer && peer->signalling_state == HAVE_REMOTE_OFFER) ||
+      (is_answer && peer->signalling_state == HAVE_REMOTE_ANSWER)) {
+    printf("set local desc called in wrong state");
+    return;
+  }
+
+  if (is_offer) {
+    peer->signalling_state = HAVE_LOCAL_OFFER;
+  } else if (is_answer) {
+    peer->signalling_state = HAVE_LOCAL_ANSWER;
+  }
   peer->current_local_desc = sdp;
 
   gather_ice_candidate(peer);
-}
-void *set_remote_discription(struct RTCSessionDescription *peer) {
 
-  return NULL;
+}
+bool set_remote_discription(struct RTCPeerConnection *peer,
+                            struct RTCSessionDescription *sdp) {
+
+  if (peer == NULL || peer->transceiver == NULL) {
+    printf("set remote description failed not a valid state :\n");
+    return false;
+  }
+  // if its answer then I should be in have  local offer state
+  // imporve this spegetti
+  //
+  if ((strncmp(sdp->type, SDP_TYPE_ANSWER, 6) == 0 &&
+       peer->signalling_state == HAVE_LOCAL_OFFER) ||
+      (strncmp(sdp->type, SDP_TYPE_OFFER, 4) == 0 &&
+       (peer->signalling_state == STABLE ||
+        peer->signalling_state == HAVE_LOCAL_OFFER))) {
+
+    parse_sdp_string(peer, sdp);
+  } else {
+    printf("set remote description  called in wrong state: %d\n",
+           peer->signalling_state);
+    return false;
+  }
+  peer->current_remote_desc = sdp;
+  g_timeout_add_full(G_PRIORITY_HIGH, 499, (GSourceFunc)do_ice_handshake, peer,
+                     (GDestroyNotify)ice_handshake_ended);
+  return true;
 }
 // remote ice
 void add_ice_candidate(struct RTCPeerConnection *peer,
@@ -114,7 +157,11 @@ void add_ice_candidate(struct RTCPeerConnection *peer,
     return;
   }
 
-  parse_ice_candidate(candidate);
+  if (!parse_ice_candidate(candidate)) {
+    printf("failed to parse remote ice ");
+    return;
+  }
+
   struct RTCRtpTransceivers *transceiver =
       get_transceiver(peer->transceiver, candidate->sdpMid);
 
@@ -139,10 +186,4 @@ void add_ice_candidate(struct RTCPeerConnection *peer,
 
   g_timeout_add_full(G_PRIORITY_HIGH, 499, (GSourceFunc)make_candidate_pair,
                      arg, (GDestroyNotify)ice_handshake_ended);
-
-  if (!transceiver->handshake_sending_started) {
-    transceiver->handshake_sending_started = true;
-    g_timeout_add_full(G_PRIORITY_HIGH, 499, (GSourceFunc)do_ice_handshake,
-                       transceiver, (GDestroyNotify)ice_handshake_ended);
-  }
 }

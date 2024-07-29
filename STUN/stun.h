@@ -93,6 +93,7 @@ struct stun_binding {
   char *local_ip;
   char *bound_ip;
   uint16_t bound_port;
+  bool is_stun_server;
   char *candidate_type;
   char transaction_id[12];
 };
@@ -110,8 +111,8 @@ guchar *hexstr_to_char(const char *hexstr);
 
 void print_hex(const unsigned char *data, size_t length);
 void on_stun_packet(struct NetworkPacket *packet,
-                           struct RTCPeerConnection *peer);
+                    struct RTCPeerConnection *peer);
 
-uint32_t calculate_crc32(struct Stun *stun_message); 
+uint32_t calculate_crc32(struct Stun *stun_message);
 
 #endif // !_STUNH_
