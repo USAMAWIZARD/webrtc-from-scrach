@@ -271,6 +271,7 @@ void on_stun_packet(struct NetworkPacket *packet,
           printf("ice pair succeeded %s:%d %s:%d \n", pair->p0->address,
                  pair->p0->port, pair->p1->address, pair->p1->port);
           pair->state = ICE_PAIR_SUCCEEDED;
+
         }
       }
     }
@@ -286,7 +287,7 @@ void on_stun_packet(struct NetworkPacket *packet,
 
         if ((strcmp(checklist->p0->address, packet->receiver_ip) == 0 &&
              *packet->receiver_port == checklist->p0->port) &&
-            (strcmp(checklist->p1->address, packet->sender_ip) == 0 &&
+            (strcmp(checklist->p0->address, packet->sender_ip) == 0 &&
              *packet->sender_port == checklist->p1->port)) {
 
           struct stun_binding *binding = malloc(sizeof(struct stun_binding));

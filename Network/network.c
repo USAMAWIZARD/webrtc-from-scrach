@@ -1,10 +1,13 @@
 #include "network.h"
 #include "../STUN/stun.h"
+#include "glib.h"
 #include <arpa/inet.h>
 #include <bits/pthreadtypes.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <pthread.h>
 #include <sched.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -69,9 +72,11 @@ void *packet_listner_thread(void *peer_v) {
   struct RTCPeerConnection *peer = (struct RTCPeerConnection *)peer_v;
   int *sport = malloc(sizeof(int));
   int *rport = malloc(sizeof(int));
-
   char *sender_ip = malloc(20);
   char *recv_ip = malloc(20);
+  char *udp_packet = malloc(1000);
+  socklen_t socklen = sizeof(struct sockaddr_in);
+
   struct sockaddr *sender_addr = malloc(sizeof(struct sockaddr));
   struct sockaddr *receiver_addr = malloc(sizeof(struct sockaddr));
 
@@ -81,60 +86,57 @@ void *packet_listner_thread(void *peer_v) {
     exit(0);
     return 0;
   }
-
-  int sock_desc = peer->transceiver->local_ice_candidate->sock_desc;
-
-  struct sockaddr_in *srcaddr =
-      peer->transceiver->local_ice_candidate->src_socket;
-
-  char *udp_packet = malloc(1000);
-  socklen_t socklen = sizeof(struct sockaddr_in);
-
+  struct pollfd *candidates_fds;
+  int candidate_list_size = get_candidates_fd_array(peer, &candidates_fds);
   send_stun_bind(NULL, STUN_REQUEST_CLASS,
                  peer->transceiver->local_ice_candidate, NULL);
 
-  while (true) {
+  while (poll(candidates_fds, candidate_list_size, NULL) != -1) {
+    for (int poll_index = 0; poll_index < candidate_list_size; poll_index++) {
 
-    int bytes = recvfrom(sock_desc, udp_packet, 1000, 0, sender_addr, &socklen);
+      if (!((candidates_fds + poll_index)->revents & POLL_IN)) {
+        continue;
+      }
 
-    if (bytes == -1)
-      printf("error something went wrong when reciving stun response %d",
-             errno);
+      int sock_desc = (candidates_fds + poll_index)->fd;
+      int bytes =
+          recvfrom(sock_desc, udp_packet, 1000, 0, sender_addr, &socklen);
 
-    // packet type is stun response and its returning from stun server add
-    // srflx candidate
+      if (bytes == -1)
+        printf("error something went wrong when reciving stun response %d",
+               errno);
 
-    struct NetworkPacket *packet = get_parsed_packet(udp_packet, bytes);
-    // why null
-    if (packet == NULL) {
-      printf("packet detected a NULL");
-      continue;
-    }
-    getsockname(sock_desc, receiver_addr, &socklen);
-    packet->receiver_sock = receiver_addr;
+      struct NetworkPacket *packet = get_parsed_packet(udp_packet, bytes);
 
-    get_ip_str(sender_addr, sender_ip, sport, socklen);
-    get_ip_str((struct sockaddr *)receiver_addr, recv_ip, rport, socklen);
+      if (packet == NULL) {
+        printf("packet detected a NULL");
+        continue;
+      }
+      getsockname(sock_desc, receiver_addr, &socklen);
+      packet->receiver_sock = receiver_addr;
 
-    packet->sender_ip = sender_ip;
-    packet->receiver_ip = recv_ip;
-    packet->sender_port = sport;
-    packet->receiver_port = rport;
-    packet->sock_desc = sock_desc;
-    packet->sock_len = socklen;
+      get_ip_str(sender_addr, sender_ip, sport, socklen);
+      get_ip_str((struct sockaddr *)receiver_addr, recv_ip, rport, socklen);
 
-    packet->sender_sock = sender_addr;
-    packet->receiver_sock = receiver_addr;
+      packet->sender_ip = sender_ip;
+      packet->receiver_ip = recv_ip;
+      packet->sender_port = sport;
+      packet->receiver_port = rport;
+      packet->sock_desc = sock_desc;
+      packet->sock_len = socklen;
 
-    if (packet->protocol == STUN) {
-      on_stun_packet(packet, peer);
-    } else if (packet->protocol == RTP) {
-      // parse RTP packet
-    } else if (packet->protocol == RTCP) {
-      // parse RTCP packet
+      packet->sender_sock = sender_addr;
+      packet->receiver_sock = receiver_addr;
+
+      if (packet->protocol == STUN) {
+        on_stun_packet(packet, peer);
+      } else if (packet->protocol == RTP) {
+        // parse RTP packet
+      } else if (packet->protocol == RTCP) {
+        // parse RTCP packet
+      }
     }
   }
-
   return 0;
 }
 struct NetworkPacket *get_parsed_packet(char *packet, int bytes) {
@@ -210,5 +212,39 @@ bool check_if_stun(struct Stun *stun_header) {
 
   return true;
 }
+int get_candidates_fd_array(struct RTCPeerConnection *peer,
+                            struct pollfd **candidate_fd) {
+  if (peer == NULL || peer->transceiver == NULL)
+    return 0;
+  struct pollfd *fd_array = malloc(sizeof(struct pollfd) * 10);
+  struct pollfd *i = fd_array;
+  int size = 10;
 
+  for (struct RTCRtpTransceivers *transceiver = peer->transceiver;
+       transceiver != NULL; transceiver = transceiver->next_trans) {
+    for (struct RTCIecCandidates *candidate = transceiver->local_ice_candidate;
+         candidate != NULL; candidate = candidate->next_candidate) {
+      printf("testong\n");
+      if ((fd_array + size) == i) {
+        fd_array = realloc(fd_array, sizeof(struct pollfd) * size +
+                                         sizeof(struct pollfd) * 10);
+        size = size + 10;
+      }
+      struct pollfd *fd = malloc(sizeof(struct pollfd));
+      fd->fd = candidate->sock_desc;
+      fd->events = POLL_IN;
+
+      *i = *fd;
+      i++;
+    }
+    if (BUNDLE_MAX_BUNDLE) { // compare webrtc config param todo
+      break;
+    }
+  }
+  *candidate_fd = fd_array;
+
+  // printf("%d %d %d \n", i, fd_array, i - fd_array);
+  // printf("testong\n");
+  return i - fd_array;
+}
 struct Stun *parse_stun_header(struct Stun *stun_header) {}

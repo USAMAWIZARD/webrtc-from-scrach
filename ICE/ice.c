@@ -370,6 +370,8 @@ guint make_candidate_pair(struct args *arg) {
   make_pair(transceiver, candidate);
   return true;
 }
+// todo make this rfc complient by incorporating proper timer and priority
+// mechenism
 guint do_ice_handshake(struct RTCPeerConnection *peer) {
 
   for (struct RTCRtpTransceivers *transceiver = peer->transceiver;

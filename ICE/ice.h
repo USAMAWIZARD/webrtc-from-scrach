@@ -32,6 +32,11 @@ enum pair_state {
 #define SRFLX_CANDIDATE "srflx"
 #define PRFLX_CANDIDATE "prflx"
 #define RELAY_CANDIDATE "relay"
+
+#define BUNDLE_MAX_BUNDLE 1 
+#define BUNDLE_MAC_COMPAT 2 
+#define BUNDEL_BALANCED 3 
+
 struct RTCIecCandidates {
   char *address;
   char *candidate;

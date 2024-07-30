@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <sched.h>
 #include <sys/socket.h>
-
+#include <poll.h>
 #ifndef _NETWORKH_
 #define _NETWORKH_
 
@@ -43,5 +43,7 @@ void *packet_listner_thread(void *peer_v);
 
 bool check_if_stun(struct Stun *stun_header);
 struct NetworkPacket *get_parsed_packet(char *packet, int bytes);
+int get_candidates_fd_array(struct RTCPeerConnection *peer,
+                            struct pollfd **candidate_fd); 
 
 #endif // !_NETWORKH_
