@@ -1,10 +1,13 @@
+#ifndef _ICEH_
+#define _ICEH_
+
 #include "../WebRTC/webrtc.h"
 #include "stdbool.h"
 #include <glib.h>
 #include <json-glib/json-glib.h>
+#include <sched.h>
 #include <stdint.h>
-#ifndef _ICEH_
-#define _ICEH_
+
 #define SDP_TYPE_OFFER "offer"
 #define SDP_TYPE_ANSWER "answer"
 #define TRANSPORT_STATE_NEW "new"
@@ -32,17 +35,12 @@ enum pair_state {
 #define SRFLX_CANDIDATE "srflx"
 #define PRFLX_CANDIDATE "prflx"
 #define RELAY_CANDIDATE "relay"
-
-#define BUNDLE_MAX_BUNDLE 1 
-#define BUNDLE_MAC_COMPAT 2 
-#define BUNDEL_BALANCED 3 
-
 struct RTCIecCandidates {
   char *address;
   char *candidate;
   int component_id;
   int foundation;
-  int port;
+  uint16_t port;
   uint32_t priority;
   char *transport;
   int sdpMid;

@@ -1,13 +1,20 @@
+
+#include "../DTLS/dtls.h"
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 
+#pragma once
 #ifndef _WEBRTCH_
 #define _WEBRTCH_
 
 #define SEND_ONLY "sendonly"
 #define RECV_ONLY "recvonly"
 #define SEND_RECV "sendrecv"
+
+#define BUNDLE_MAX_BUNDLE 1
+#define BUNDLE_MAC_COMPAT 2
+#define BUNDEL_BALANCED 3
 
 enum RTC_CONNECTION_STATE {
   PEER_CONNECTION_NEW,
@@ -36,6 +43,8 @@ struct RTCPeerConnection {
   char *ice_role;
   bool local_gathering_compleated;
   bool remote_gathering_compleated;
+  int bundle_policy;
+  struct RTCDtlsTransport *dtls_transport;
 };
 
 struct MediaStreamTrack {
@@ -69,7 +78,6 @@ struct RTCRtpTransceivers {
   char *remote_ice_ufrag;
   char *local_ice_password;
   char *remote_ice_password;
-  char *dtls_fingeprint;
   bool stoped;
   bool handshake_sending_started;
   struct RTCRtpTransceivers *next_trans;

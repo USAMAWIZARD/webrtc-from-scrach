@@ -1,5 +1,7 @@
 #include "./webrtc.h"
+#include "../DTLS/dtls.h"
 #include "../ICE/ice.h"
+#include "../Network/network.h"
 #include "../SDP/sdp.h"
 #include "glib.h"
 #include <stdbool.h>
@@ -12,6 +14,7 @@ struct RTCPeerConnection *NEW_RTCPeerConnection() {
   struct RTCPeerConnection *peer =
       (struct RTCPeerConnection *)calloc(1, sizeof(struct RTCPeerConnection));
   peer->signalling_state = STABLE;
+  peer->dtls_transport = create_dtls_transport();
   if (peer == NULL) {
     perror("Failed to allocate memory for RTCPeerConnection");
     return NULL;
@@ -69,6 +72,7 @@ struct RTCRtpTransceivers *add_transceivers(struct RTCPeerConnection *peer,
   } else {
     transceiver->next_trans = new_transceiver;
   }
+
   return transceiver;
 }
 
@@ -119,7 +123,6 @@ void set_local_description(struct RTCPeerConnection *peer,
   peer->current_local_desc = sdp;
 
   gather_ice_candidate(peer);
-
 }
 bool set_remote_discription(struct RTCPeerConnection *peer,
                             struct RTCSessionDescription *sdp) {
@@ -162,6 +165,8 @@ void add_ice_candidate(struct RTCPeerConnection *peer,
     return;
   }
 
+  candidate->src_socket =
+      get_network_socket(candidate->address, candidate->port);
   struct RTCRtpTransceivers *transceiver =
       get_transceiver(peer->transceiver, candidate->sdpMid);
 

@@ -1,6 +1,7 @@
 #include "ice.h"
 #include "../Network/network.h"
 #include "../STUN/stun.h"
+#include "../Utils/utils.h"
 #include "../WebRTC/webrtc.h"
 #include "glib.h"
 #include <arpa/inet.h>
@@ -107,6 +108,7 @@ bool parse_ice_candidate(struct RTCIecCandidates *candidate) {
       return true;
     candidate->rport = atoi(rport);
   }
+  candidate->ufrag = NULL;
 
   char *ufrag = strtok(0, " ");
   while (ufrag != NULL) {
@@ -117,9 +119,6 @@ bool parse_ice_candidate(struct RTCIecCandidates *candidate) {
     }
     ufrag = strtok(0, " ");
   }
-  if (ufrag == NULL)
-    return false;
-
   return true;
 }
 
@@ -226,7 +225,6 @@ void gather_ice_candidate(struct RTCPeerConnection *peer) {
   int port = 5020;
   char *candidate_type = "host";
   char *candidate;
-  char *BundlePolicy = 0;
   char *ufrag = "H0Tz";
 
   struct RTCIecCandidates *local_ice_candidate;
@@ -276,7 +274,6 @@ void gather_ice_candidate(struct RTCPeerConnection *peer) {
 
   // Empty candidate to signal ICE gathring completion
   add_local_icecandidate(peer, NULL);
-  peer->ice_connection_state = ICE_COMPLEATE;
 
   return;
 }
@@ -315,7 +312,7 @@ bool check_pair_compatiblity(struct RTCRtpTransceivers *transceiver,
     }
   }
 
-  if (g_strcmp0(local_candidate->transport, remote_candidate->transport) == 0) {
+  if (strcicmp(local_candidate->transport, remote_candidate->transport) == 0) {
     return true;
   }
   return false;
@@ -386,8 +383,10 @@ guint do_ice_handshake(struct RTCPeerConnection *peer) {
       printf("\n ice handshake request sent form %s://%s:%d to %s://%s:%d\n",
              pair->p0->transport, pair->p0->address, pair->p0->port,
              pair->p1->transport, pair->p1->address, pair->p1->port);
-      if (pair->state == ICE_PAIR_WAITING)
+      if (pair->state == ICE_PAIR_WAITING) {
         pair->state = ICE_PAIR_INPROGRESS;
+        return 0;
+      }
     }
   return true;
 }
