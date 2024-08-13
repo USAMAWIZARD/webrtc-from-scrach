@@ -1,13 +1,13 @@
 #include "network.h"
+#include "../DTLS/dtls.h"
 #include "../STUN/stun.h"
-#include "glib.h"
 #include <arpa/inet.h>
 #include <bits/pthreadtypes.h>
+#include <glib.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <pthread.h>
 #include <sched.h>
-#include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+
 #pragma pack(1)
 struct sockaddr_in *get_network_socket(char *ip, int port) {
 
@@ -88,10 +89,11 @@ void *packet_listner_thread(void *peer_v) {
   }
   struct pollfd *candidates_fds;
   int candidate_list_size = get_candidates_fd_array(peer, &candidates_fds);
+
   send_stun_bind(NULL, STUN_REQUEST_CLASS,
                  peer->transceiver->local_ice_candidate, NULL);
 
-  while (poll(candidates_fds, candidate_list_size, NULL) != -1) {
+  while (poll(candidates_fds, candidate_list_size, -1) != -1) {
     for (int poll_index = 0; poll_index < candidate_list_size; poll_index++) {
 
       if (!((candidates_fds + poll_index)->revents & POLL_IN)) {
@@ -99,7 +101,7 @@ void *packet_listner_thread(void *peer_v) {
       }
 
       int sock_desc = (candidates_fds + poll_index)->fd;
-      int bytes =
+      uint32_t bytes =
           recvfrom(sock_desc, udp_packet, 1000, 0, sender_addr, &socklen);
 
       if (bytes == -1)
@@ -108,8 +110,8 @@ void *packet_listner_thread(void *peer_v) {
 
       struct NetworkPacket *packet = get_parsed_packet(udp_packet, bytes);
 
-      if (packet == NULL) {
-        printf("packet detected a NULL");
+      if (!packet) {
+        printf("packet detected a NULL\n");
         continue;
       }
       getsockname(sock_desc, receiver_addr, &socklen);
@@ -127,9 +129,14 @@ void *packet_listner_thread(void *peer_v) {
 
       packet->sender_sock = sender_addr;
       packet->receiver_sock = receiver_addr;
+      packet->total_bytes_recvied = bytes;
 
       if (packet->protocol == STUN) {
         on_stun_packet(packet, peer);
+      } else if (packet->protocol == DTLS) {
+        // printf("%d aa\n", packet->total_bytes_recvied);
+        // print_hex(packet, packet->total_bytes_recvied);
+        on_dtls_packet(packet, peer);
       } else if (packet->protocol == RTP) {
         // parse RTP packet
       } else if (packet->protocol == RTCP) {
@@ -139,12 +146,13 @@ void *packet_listner_thread(void *peer_v) {
   }
   return 0;
 }
-struct NetworkPacket *get_parsed_packet(char *packet, int bytes) {
+struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
 
   // check if its a STUN
   struct NetworkPacket *network_packet = malloc(sizeof(struct NetworkPacket));
   struct Stun *stun = malloc(sizeof(struct Stun));
   memcpy(stun, packet, sizeof(struct Stun));
+  network_packet->total_bytes_recvied = bytes;
 
   if (check_if_stun(stun)) {
     network_packet->protocol = STUN;
@@ -180,38 +188,87 @@ struct NetworkPacket *get_parsed_packet(char *packet, int bytes) {
     }
 
     if (class == STUN_REQUEST_CLASS && method == STUN_BINDING_METHOD) {
-      printf("received stun biding request\n");
+      printf("\n received stun binding request");
       network_packet->subtype = BINDING_REQUEST;
     }
 
     // if (class == method ==) {
     // }
-    //
 
     return network_packet;
   }
 
+  uint8_t first_byte = packet[0];
+
+  if (check_if_dtls(first_byte)) {
+    network_packet->protocol = DTLS;
+
+    struct DtlsParsedPacket *dtls_packet =
+        malloc(sizeof(struct DtlsParsedPacket));
+    network_packet->payload.dtls_parsed = dtls_packet;
+
+    uint32_t remaining_bytes = bytes;
+    while (remaining_bytes > 0) {
+      uint16_t dtls_header_size = sizeof(struct DtlsHeader);
+      if (remaining_bytes < dtls_header_size) {
+        return NULL;
+      }
+      struct DtlsHeader *dtls_header = malloc(dtls_header_size);
+
+      dtls_header = (struct DtlsHeader *)(packet);
+      remaining_bytes = remaining_bytes - dtls_header_size;
+      packet = packet + dtls_header_size;
+      dtls_packet->dtls_header = dtls_header;
+
+      struct HandshakeHeader *handshake_header =
+          malloc(sizeof(struct HandshakeHeader));
+
+      uint16_t handshake_header_size = sizeof(struct HandshakeHeader);
+      if (remaining_bytes < handshake_header_size)
+        return NULL;
+
+      memcpy(handshake_header, packet, handshake_header_size);
+      remaining_bytes = remaining_bytes - handshake_header_size;
+      dtls_packet->handshake_header = handshake_header;
+
+      dtls_packet->handshake_type = handshake_header->type;
+      dtls_packet->fragment_length =
+          ntohl((uint32_t)handshake_header->fragment_length) >> 8;
+      dtls_packet->fragment_offset = handshake_header->fragment_offset;
+      dtls_packet->handshake_length = handshake_header->length;
+      printf("%d  remainghing bytes %d \n", remaining_bytes,
+             dtls_packet->fragment_length);
+
+      packet = packet + handshake_header_size;
+
+      if (dtls_packet->fragment_length != dtls_packet->fragment_offset) {
+        dtls_packet->isfragmented = true;
+      }
+
+      if (remaining_bytes != 0 &&
+          remaining_bytes >= dtls_packet->fragment_length) {
+
+        dtls_packet->handshake_payload = malloc(dtls_packet->fragment_length);
+        memcpy(dtls_packet->handshake_payload, packet,
+               dtls_packet->fragment_length);
+        packet = packet + dtls_packet->fragment_length;
+        remaining_bytes = remaining_bytes - dtls_packet->fragment_length;
+      }
+
+      if (remaining_bytes >= dtls_header_size) {
+        dtls_packet->next_record = malloc(sizeof(struct DtlsParsedPacket));
+        dtls_packet = dtls_packet->next_record;
+      }
+    }
+    return network_packet;
+  }
+
+  if (false) { // check if rtp or rtcp
+  }
   // check if RTP RTCP
   return NULL;
 }
 
-bool check_if_stun(struct Stun *stun_header) {
-
-  stun_header->msg_type = ntohs(stun_header->msg_type);
-  int zerobits = stun_header->msg_type & 0xC000; // 1100000
-
-  if (zerobits != 0) {
-    return false;
-  }
-
-  uint32_t magic_cookie = ntohl(stun_header->magic_cookie);
-
-  if (magic_cookie != STUN_MAGIC_COOKIE) {
-    return false;
-  }
-
-  return true;
-}
 int get_candidates_fd_array(struct RTCPeerConnection *peer,
                             struct pollfd **candidate_fd) {
   if (peer == NULL || peer->transceiver == NULL)
@@ -224,7 +281,6 @@ int get_candidates_fd_array(struct RTCPeerConnection *peer,
        transceiver != NULL; transceiver = transceiver->next_trans) {
     for (struct RTCIecCandidates *candidate = transceiver->local_ice_candidate;
          candidate != NULL; candidate = candidate->next_candidate) {
-      printf("testong\n");
       if ((fd_array + size) == i) {
         fd_array = realloc(fd_array, sizeof(struct pollfd) * size +
                                          sizeof(struct pollfd) * 10);
@@ -248,3 +304,13 @@ int get_candidates_fd_array(struct RTCPeerConnection *peer,
   return i - fd_array;
 }
 struct Stun *parse_stun_header(struct Stun *stun_header) {}
+
+uint32_t hton24(uint32_t host24) {
+  host24 &= 0xFFFFFF;
+
+  uint8_t byte1 = (host24 >> 16) & 0xFF;
+  uint8_t byte2 = (host24 >> 8) & 0xFF;
+  uint8_t byte3 = host24 & 0xFF;
+
+  return (byte1 << 16) | (byte2 << 8) | byte3;
+}

@@ -13,7 +13,6 @@
 |                             Data                              |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
-
 #include "./stun.h"
 #include "../ICE/ice.h"
 #include "../Network/network.h"
@@ -78,14 +77,13 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
         g_strdup_printf("%s:%s", pair->p1->ufrag, pair->p0->ufrag);
     strncpy(stun_message->transaction_id, pair->transaction_id, 12);
 
-    add_stun_attribute(stun_message, STUN_ATTRIBUTE_USERNAME, usernamekeys,
-                       NULL);
+    add_stun_attribute(stun_message, STUN_ATTRIBUTE_USERNAME, usernamekeys, -1);
 
     add_stun_attribute(stun_message, STUN_ATTRIBUTE_ICE_CONTROLLING, "adcdfdsa",
-                       NULL);
+                       -1);
 
-    if (false) {
-      add_stun_attribute(stun_message, STUN_ATTRIBUTE_USE_CANDIDATE, "", NULL);
+    if (true) {
+      add_stun_attribute(stun_message, STUN_ATTRIBUTE_USE_CANDIDATE, "", -1);
     }
     // check here
     add_stun_attribute(stun_message, STUN_ATTRIBUTE_PRIORITY,
@@ -131,7 +129,7 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
     uint32_t stun_message_crc32 =
         htonl(calculate_crc32(stun_message) ^ 0x5354554e);
     add_stun_attribute(stun_message, STUN_ATTRIBUTE_FINGERPRINT,
-                       (guchar *)&stun_message_crc32, sizeof(uint32_t));
+                       (guchar *)&stun_message_crc32, 4);
 
     // exit(0);
   }
@@ -139,9 +137,10 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
   int bytes = sendto(sock_desc, stun_message,
                      sizeof(struct Stun) + ntohs(stun_message->msg_len), 0,
                      (struct sockaddr *)dest_addr, sizeof(struct sockaddr_in));
+
   if (sender_candidate == NULL && (message_class == STUN_RESPONSE_CLASS))
     if (bytes != -1 && bytes != 0)
-      printf("\n-stun Packet sent client : stun://%s:%d with   server/Cliet : "
+      printf("\nstun Packet sent client : stun://%s:%d with C/S: "
              "%s:%d \n",
              pair->p0->address, pair->p0->port, pair->p1->address,
              pair->p1->port);
@@ -195,8 +194,8 @@ uint32_t calculate_crc32(struct Stun *stun_message) {
   return stun_message_crc32;
 }
 struct TVL *add_stun_attribute(struct Stun *stun, uint16_t type, char *value,
-                               uint16_t size) {
-  uint16_t len = size != NULL ? size : strlen(value);
+                               int size) {
+  uint16_t len = size >= 1 ? size : strlen(value);
   int rem = len % 4;
   int padding_bytes = rem != 0 ? 4 - rem : 0;
   int total_attribute_size = sizeof(struct TVL) + len + padding_bytes;
@@ -258,20 +257,24 @@ void on_stun_packet(struct NetworkPacket *packet,
       printf("\n-----public NAT Mapping is  : PORT %d  IP , %s %s-----\n",
              stun_binding->bound_port, stun_binding->bound_ip,
              stun_binding->candidate_type);
-    } else {
+      // on_reflexive_candidates(peer, stun_binding);
       stun_binding->candidate_type = "prflx";
-    }
+    } else {
+      for (struct RTCRtpTransceivers *transceiver = peer->transceiver;
+           transceiver != NULL; transceiver = transceiver->next_trans) {
+        for (struct CandidataPair *pair = transceiver->pair_checklist;
+             pair != NULL; pair = pair->next_pair) {
 
-    for (struct RTCRtpTransceivers *transceiver = peer->transceiver;
-         transceiver != NULL; transceiver = transceiver->next_trans) {
-      for (struct CandidataPair *pair = transceiver->pair_checklist;
-           pair != NULL; pair = pair->next_pair) {
-        if (strncmp(pair->transaction_id, stun_header->transaction_id, 12) ==
-            0) {
-          printf("ice pair succeeded %s:%d %s:%d \n", pair->p0->address,
-                 pair->p0->port, pair->p1->address, pair->p1->port);
-          pair->state = ICE_PAIR_SUCCEEDED;
-
+          if (strncmp(pair->transaction_id, stun_header->transaction_id, 12) ==
+              0) {
+            printf("ice pair succeeded %s:%d %s:%d \n", pair->p0->address,
+                   pair->p0->port, pair->p1->address, pair->p1->port);
+            if (peer->dtls_transport->pair == NULL) {
+              peer->dtls_transport->pair = pair;
+              start_dtls_negosiation(peer, pair);
+            }
+            pair->state = ICE_PAIR_SUCCEEDED;
+          }
         }
       }
     }
@@ -281,26 +284,51 @@ void on_stun_packet(struct NetworkPacket *packet,
 
     if (packet->sender_ip != NULL) {
       // checking on only  first trans candidate pair for max bundle
-      struct CandidataPair *checklist = peer->transceiver->pair_checklist;
+      struct stun_binding *binding = malloc(sizeof(struct stun_binding));
+      binding->bound_port = *packet->sender_port;
+      binding->bound_ip = packet->sender_ip;
 
-      for (; checklist != NULL; checklist = checklist->next_pair) {
+      memcpy(binding->transaction_id, stun_header->transaction_id,
+             sizeof(stun_header->transaction_id));
 
-        if ((strcmp(checklist->p0->address, packet->receiver_ip) == 0 &&
-             *packet->receiver_port == checklist->p0->port) &&
-            (strcmp(checklist->p0->address, packet->sender_ip) == 0 &&
-             *packet->sender_port == checklist->p1->port)) {
+      struct CandidataPair *pair = malloc(sizeof(struct CandidataPair));
 
-          struct stun_binding *binding = malloc(sizeof(struct stun_binding));
-          binding->bound_port = checklist->p1->port;
-          binding->bound_ip = checklist->p1->address;
-          memcpy(binding->transaction_id, stun_header->transaction_id,
-                 sizeof(stun_header->transaction_id));
-          send_stun_bind(checklist, STUN_RESPONSE_CLASS, NULL, binding);
+      for (struct RTCIecCandidates *candidate =
+               peer->transceiver->local_ice_candidate;
+           candidate != NULL; candidate = candidate->next_candidate) {
+        if (strcmp(candidate->address, packet->receiver_ip) == 0 &&
+            candidate->port == *packet->receiver_port) {
+          pair->p0 = candidate;
+          pair->p1 = malloc(sizeof(struct RTCIecCandidates));
+          pair->p1->address = packet->sender_ip;
+          pair->p1->port = *packet->sender_port;
+
+          send_stun_bind(pair, STUN_RESPONSE_CLASS, NULL, binding);
+
+          free(pair->p1);
+          free(pair);
           break;
         }
       }
     }
   }
+}
+bool check_if_stun(struct Stun *stun_header) {
+
+  stun_header->msg_type = ntohs(stun_header->msg_type);
+  int zerobits = stun_header->msg_type & 0xC000; // 1100000
+
+  if (zerobits != 0) {
+    return false;
+  }
+
+  uint32_t magic_cookie = ntohl(stun_header->magic_cookie);
+
+  if (magic_cookie != STUN_MAGIC_COOKIE) {
+    return false;
+  }
+
+  return true;
 }
 char *get_stun_attributes(struct RTCIecCandidates *local_candidate,
                           struct RTCIecCandidates *remote_candidate) {

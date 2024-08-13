@@ -26,7 +26,7 @@ char *get_ice_auth(struct RTCRtpTransceivers *transceiver) {
 char *get_dtls_sdp_param(struct RTCRtpTransceivers *transceiver) {
   char *dtls_auth_param = g_strdup_printf("a=fingerprint:sha-256 %s\n"
                                           "a=setup:actpass\n",
-                                          transceiver->dtls_fingeprint);
+                                          "fingerprint");
   return dtls_auth_param;
 }
 char *get_transceiver_info(struct RTCRtpTransceivers *transceiver) {
@@ -92,7 +92,7 @@ JsonObject *get_test_ofer() {
       "3C:4A:AA:DA:3A:F5:7F:B1:60:B2:1A:BB:59:20:22:DB:FC:44:FB:71:BB:88:"
       "6D:E5:"
       "BB:2E:C6:7F:6A:9E:0B:83\n"
-      "a=setup:actpass\n"
+      "a=setup:active\n"
 
       "a=mid:0\n"
       "a=sendrecv\n"
@@ -182,7 +182,7 @@ struct RTCSessionDescription *json_object_to_sdp(JsonObject *sdp_json) {
   struct RTCSessionDescription *session_desc =
       malloc(sizeof(struct RTCSessionDescription));
 
-  session_desc->type = json_object_get_string_member(sdp_json, "type");
-  session_desc->sdp = json_object_get_string_member(sdp_json, "sdp");
+  session_desc->type = (char *)json_object_get_string_member(sdp_json, "type");
+  session_desc->sdp = (char *)json_object_get_string_member(sdp_json, "sdp");
   return session_desc;
 }

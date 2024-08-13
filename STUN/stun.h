@@ -37,14 +37,14 @@
 
 */
 #pragma once
+#ifndef _STUNH_
+#define _STUNH_
+
 #include "../ICE/ice.h"
-#include "../Network/network.h"
 #include "glib.h"
 #include <stdint.h>
 #include <sys/types.h>
-
-#ifndef _STUNH_
-#define _STUNH_
+struct NetworkPacket;
 
 #define STUN_MAGIC_COOKIE 0x2112A442
 #define STUN_MAGIC_COOKIE_MSB 0x2112
@@ -84,7 +84,7 @@ struct __attribute__((packed)) StunPayload {
   uint16_t x_port; // ip and are xor mapped with Transaction id
   uint32_t x_ip;
 };
-struct TVL {
+struct __attribute__((packed)) TVL {
   uint16_t att_type;
   uint16_t att_len;
   char value[];
@@ -101,7 +101,7 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
                     struct RTCIecCandidates *sender_candidate, void *data);
 
 struct TVL *add_stun_attribute(struct Stun *stun, uint16_t type, char *value,
-                               uint16_t size);
+                               int size);
 
 guchar *generate_HMAC(const gchar *key, struct Stun *message);
 void on_reflexive_candidates(struct RTCPeerConnection *peer,
@@ -115,4 +115,5 @@ void on_stun_packet(struct NetworkPacket *packet,
 
 uint32_t calculate_crc32(struct Stun *stun_message);
 
+bool check_if_stun(struct Stun *stun_header);
 #endif // !_STUNH_

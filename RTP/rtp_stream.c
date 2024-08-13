@@ -30,6 +30,7 @@ RTP payload header.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
 #include "../Network/network.h"
+#include "../WebRTC/webrtc.h"
 #include "rtp.h"
 #include <errno.h>
 #include <netinet/in.h>
@@ -41,7 +42,6 @@ RTP payload header.
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include "../WebRTC/webrtc.h"
 #pragma pack(1)
 
 void getdata(void *data);
@@ -68,7 +68,9 @@ struct Rtp *init_rtp_packet() {
   return rtp_packet_packet;
 }
 
-struct RtpStream *create_rtp_stream(char *ip, int port, struct RtpSession *rtp_session,struct MediaStreamTrack *track) {
+struct RtpStream *create_rtp_stream(char *ip, int port,
+                                    struct RtpSession *rtp_session,
+                                    struct MediaStreamTrack *track) {
 
   struct RtpStream *newRtpStream;
   newRtpStream = malloc(sizeof(struct RtpStream));
