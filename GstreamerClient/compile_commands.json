@@ -1,0 +1,28 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-pthread",
+      "-I/usr/include/libsoup-2.4",
+      "-I/usr/include/libxml2",
+      "-I/usr/include/json-glib-1.0",
+      "-I/usr/include/gstreamer-1.0",
+      "-I/usr/include/orc-0.4",
+      "-I/usr/include/gstreamer-1.0",
+      "-I/usr/include/x86_64-linux-gnu",
+      "-I/usr/include/libmount",
+      "-I/usr/include/blkid",
+      "-I/usr/include/glib-2.0",
+      "-I/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+      "-Wl,--export-dynamic",
+      "-pthread",
+      "-o",
+      "./webrtc_recv",
+      "./webrtc_recv.c"
+    ],
+    "directory": "/home/usama/learn/webrtc-from-scrach/GstreamerClient",
+    "file": "/home/usama/learn/webrtc-from-scrach/GstreamerClient/webrtc_recv.c",
+    "output": "/home/usama/learn/webrtc-from-scrach/GstreamerClient/webrtc_recv"
+  }
+]
