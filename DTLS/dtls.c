@@ -97,18 +97,19 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer,
       make_extentention(&other_extention, EXTEND_MASTER_SEC_EXT, 0, 0, 0, 0);
   add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
 
-  dtls_client_hello->extention_len = htons(dtls_client_hello->extention_len);
   free(other_extention);
 
   // session ticket extention
-  //  ext_len = make_extentention(&other_extention, SESS_TICKET_EXT, 0, 0, 0,
-  //  0); add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
-  //  free(other_extention);
+  ext_len = make_extentention(&other_extention, SESS_TICKET_EXT, 0, 0, 0, 0);
+  add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
+  free(other_extention);
 
   // printf("\n%d %d %u %d %d\n", handshake->length, sizeof(struct DtlsHello),
   //        dtls_client_hello->cipher_suite_len, dtls_header->length,
   //        handshake->type);
   //
+
+  dtls_client_hello->extention_len = htons(dtls_client_hello->extention_len);
 
   send_dtls_packet(peer->dtls_transport, (gchar *)dtls_client_hello,
                    sizeof(struct DtlsServerHello) +
