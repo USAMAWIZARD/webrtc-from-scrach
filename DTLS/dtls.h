@@ -1,4 +1,6 @@
 #pragma once
+#include "json-glib/json-glib.h"
+#include <openssl/types.h>
 #ifndef _DTLSH_
 #define _DTLSH_
 
@@ -35,17 +37,17 @@ enum DTLS_MODE {
   DTLS_ACTPASS
 };
 enum HandshakeType {
-  hello_request = 0,
-  client_hello,
-  server_hello,
-  hello_verify_request, // New field
-  certificate = 11,
-  server_key_exchange,
-  certificate_request,
-  server_hello_done,
-  certificate_verify,
-  client_key_exchange,
-  finished = 255
+  handshake_type_hello_request = 0,
+  handshake_type_client_hello,
+  handshake_type_server_hello,
+  handshake_type_hello_verify_request, // New field
+  handshake_type_certificate = 11,
+  handshake_type_server_key_exchange,
+  handshake_type_certificate_request,
+  handshake_type_server_hello_done,
+  handshake_type_certificate_verify,
+  handshake_type_client_key_exchange,
+  handshake_type_finished = 255
 };
 
 struct RTCDtlsTransport {
@@ -54,11 +56,18 @@ struct RTCDtlsTransport {
   enum DtlsState state;
   struct CandidataPair *pair;
   struct DtlsParsedPacket *last_dtl_packet;
-  gchar *current_seq_no;
+  JsonObject *dtls_flights;
+  uint16_t current_seq_no;
   uint16_t epoch;
   int cookie;
   int cookie_len;
-  guchar random[32];
+  guchar my_random[32];
+  guchar peer_random[32];
+  uint16_t selected_cipher_suite;
+  X509 *server_certificate;
+  X509 *client_certificate;
+
+  EVP_PKEY *pub_key;
 };
 
 struct __attribute__((packed)) HandshakeHeader {
@@ -84,22 +93,23 @@ struct __attribute__((packed)) DtlsHello {
 struct __attribute__((packed)) DtlsServerHello {
   uint16_t client_version;
   gchar random[32];
-  uint8_t session_id;
+  uint8_t session_id_len;
+  gchar *session_id;
   uint16_t cipher_suite;
   uint8_t compression_method;
   uint16_t extention_len;
-  uint16_t extentions[];
+  uint16_t *extentions;
 };
 struct __attribute__((packed)) Certificate {
   uint32_t certificate_len : 24;
-  guchar *certificate[];
+  guchar *certificate;
 };
 
 struct __attribute__((packed)) CertificateRequest {
   uint8_t certificate_types_count;
-  uint8_t **certificate_types;
+  uint8_t *certificate_types;
   uint16_t signature_hash_algo_len;
-  uint16_t **signature_hash_algo;
+  uint16_t *signature_hash_algo;
   uint16_t distiguished_name_len;
 };
 
@@ -129,15 +139,20 @@ union ParsedHandshakePayload {
 
 struct DtlsParsedPacket {
   bool isfragmented;
+  bool islastfragment;
   uint8_t handshake_type;
-  uint32_t fragment_length : 24;
-  uint32_t fragment_offset : 24;
-  uint32_t handshake_length : 24;
   struct DtlsHeader *dtls_header;
   struct HandshakeHeader *handshake_header;
   guchar *handshake_payload;
+  guchar *all_fragmented_payload;
   union ParsedHandshakePayload parsed_handshake_payload;
   struct DtlsParsedPacket *next_record;
+};
+
+struct ServerHelloFlight {
+  struct DtlsServerHello *server_hello;
+  struct Certificate *certificate;
+  struct CertificateRequest *certificate_request;
 };
 
 struct RTCDtlsTransport *create_dtls_transport();
@@ -147,10 +162,9 @@ void start_dtls_negosiation(struct RTCPeerConnection *peer,
 void send_dtls_client_hello(struct RTCPeerConnection *peer,
                             struct CandidataPair *pair, bool with_cookie);
 bool check_if_dtls(uint8_t);
-
-int make_dtls_packet(guchar **dtls_packet, struct DtlsHeader *dtls_header,
-                     struct HandshakeHeader *handshake,
-                     struct DtlsHello *client_hello);
+uint32_t make_dtls_packet(guchar **dtls_packet, struct DtlsHeader *dtls_header,
+                          struct HandshakeHeader *handshake,
+                          guchar *dtls_payload, uint32_t payload_len);
 uint16_t add_dtls_extention(struct DtlsHello **dtls_packet,
                             struct dtls_ext *extention, uint16_t extention_len);
 uint16_t make_extentention(struct dtls_ext **ext, uint16_t extention_type,
@@ -158,4 +172,21 @@ uint16_t make_extentention(struct dtls_ext **ext, uint16_t extention_type,
                            uint16_t extra_data_len);
 void on_dtls_packet(struct NetworkPacket *dtls_packet,
                     struct RTCPeerConnection *peer);
+void handle_server_hello(struct RTCDtlsTransport *transport,
+                         struct DtlsServerHello *hello);
+void handle_certificate(struct RTCDtlsTransport *transport,
+                        struct Certificate *certificate);
+void handle_certificate_request(struct RTCDtlsTransport *transport,
+                                struct CertificateRequest *certificate_request);
+
+struct DtlsServerHello *parse_server_hello(guchar *handshake_payload,
+                                           uint32_t length);
+
+struct Certificate *
+get_client_certificate(struct RTCDtlsTransport *transport,
+                       struct CertificateRequest *certificate_request);
+
+bool do_client_key_exchange(struct RTCDtlsTransport *transport);
+bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
+                      gchar *dtls_payload, uint32_t dtls_payload_len);
 #endif

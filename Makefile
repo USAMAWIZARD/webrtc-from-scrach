@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS= 
 LIBS=-lavutil -lavcodec -lavformat -lgsasl -lz
-PKG_CONFIG=`pkg-config --cflags --libs libsoup-2.4 json-glib-1.0  `
+PKG_CONFIG=`pkg-config --cflags --libs libsoup-2.4 json-glib-1.0 openssl `
 
 SRC=$(shell find . -name "*.c" -not -path "./SignallingServer/*" -not -path "./GstreamerClient/*")
 

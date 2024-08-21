@@ -204,7 +204,7 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
     network_packet->protocol = DTLS;
 
     struct DtlsParsedPacket *dtls_packet =
-        malloc(sizeof(struct DtlsParsedPacket));
+        calloc(1, sizeof(struct DtlsParsedPacket));
     network_packet->payload.dtls_parsed = dtls_packet;
 
     uint32_t remaining_bytes = bytes;
@@ -230,37 +230,60 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
       memcpy(handshake_header, packet, handshake_header_size);
       remaining_bytes = remaining_bytes - handshake_header_size;
       dtls_packet->handshake_header = handshake_header;
-
       dtls_packet->handshake_type = handshake_header->type;
-      dtls_packet->fragment_length =
+
+      handshake_header->fragment_length =
           ntohl((uint32_t)handshake_header->fragment_length) >> 8;
-      dtls_packet->fragment_offset = handshake_header->fragment_offset;
-      dtls_packet->handshake_length = handshake_header->length;
-      printf("%d  remainghing bytes %d \n", remaining_bytes,
-             dtls_packet->fragment_length);
+      handshake_header->length = ntohl((uint32_t)handshake_header->length) >> 8;
+      handshake_header->fragment_offset =
+          ntohl((uint32_t)handshake_header->fragment_offset) >> 8;
+      handshake_header->message_seq = ntohs(handshake_header->message_seq);
+
+      if (handshake_header->fragment_length != handshake_header->length) {
+        dtls_packet->isfragmented = true;
+        uint16_t total_recvied_len = handshake_header->fragment_offset +
+                                     handshake_header->fragment_length;
+        if (total_recvied_len == handshake_header->length)
+          dtls_packet->islastfragment = true;
+        else
+          dtls_packet->islastfragment = false;
+      } else {
+        dtls_packet->isfragmented = false;
+        dtls_packet->islastfragment = false;
+      }
 
       packet = packet + handshake_header_size;
 
-      if (dtls_packet->fragment_length != dtls_packet->fragment_offset) {
-        dtls_packet->isfragmented = true;
-      }
-
       if (remaining_bytes != 0 &&
-          remaining_bytes >= dtls_packet->fragment_length) {
+          remaining_bytes >= handshake_header->fragment_length) {
 
-        dtls_packet->handshake_payload = malloc(dtls_packet->fragment_length);
+        if (handshake_header->length < handshake_header->fragment_offset +
+                                           handshake_header->fragment_length) {
+          return NULL;
+        }
+
+        dtls_packet->handshake_payload =
+            malloc(handshake_header->fragment_length);
+
+        if (dtls_packet->isfragmented)
+          dtls_packet->handshake_payload = malloc(handshake_header->length);
+
         memcpy(dtls_packet->handshake_payload, packet,
-               dtls_packet->fragment_length);
-        packet = packet + dtls_packet->fragment_length;
-        remaining_bytes = remaining_bytes - dtls_packet->fragment_length;
+               handshake_header->fragment_length);
+
+        packet = packet + handshake_header->fragment_length;
+        remaining_bytes = remaining_bytes - handshake_header->fragment_length;
       }
 
       if (remaining_bytes >= dtls_header_size) {
-        dtls_packet->next_record = malloc(sizeof(struct DtlsParsedPacket));
+        dtls_packet->next_record = calloc(1, sizeof(struct DtlsParsedPacket));
         dtls_packet = dtls_packet->next_record;
       }
+      if (remaining_bytes == 0) {
+        return network_packet;
+      }
     }
-    return network_packet;
+    return NULL;
   }
 
   if (false) { // check if rtp or rtcp
@@ -303,6 +326,7 @@ int get_candidates_fd_array(struct RTCPeerConnection *peer,
   // printf("testong\n");
   return i - fd_array;
 }
+
 struct Stun *parse_stun_header(struct Stun *stun_header) {}
 
 uint32_t hton24(uint32_t host24) {

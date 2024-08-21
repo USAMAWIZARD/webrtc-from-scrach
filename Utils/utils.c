@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <ctype.h>
 #include <glib.h>
+#include <gmp.h>
 #include <json-glib/json-glib.h>
 #include <stdint.h>
 #include <string.h>
@@ -28,6 +29,4 @@ int strcicmp(char const *a, char const *b) {
   }
 }
 
-uint32_t hton_24(uint32_t no) {
-  
-}
+uint32_t hton_24(uint32_t no) {}
