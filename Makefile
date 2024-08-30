@@ -1,9 +1,12 @@
 CC=gcc
 CFLAGS= 
-LIBS=-lavutil -lavcodec -lavformat -lgsasl -lz
+LIBS=-lavutil -lavcodec -lavformat -lgsasl -lz -lgmp -lm
 PKG_CONFIG=`pkg-config --cflags --libs libsoup-2.4 json-glib-1.0 openssl `
 
-SRC=$(shell find . -name "*.c" -not -path "./SignallingServer/*" -not -path "./GstreamerClient/*")
+EXCLUDE=-not -name "test.c" 
+#EXCLUDE=-not -name "webrtc_app.c" -not -path "./SignallingClient/*" 
+
+SRC=$(shell find . $(EXCLUDE) -name "*.c" -not -path "./SignallingServer/*" -not -path "./GstreamerClient/*")
 
 OBJECTS=$(SRC:.c=.o)
 
@@ -26,7 +29,10 @@ run:
 	make
 	./webrtc
 
+
 startservers:
 	nohup npm start --prefix ./WebRTC_Browser_APP/ &
 	npm start --prefix ./SignallingServer/
+
+
 

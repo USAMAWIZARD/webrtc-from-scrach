@@ -2,11 +2,14 @@
 #include "dtls.h"
 #include "../Network/network.h"
 #include "../STUN/stun.h"
+#include "../Utils/utils.h"
 #include "../WebRTC/webrtc.h"
+#include "./Encryptions/encryption.h"
 #include "glibconfig.h"
 #include "json-glib/json-glib.h"
 #include <glib.h>
 #include <malloc.h>
+#include <math.h>
 #include <netinet/in.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
@@ -30,8 +33,10 @@ tREGoJxphqnoO1eaPUh2Nr7OU06X+SeB3Ooem5JTJO7F8jg9TohDsvN+RnSHRE4P\
 FDZfrv9gRGK9qz9lAgMBAAE=";
 
 uint16_t cipher_suite_list[CIPHER_SUITE_LEN] = {TLS_RSA_WITH_AES_128_CBC_SHA};
+
 uint16_t srtp_supported_profiles[] = {SRTP_AES128_CM_HMAC_SHA1_80};
 uint16_t signature_algorithms[] = {0x0102, 0x0104};
+uint16_t supported_signature_algorithms[] = {0x0401};
 
 struct RTCDtlsTransport *create_dtls_transport() {
   struct RTCDtlsTransport *dtls_transport =
@@ -54,7 +59,8 @@ struct RTCDtlsTransport *create_dtls_transport() {
 void send_dtls_client_hello(struct RTCPeerConnection *peer,
                             struct CandidataPair *pair, bool with_cookie) {
 
-  struct DtlsHello *dtls_client_hello = malloc(sizeof(struct DtlsHello));
+  struct DtlsClientHello *dtls_client_hello =
+      malloc(sizeof(struct DtlsClientHello));
 
   dtls_client_hello->client_version = htons(DTLS_1_2);
   memcpy(dtls_client_hello->random, peer->dtls_transport->my_random, 32);
@@ -104,43 +110,71 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer,
   add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
   free(other_extention);
 
-  // printf("\n%d %d %u %d %d\n", handshake->length, sizeof(struct DtlsHello),
+  // printf("\n%d %d %u %d %d\n", handshake->length, sizeof(struct
+  // DtlsClientHello),
   //        dtls_client_hello->cipher_suite_len, dtls_header->length,
   //        handshake->type);
   //
 
   dtls_client_hello->extention_len = htons(dtls_client_hello->extention_len);
 
-  send_dtls_packet(peer->dtls_transport, (gchar *)dtls_client_hello,
-                   sizeof(struct DtlsServerHello) +
+  send_dtls_packet(peer->dtls_transport, handshake_type_client_hello,
+                   (guchar *)dtls_client_hello,
+                   sizeof(struct DtlsClientHello) +
                        ntohs(dtls_client_hello->extention_len));
+
   printf("DTLS hello sent\n");
   // exit(0);
 }
+uint8_t get_content_type(uint8_t handshake_type) {
+
+  uint8_t content_type = 22;
+  if (handshake_type == handshake_type_change_cipher_spec)
+    content_type = 20;
+
+  return content_type;
+}
 bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
-                      gchar *dtls_payload, uint32_t dtls_payload_len) {
+                      uint8_t handshake_type, guchar *dtls_payload,
+                      uint32_t dtls_payload_len) {
 
   struct DtlsHeader *dtls_header = malloc(sizeof(struct DtlsHeader));
-  dtls_header->type = 22;
-  dtls_header->version = htons(DTLS_1_0);
+  dtls_header->type = get_content_type(handshake_type);
+
+  dtls_header->version = handshake_type == handshake_type_client_hello
+                             ? htons(DTLS_1_0)
+                             : htons(DTLS_1_2);
   dtls_header->epoch = dtls_transport->epoch;
-  // dtls_header->sequence_number
+  dtls_header->length = htons(dtls_payload_len);
+  dtls_header->sequence_number = htons(dtls_transport->current_seq_no);
+  dtls_header->sequence_number = dtls_header->sequence_number << 32;
 
-  struct HandshakeHeader *handshake = malloc(sizeof(struct HandshakeHeader));
-  handshake->type = handshake_type_client_hello;
-  handshake->message_seq = dtls_transport->current_seq_no;
-  handshake->fragment_length = dtls_payload_len;
-  handshake->length = dtls_payload_len;
-  handshake->fragment_offset = 0;
+  struct HandshakeHeader *handshake = NULL;
 
+  if (!(handshake_type == handshake_type_change_cipher_spec)) {
+
+    dtls_header->length =
+        htons(ntohs(dtls_header->length) + sizeof(struct HandshakeHeader));
+
+    handshake = malloc(sizeof(struct HandshakeHeader));
+    handshake->type = handshake_type;
+    handshake->message_seq = htons(dtls_transport->current_seq_no);
+    handshake->length = htonl(dtls_payload_len) >> 8;
+    handshake->fragment_length = handshake->length;
+    handshake->fragment_offset = 0;
+  }
   guchar *dtls_packet;
   int packet_len = make_dtls_packet(&dtls_packet, dtls_header, handshake,
                                     dtls_payload, dtls_payload_len);
 
+  printf("test change cipher %d \n", packet_len);
   struct CandidataPair *pair = dtls_transport->pair;
   int bytes = sendto(pair->p0->sock_desc, dtls_packet, packet_len, 0,
                      (struct sockaddr *)pair->p1->src_socket,
                      sizeof(struct sockaddr_in));
+
+  dtls_transport->current_seq_no++;
+
   if (bytes < 0) {
     printf("cannot send DTLS packet\n");
     exit(0);
@@ -151,36 +185,35 @@ uint32_t make_dtls_packet(guchar **dtls_packet, struct DtlsHeader *dtls_header,
                           struct HandshakeHeader *handshake,
                           guchar *dtls_payload, uint32_t payload_len) {
 
-  int total_packet_len =
-      sizeof(struct DtlsHeader) + sizeof(struct HandshakeHeader) + payload_len;
+  int total_packet_len = sizeof(struct DtlsHeader) + payload_len;
+
+  if (handshake != NULL)
+    total_packet_len += sizeof(struct HandshakeHeader);
 
   guchar *packet = malloc(total_packet_len);
-  printf("total size of packet dtls  %d \n", total_packet_len);
+  guchar *ptr = packet;
 
-  handshake->length = payload_len;
-  dtls_header->length = handshake->length + sizeof(struct HandshakeHeader);
+  memcpy(ptr, dtls_header, sizeof(struct DtlsHeader));
+  ptr = ptr + sizeof(struct DtlsHeader);
 
-  dtls_header->length = htons(dtls_header->length);
-  handshake->length = htons(handshake->length) << 8;
-  // remove from here and add this in add_dtls_extentio funciton
+  if (handshake != NULL) {
+    memcpy(ptr, handshake, sizeof(struct HandshakeHeader));
+    ptr = ptr + sizeof(struct HandshakeHeader);
+  }
 
-  handshake->fragment_length = handshake->length;
+  memcpy(ptr, dtls_payload, payload_len);
 
-  memcpy(packet, dtls_header, sizeof(struct DtlsHeader));
-  memcpy(packet + sizeof(struct DtlsHeader), handshake,
-         sizeof(struct HandshakeHeader));
-  memcpy(packet + sizeof(struct DtlsHeader) + sizeof(struct HandshakeHeader),
-         dtls_payload, payload_len);
-  print_hex(packet, total_packet_len);
   *dtls_packet = packet;
 
   return total_packet_len;
 }
-uint16_t add_dtls_extention(struct DtlsHello **dtls_hello,
+
+uint16_t add_dtls_extention(struct DtlsClientHello **dtls_hello,
                             struct dtls_ext *extention,
                             uint16_t extention_len) {
   uint16_t old_ext_len = (*dtls_hello)->extention_len;
-  uint16_t new_len = sizeof(struct DtlsHello) + old_ext_len + extention_len;
+  uint16_t new_len =
+      sizeof(struct DtlsClientHello) + old_ext_len + extention_len;
 
   *dtls_hello = realloc(*dtls_hello, new_len);
   // printf("old ext lend %d \n", (*dtls_hello)->extention_len);
@@ -330,11 +363,11 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
 
       struct Certificate *certificate = malloc(certificate_len);
       certificate->certificate_len = certificate_len;
+      certificate->certificate = malloc(certificate_len);
 
       handshake_payload += 3;
 
-      if (total_fragment_len <
-          sizeof(struct Certificate) + certificate->certificate_len)
+      if (total_fragment_len < 3 + certificate->certificate_len)
         return;
 
       memcpy(certificate->certificate, handshake_payload,
@@ -371,17 +404,53 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       handshake_payload += sizeof(uint16_t);
 
       certificate_request->signature_hash_algo =
-          malloc(certificate_request->signature_hash_algo_len);
+          (uint16_t *)calloc(1, certificate_request->signature_hash_algo_len);
 
       memcpy(certificate_request->signature_hash_algo, handshake_payload,
              certificate_request->signature_hash_algo_len);
+
+      uint16_t selected_sign_hash_algo = 0;
+      for (int i = 0; i < certificate_request->signature_hash_algo_len / 2;
+           i++) {
+        if (selected_sign_hash_algo != 0)
+          break;
+        uint16_t i_sign_hash_algo =
+            ntohs(certificate_request->signature_hash_algo[i]);
+
+        for (int j = 0; j < sizeof(supported_signature_algorithms) /
+                                sizeof(supported_signature_algorithms[0]);
+             j++) {
+
+          uint16_t j_supported_sign_algo = supported_signature_algorithms[j];
+
+          // printf("%x %d %d %x \n", i_sign_hash_algo, i,
+          //        certificate_request->signature_hash_algo_len,
+          //        j_supported_sign_algo);
+          //
+          if (i_sign_hash_algo == j_supported_sign_algo) {
+            selected_sign_hash_algo = i_sign_hash_algo;
+            printf("slected signature algo %x \n", i_sign_hash_algo);
+            break;
+          }
+        }
+      }
+
+      peer->dtls_transport->selected_signatuire_hash_algo =
+          selected_sign_hash_algo;
+
+      if (selected_sign_hash_algo == 0) {
+        printf("no supported dtls singing hash algo \n");
+        exit(0);
+      }
 
       break;
     case handshake_type_server_hello_done:
       printf("server hello done \n");
 
-      // do_client_key_exchange();
-      // client_finished();
+      do_client_key_exchange(peer->dtls_transport);
+      do_change_cipher_spec(peer->dtls_transport);
+
+      // client_finshed();
       break;
     default:
       break;
@@ -395,13 +464,10 @@ void handle_server_hello(struct RTCDtlsTransport *transport,
                          struct DtlsServerHello *hello) {
 
   memcpy(transport->peer_random, hello->random, sizeof(hello->random));
-  transport->selected_cipher_suite = hello->cipher_suite;
+  transport->selected_cipher_suite = ntohs(hello->cipher_suite);
 }
 void handle_certificate(struct RTCDtlsTransport *transport,
                         struct Certificate *certificate) {
-  printf("%d cert len\n", certificate->certificate_len);
-  print_hex(certificate->certificate, certificate->certificate_len);
-
   X509 *cert;
   cert =
       d2i_X509(NULL, &(certificate->certificate), certificate->certificate_len);
@@ -416,6 +482,7 @@ void handle_certificate(struct RTCDtlsTransport *transport,
 
   EVP_PKEY *pub_key = X509_get_pubkey(cert);
   transport->pub_key = pub_key;
+  transport->rand_sum = get_dtls_rand_hello_sum(transport);
 }
 
 void handle_certificate_request(
@@ -484,20 +551,49 @@ get_client_certificate(struct RTCDtlsTransport *transport,
 
 bool do_client_key_exchange(struct RTCDtlsTransport *transport) {
   uint16_t selected_cipher_suite = transport->selected_cipher_suite;
-  // also
+  // add better struct here
+
   if (selected_cipher_suite == cipher_suite_list[0]) { // rsa key change
-    FILE *randomData = fopen("/dev/urandom", "r");
-    if (randomData == NULL) {
-      printf("random nubmer generateion failed for rsa\n");
-      exit(0);
-    }
-    gchar premaster_key[48];
-    memcpy(premaster_key, (guchar *)DTLS_1_2, sizeof(uint16_t));
+    guchar *premaster_key;
 
-    fread(premaster_key + sizeof(uint16_t), 1, 46, randomData);
+    get_random_string(&premaster_key, 48, 1);
 
+    uint16_t version = (uint16_t)htons(DTLS_1_2);
+    memcpy(premaster_key, &version, sizeof(uint16_t));
+
+    guchar *encrypted_premaster_key;
+
+    uint16_t encrypted_key_len =
+        encrypt_rsa(&encrypted_premaster_key, transport->pub_key, premaster_key,
+                    transport->rand_sum);
+
+    BIGNUM *master_secret =
+        generate_master_key(premaster_key, transport->rand_sum);
+    transport->encryption_keys->master_secret = master_secret;
+    init_symitric_encryption(transport);
+
+    struct ClientKeyExchange *client_key_xchange =
+        malloc(sizeof(struct ClientKeyExchange) + encrypted_key_len);
+
+    memcpy(client_key_xchange->encrypted_premaster_key, encrypted_premaster_key,
+           encrypted_key_len);
+
+    client_key_xchange->key_len = htons(encrypted_key_len);
+
+    send_dtls_packet(transport, handshake_type_client_key_exchange,
+                     (guchar *)client_key_xchange,
+                     sizeof(struct ClientKeyExchange) + encrypted_key_len);
   } else {
-    printf("only rsa key exchagge suported ");
-    exit(0);
+    printf("only rsa key exchagge suported \n");
+    return false;
   }
+  return true;
 }
+bool do_change_cipher_spec(struct RTCDtlsTransport *transport) {
+
+  guchar a = (gchar)1;
+  send_dtls_packet(transport, handshake_type_change_cipher_spec, &a, 1);
+  return true;
+}
+
+bool do_client_finished(struct RTCDtlsTransport *transport) {}

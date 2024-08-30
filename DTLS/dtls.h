@@ -1,5 +1,6 @@
 #pragma once
 #include "json-glib/json-glib.h"
+#include <openssl/bn.h>
 #include <openssl/types.h>
 #ifndef _DTLSH_
 #define _DTLSH_
@@ -13,16 +14,19 @@
 #define DTLS_1_0 0xfeff
 
 #define CIPHER_SUITE_LEN 1
-#define TLS_RSA_WITH_AES_128_CBC_SHA 0x2f00 // big endian
+// #define TLS_RSA_WITH_AES_128_CBC_SHA 0x2f00 // big endian
 
 #define SRTP_AES128_CM_HMAC_SHA1_80 0x0100
-
-#define TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA255
 
 #define SRTP_EXT 0x000e
 #define SIGN_ALGO_EXT 0x000d
 #define SESS_TICKET_EXT 0x0023
 #define EXTEND_MASTER_SEC_EXT 0x0017
+
+enum cipher_suite { TLS_RSA_WITH_AES_128_CBC_SHA = 0x2f00 };
+enum key_exchange { RSA_KEY_EXCHANGE };
+enum cipher { AES_128_CBC = 128 };
+
 struct NetworkPacket;
 
 enum DtlsState {
@@ -47,6 +51,7 @@ enum HandshakeType {
   handshake_type_server_hello_done,
   handshake_type_certificate_verify,
   handshake_type_client_key_exchange,
+  handshake_type_change_cipher_spec = 20,
   handshake_type_finished = 255
 };
 
@@ -63,10 +68,13 @@ struct RTCDtlsTransport {
   int cookie_len;
   guchar my_random[32];
   guchar peer_random[32];
+  BIGNUM *rand_sum;
   uint16_t selected_cipher_suite;
+  uint16_t selected_signatuire_hash_algo;
   X509 *server_certificate;
   X509 *client_certificate;
-
+  struct encryption_keys *encryption_keys;
+  union symmetric_encrypt *symitric_encrypt_ctx;
   EVP_PKEY *pub_key;
 };
 
@@ -78,7 +86,7 @@ struct __attribute__((packed)) HandshakeHeader {
   uint32_t fragment_length : 24;
 };
 
-struct __attribute__((packed)) DtlsHello {
+struct __attribute__((packed)) DtlsClientHello {
   uint16_t client_version;
   gchar random[32];
   uint8_t session_id;
@@ -122,7 +130,7 @@ struct __attribute__((packed)) DtlsHeader {
   uint8_t type;
   uint16_t version;
   uint16_t epoch;
-  guchar sequence_number[6];
+  uint64_t sequence_number : 48;
   uint16_t length;
 };
 
@@ -155,6 +163,21 @@ struct ServerHelloFlight {
   struct CertificateRequest *certificate_request;
 };
 
+struct ClientKeyExchange {
+  uint16_t key_len;
+  gchar encrypted_premaster_key[];
+};
+
+struct encryption_keys {
+  BIGNUM *master_secret;
+  BIGNUM *client_write_mac_key;
+  BIGNUM *server_write_mac_key;
+  BIGNUM *client_write_key;
+  BIGNUM *server_wirte_key;
+  BIGNUM *client_write_IV;
+  BIGNUM *server_write_IV;
+};
+
 struct RTCDtlsTransport *create_dtls_transport();
 void start_dtls_negosiation(struct RTCPeerConnection *peer,
                             struct CandidataPair *pair);
@@ -165,8 +188,12 @@ bool check_if_dtls(uint8_t);
 uint32_t make_dtls_packet(guchar **dtls_packet, struct DtlsHeader *dtls_header,
                           struct HandshakeHeader *handshake,
                           guchar *dtls_payload, uint32_t payload_len);
-uint16_t add_dtls_extention(struct DtlsHello **dtls_packet,
+bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
+                      uint8_t handshake_type, guchar *dtls_payload,
+                      uint32_t dtls_payload_len);
+uint16_t add_dtls_extention(struct DtlsClientHello **dtls_packet,
                             struct dtls_ext *extention, uint16_t extention_len);
+
 uint16_t make_extentention(struct dtls_ext **ext, uint16_t extention_type,
                            guchar *data, uint16_t data_len, guchar *extradata,
                            uint16_t extra_data_len);
@@ -187,6 +214,5 @@ get_client_certificate(struct RTCDtlsTransport *transport,
                        struct CertificateRequest *certificate_request);
 
 bool do_client_key_exchange(struct RTCDtlsTransport *transport);
-bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
-                      gchar *dtls_payload, uint32_t dtls_payload_len);
+bool do_change_cipher_spec(struct RTCDtlsTransport *transport);
 #endif

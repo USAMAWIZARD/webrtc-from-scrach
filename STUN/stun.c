@@ -140,7 +140,7 @@ bool send_stun_bind(struct CandidataPair *pair, int message_class,
 
   if (sender_candidate == NULL && (message_class == STUN_RESPONSE_CLASS))
     if (bytes != -1 && bytes != 0)
-      printf("\nstun Packet sent client : stun://%s:%d with C/S: "
+      printf("\nstun Packet sent client : stun://%s:%d with C/S : "
              "%s:%d \n",
              pair->p0->address, pair->p0->port, pair->p1->address,
              pair->p1->port);
@@ -339,20 +339,4 @@ char *get_stun_attributes(struct RTCIecCandidates *local_candidate,
   // strcpy(username.value,"usama:usam1");
   return NULL;
 }
-guchar *hexstr_to_char(const char *hexstr) {
-  size_t len = strlen(hexstr);
-  if (len % 2 != 0)
-    return NULL;
-  size_t final_len = len / 2;
-  guchar *chrs = (unsigned char *)malloc((final_len + 1) * sizeof(*chrs));
-  for (size_t i = 0, j = 0; j < final_len; i += 2, j++)
-    chrs[j] = (hexstr[i] % 32 + 9) % 25 * 16 + (hexstr[i + 1] % 32 + 9) % 25;
-  chrs[final_len] = '\0';
-  return chrs;
-}
-void print_hex(const unsigned char *data, size_t length) {
-  for (size_t i = 0; i < length; i++) {
-    printf("%02x ", data[i]);
-  }
-  printf("\n");
-}
+

@@ -112,6 +112,7 @@ void on_remote_description(JsonObject *object, const gchar *type,
   gchar *sdp_string = (gchar *)json_object_get_string_member(object, "sdp");
 
   if (strncmp(type, "answer", 6) == 0) {
+
     struct RTCSessionDescription *session_desc = json_object_to_sdp(object);
     if (session_desc == NULL) {
       printf("invalid sdp");

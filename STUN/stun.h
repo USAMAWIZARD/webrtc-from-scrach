@@ -109,7 +109,6 @@ void on_reflexive_candidates(struct RTCPeerConnection *peer,
 
 guchar *hexstr_to_char(const char *hexstr);
 
-void print_hex(const unsigned char *data, size_t length);
 void on_stun_packet(struct NetworkPacket *packet,
                     struct RTCPeerConnection *peer);
 
