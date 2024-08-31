@@ -82,13 +82,15 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer,
   // print_hex(dtls_client_hello->cipher_suite,
   //           dtls_client_hello->cipher_suite_len);
 
+  uint16_t ext_len;
   struct dtls_ext *srtp_extention;
   uint8_t mki_len = 0;
-  uint16_t ext_len =
-      make_extentention(&srtp_extention, SRTP_EXT, srtp_supported_profiles,
-                        sizeof(srtp_supported_profiles), &mki_len, 1);
-  add_dtls_extention(&dtls_client_hello, srtp_extention, ext_len);
-  free(srtp_extention);
+
+  // ext_len =
+  //     make_extentention(&srtp_extention, SRTP_EXT, srtp_supported_profiles,
+  //                       sizeof(srtp_supported_profiles), &mki_len, 1);
+  // add_dtls_extention(&dtls_client_hello, srtp_extention, ext_len);
+  // free(srtp_extention);
 
   struct dtls_ext *supported_signature_algorithms;
   ext_len = make_extentention(&supported_signature_algorithms, SIGN_ALGO_EXT,
@@ -98,23 +100,16 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer,
                      ext_len);
   free(supported_signature_algorithms);
 
-  struct dtls_ext *other_extention;
-  ext_len =
-      make_extentention(&other_extention, EXTEND_MASTER_SEC_EXT, 0, 0, 0, 0);
-  add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
-
-  free(other_extention);
-
-  // session ticket extention
-  ext_len = make_extentention(&other_extention, SESS_TICKET_EXT, 0, 0, 0, 0);
-  add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
-  free(other_extention);
-
-  // printf("\n%d %d %u %d %d\n", handshake->length, sizeof(struct
-  // DtlsClientHello),
-  //        dtls_client_hello->cipher_suite_len, dtls_header->length,
-  //        handshake->type);
+  // struct dtls_ext *other_extention;
+  // ext_len =
+  //     make_extentention(&other_extention, EXTEND_MASTER_SEC_EXT, 0, 0, 0, 0);
+  // add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
+  // free(other_extention);
   //
+  // // session ticket extention
+  // ext_len = make_extentention(&other_extention, SESS_TICKET_EXT, 0, 0, 0, 0);
+  // add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
+  // free(other_extention);
 
   dtls_client_hello->extention_len = htons(dtls_client_hello->extention_len);
 

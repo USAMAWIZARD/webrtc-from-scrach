@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
+void transpose_matrix(gchar (*round_key)[4]);
 uint8_t s_box[16][16] = {
     {0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
      0xfe, 0xd7, 0xab, 0x76},
@@ -48,8 +50,13 @@ uint32_t round_constants[] = {0x00000001, 0x00000002, 0x00000004, 0x00000008,
                               0x00000010, 0x00000020, 0x00000040, 0x00000080,
                               0x0000001b, 0x00000036};
 
+uint8_t aes_galois_fild[4][4] = {{0x02, 0x03, 0x01, 0x01},
+                                 {0x01, 0x02, 0x03, 0x01},
+                                 {0x01, 0x01, 0x02, 0x03},
+                                 {0x03, 0x01, 0x01, 0x02}};
+
 uint32_t g_function(uint32_t word, uint16_t round_num);
-bool aes_expand_key(struct RsaEnryptionCtx *ctx) {
+bool aes_expand_key(struct AesEnryptionCtx *ctx) {
   uint16_t aes_key_len = ctx->key_size_bytes;
   if (aes_key_len != ctx->key_size_bytes) {
     printf("not enuph data in the key");
@@ -79,26 +86,45 @@ bool aes_expand_key(struct RsaEnryptionCtx *ctx) {
 
   memcpy(expanded_keys, key, aes_key_len);
 
+  uint8_t num_row = ctx->row_size;
+
   printf("aes key len %d expand key up to %d \n", aes_key_len, expand_key_len);
 
-  uint8_t num_row = (uint8_t)((float)aes_key_len / 4.0);
-
   for (int i = num_row; i <= expand_key_len; i++) {
-    uint16_t round_num = ((int)floor(i / 4) - 1);
+    uint16_t round_num = (((int)floor(i / 4)) - 1);
 
     if ((i % num_row) == 0) {
       expanded_keys[i] = expanded_keys[i - num_row] ^
                          g_function(expanded_keys[i - 1], round_num % 10);
       continue;
     }
-
     expanded_keys[i] = expanded_keys[i - num_row] ^ expanded_keys[i - 1];
+  }
+
+  for (int i = 0; i <= ctx->no_rounds; i++) { // one extran key
+    gchar *round_key = malloc(aes_key_len);
+    memcpy(round_key, &(expanded_keys[i * 4]), aes_key_len);
+    transpose_matrix(round_key);
+
+    printf("\nround %d key ", i);
+    print_rsa_matrix(round_key, 4);
+    ctx->roundkeys[i] = round_key;
   }
 
   print_hex(expanded_keys, expand_key_len);
   return true;
 }
 
+void transpose_matrix(gchar (*round_key)[4]) {
+  gchar temp;
+  for (int i = 0; i < 4; i++) {
+    for (int j = i + 1; j < 4; j++) {
+      temp = round_key[i][j];
+      round_key[i][j] = round_key[j][i];
+      round_key[j][i] = temp;
+    }
+  }
+}
 uint32_t g_func_sub_byte(uint32_t word) {
   uint8_t first_byte;
   uint32_t mask = 0xFFFFFFFF;
@@ -116,7 +142,6 @@ uint32_t g_func_sub_byte(uint32_t word) {
     // some crazy bit wise shit that I will
     // not remember
   }
-
   return word;
 }
 
@@ -135,9 +160,127 @@ uint32_t g_function(uint32_t word, uint16_t round_num) {
   return word ^ round_constants[round_num];
 }
 
+void sub_bytes(uint8_t (*block)[4]) {
+  printf("before sub byte\n");
+  print_rsa_matrix(block, 4);
+
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+
+      uint16_t byte = block[i][j];
+      uint8_t upper4bit = (byte & 0xF0) >> 4;
+      uint8_t lower4bit = (byte & 0x0F);
+
+      block[i][j] = s_box[upper4bit][lower4bit];
+    }
+  }
+  printf("after sub byte\n");
+  print_rsa_matrix(block, 4);
+}
+
+uint8_t gf_mult(uint8_t a, uint8_t b) {
+  uint8_t p = 0;
+  uint8_t hi_bit_set;
+  for (int i = 0; i < 8; i++) {
+    if (b & 1) {
+      p ^= a;
+    }
+    hi_bit_set = a & 0x80;
+    a <<= 1;
+    if (hi_bit_set) {
+      a ^= 0x1b; // modulo by irreducible polynomial 0x11b
+    }
+    b >>= 1;
+  }
+  return p;
+}
+void shift_rows(uint8_t *block) {
+
+  printf("before shift row\n");
+  print_rsa_matrix(block, 4);
+  for (int i = 1; i < 4; i++) {
+    uint32_t block32 = (*(uint32_t(*)[4])block)[i];
+
+    uint32_t right_shifted = (block32) << (32 - (i * 8));
+    uint32_t left_shifted = (block32) >> ((i * 8));
+
+    (*(uint32_t(*)[4])block)[i] = right_shifted | left_shifted;
+  }
+
+  print_rsa_matrix(block, 4);
+
+  printf("after shift row\n");
+}
+void mix_columns(uint8_t (*matrix)[4]) {
+  printf("befroe mix columns\n");
+  uint8_t matrix_sum[4][4] = {0};
+
+  print_rsa_matrix(matrix, 4);
+
+  print_rsa_matrix(aes_galois_fild, 4);
+
+  for (int k = 0; k < 4; k++) {
+    for (int i = 0; i < 4; i++) {
+      for (int j = 0; j < 4; j++) {
+        uint8_t mul = gf_mult(aes_galois_fild[k][j], matrix[j][i]);
+        matrix_sum[k][i] = matrix_sum[k][i] ^ mul;
+        // printf(" %d %d  %d  %d    \[ %d \] \[ %d \] = %x   \[ %d \] "
+        //        "\[ %x \] = %x  sum = %x   %d %d\n",
+        //        k, j, j, i, k, j, aes_galois_fild[k][j], j, i, matrix[j][i],
+        //        matrix_sum[k][i], k, i);
+      }
+    }
+  }
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      matrix[i][j] = matrix_sum[i][j];
+    }
+  }
+
+  printf("after mix columns\n");
+  print_rsa_matrix(matrix, 4);
+}
+void add_round_key(uint8_t (*roundkey)[4], uint8_t (*block)[4]) {
+
+  printf("add round key before: \n");
+
+  printf("round key:\n");
+  print_rsa_matrix(roundkey, 4);
+
+  printf("block :\n");
+  print_rsa_matrix(block, 4);
+
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      block[i][j] = block[i][j] ^ roundkey[i][j];
+    }
+  }
+
+  printf("after round key :\n");
+  print_rsa_matrix(block, 4);
+}
+
+void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block) {
+
+  printf("string encryption prooces\n");
+  print_rsa_matrix(block, 4);
+  add_round_key(ctx->roundkeys[0], block);
+
+  for (int i = 1; i <= ctx->no_rounds; i++) {
+    sub_bytes(block);
+    shift_rows(block);
+
+    if (ctx->no_rounds != i)
+      mix_columns(block);
+
+    add_round_key(ctx->roundkeys[i], block);
+  }
+}
+
 bool init_aes(struct RTCDtlsTransport *transport, uint8_t key_size,
               BIGNUM *init_aes_key, BIGNUM *IV) {
-  struct RsaEnryptionCtx *rsa_ctx = malloc(sizeof(struct RsaEnryptionCtx));
+
+  struct AesEnryptionCtx *rsa_ctx = malloc(sizeof(struct AesEnryptionCtx));
   rsa_ctx->key_size_bytes = key_size;
   if (rsa_ctx->key_size_bytes == 16) {
     rsa_ctx->no_rounds = 10;
@@ -145,6 +288,7 @@ bool init_aes(struct RTCDtlsTransport *transport, uint8_t key_size,
     return false;
   }
   rsa_ctx->initial_key_bn = init_aes_key;
+  rsa_ctx->row_size = (uint8_t)((float)rsa_ctx->key_size_bytes / 4.0);
 
   aes_expand_key(rsa_ctx);
 

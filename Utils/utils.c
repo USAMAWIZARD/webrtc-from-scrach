@@ -90,12 +90,13 @@ guchar *hexstr_to_char(const char *hexstr) {
   return chrs;
 }
 void print_rsa_matrix(uint8_t *ptr, uint8_t numrow) {
+  printf("\n\n");
 
   uint8_t(*matrix)[numrow] = (uint8_t(*)[numrow])ptr;
 
   for (int i = 0; i < numrow; i++) {
     for (int j = 0; j < numrow; j++) {
-      printf(" %d ", matrix[i][j]);
+      printf(" %x ", matrix[i][j]);
     }
     printf("\n");
   }

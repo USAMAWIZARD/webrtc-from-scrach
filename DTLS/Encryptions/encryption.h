@@ -13,14 +13,14 @@
 #define _ENRYPTIONH_
 
 union symmetric_encrypt {
-  struct RsaEnryptionCtx *rsa_ctx;
+  struct AesEnryptionCtx *rsa_ctx;
 };
 
 // 128 10
 // 256 12
 // 256 14
 
-struct RsaEnryptionCtx {
+struct AesEnryptionCtx {
   BIGNUM *initial_key_bn;
   uint8_t row_size;
   uint8_t initial_key[7][7];
@@ -28,9 +28,9 @@ struct RsaEnryptionCtx {
   uint8_t key_size_bytes;
   uint8_t no_rounds;
 
-  uint8_t input_text[8][8];
+  uint8_t input_text[4][4];
   uint8_t IV[8][8];
-  uint8_t roundkeys[15][8][8];
+  gchar *roundkeys[14];
 };
 #define MASTER_SECRET_LEN 48.0
 
@@ -56,5 +56,14 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, gchar *key_block);
 bool init_aes(struct RTCDtlsTransport *transport, uint8_t key_size,
               BIGNUM *init_aes_key, BIGNUM *IV);
 
-bool aes_expand_key(struct RsaEnryptionCtx *ctx);
+bool aes_expand_key(struct AesEnryptionCtx *ctx);
+
+void sub_bytes(uint8_t (*block)[4]);
+
+void shift_rows(uint8_t *block);
+
+void mix_columns(uint8_t (*matrix)[4]);
+
+void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block);
+
 #endif // !_ENRYPTIONH_

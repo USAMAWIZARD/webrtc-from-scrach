@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-
 guchar *get_padded_message(guchar *premaster_secret, uint32_t key_size) {
   guchar *padded_premaster_secret = malloc(key_size + 1);
   guchar *ptr = padded_premaster_secret;
