@@ -224,7 +224,6 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
   store_concated_handshake_msgs(dtls_transport, handshake, dtls_payload,
                                 dtls_payload_len, false);
 
-  printf("test change cipher %d \n", packet_len);
   struct CandidataPair *pair = dtls_transport->pair;
   int bytes = sendto(pair->p0->sock_desc, dtls_packet, packet_len, 0,
                      (struct sockaddr *)pair->p1->src_socket,
@@ -329,15 +328,19 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
   struct DtlsParsedPacket *dtls_packet = netowrk_packet->payload.dtls_parsed;
 
   while (dtls_packet != NULL) {
+
     store_concated_handshake_msgs(
         peer->dtls_transport, dtls_packet->handshake_header,
         dtls_packet->handshake_payload,
         dtls_packet->handshake_header->fragment_length,
         dtls_packet->isfragmented);
 
-    uint32_t total_fragment_len = dtls_packet->handshake_header->length;
-    uint32_t fragment_length = dtls_packet->handshake_header->fragment_length;
-    uint32_t fragment_offset = dtls_packet->handshake_header->fragment_offset;
+    uint32_t total_fragment_len =
+        ntohl((uint32_t)dtls_packet->handshake_header->length) >> 8;
+    uint32_t fragment_length =
+        ntohl((uint32_t)dtls_packet->handshake_header->fragment_length) >> 8;
+    uint32_t fragment_offset =
+        ntohl((uint32_t)dtls_packet->handshake_header->fragment_offset) >> 8;
     guchar *handshake_payload = dtls_packet->handshake_payload;
 
     gchar *handshake_type_str =
@@ -512,7 +515,7 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       printf("server hello done \n");
 
       send_certificate(peer->dtls_transport);
-      do_certificate_verify(peer->dtls_transport);
+      // do_certificate_verify(peer->dtls_transport);
       do_client_key_exchange(peer->dtls_transport);
       do_change_cipher_spec(peer->dtls_transport);
       do_client_finished(peer->dtls_transport);
@@ -613,7 +616,6 @@ get_client_certificate(guchar **certificate,
   guchar *my_rsa_public_cert_bin;
   uint32_t cert_509_len =
       hexstr_to_char_2(&my_rsa_public_cert_bin, my_rsa_public_cert);
-  printf("%d\n", cert_509_len);
 
   uint32_t certificate_len = cert_509_len + sizeof(struct Certificate);
   struct Certificate *client_certificate = malloc(certificate_len);
@@ -621,7 +623,7 @@ get_client_certificate(guchar **certificate,
   memcpy(client_certificate->certificate, my_rsa_public_cert_bin, cert_509_len);
 
   uint32_t total_certificates_len = certificate_len;
-  guchar *all_certificates = malloc(total_certificates_len);
+  guchar *all_certificates = malloc(total_certificates_len + 3);
 
   uint32_t n_total_certificates_len = htonl(total_certificates_len) >> 8;
   client_certificate->certificate_len = htonl(cert_509_len) >> 8;
@@ -697,15 +699,16 @@ void store_concated_handshake_msgs(struct RTCDtlsTransport *transport,
                                    bool isfragmented) {
   struct ALLDtlsMessages *handshake_message =
       malloc(sizeof(struct ALLDtlsMessages));
-
-  if (!transport->all_previous_handshake_msgs) {
-    transport->all_previous_handshake_msgs = handshake_message;
-  }
+  handshake_message->next_message = NULL;
 
   handshake_message->handshake_header = handshake_header;
   handshake_message->payload = payload;
   handshake_message->payload_len = payload_len;
-  handshake_message->next_message = NULL;
+
+  if (transport->all_previous_handshake_msgs == NULL) {
+    transport->all_previous_handshake_msgs = handshake_message;
+    return;
+  }
 
   struct ALLDtlsMessages *last_message = transport->all_previous_handshake_msgs;
   while (last_message->next_message != NULL)

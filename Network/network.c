@@ -232,18 +232,16 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
       dtls_packet->handshake_header = handshake_header;
       dtls_packet->handshake_type = handshake_header->type;
 
-      handshake_header->fragment_length =
+      uint32_t fragment_len =
           ntohl((uint32_t)handshake_header->fragment_length) >> 8;
-      handshake_header->length = ntohl((uint32_t)handshake_header->length) >> 8;
-      handshake_header->fragment_offset =
+      uint32_t length = ntohl((uint32_t)handshake_header->length) >> 8;
+      uint32_t fragment_offset =
           ntohl((uint32_t)handshake_header->fragment_offset) >> 8;
-      handshake_header->message_seq = ntohs(handshake_header->message_seq);
 
-      if (handshake_header->fragment_length != handshake_header->length) {
+      if (fragment_len != length) {
         dtls_packet->isfragmented = true;
-        uint16_t total_recvied_len = handshake_header->fragment_offset +
-                                     handshake_header->fragment_length;
-        if (total_recvied_len == handshake_header->length)
+        uint16_t total_recvied_len = fragment_offset + fragment_len;
+        if (total_recvied_len == length)
           dtls_packet->islastfragment = true;
         else
           dtls_packet->islastfragment = false;
@@ -254,21 +252,18 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
 
       packet = packet + handshake_header_size;
 
-      if (remaining_bytes != 0 &&
-          remaining_bytes >= handshake_header->fragment_length) {
+      if (remaining_bytes != 0 && remaining_bytes >= fragment_len) {
 
-        if (handshake_header->length < handshake_header->fragment_offset +
-                                           handshake_header->fragment_length) {
+        if (length < fragment_offset + fragment_len) {
           return NULL;
         }
 
-        dtls_packet->handshake_payload = malloc(handshake_header->length);
+        dtls_packet->handshake_payload = malloc(length);
 
-        memcpy(dtls_packet->handshake_payload, packet,
-               handshake_header->fragment_length);
+        memcpy(dtls_packet->handshake_payload, packet, fragment_len);
 
-        packet = packet + handshake_header->fragment_length;
-        remaining_bytes = remaining_bytes - handshake_header->fragment_length;
+        packet = packet + fragment_len;
+        remaining_bytes = remaining_bytes - fragment_len;
       }
 
       if (remaining_bytes >= dtls_header_size) {
