@@ -339,4 +339,3 @@ char *get_stun_attributes(struct RTCIecCandidates *local_candidate,
   // strcpy(username.value,"usama:usam1");
   return NULL;
 }
-

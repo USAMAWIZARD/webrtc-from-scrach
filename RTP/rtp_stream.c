@@ -97,7 +97,7 @@ bool start_rtp_stream(struct RtpStream *rtpStream) {
   return true;
 }
 
-void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
+  void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
                      int payload_size) {
   int socket_len = rtpStream->socket_len;
   rtpStream->rtp_packet->seq_no = ntohs(rtpStream->rtp_packet->seq_no);

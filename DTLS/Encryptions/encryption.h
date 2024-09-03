@@ -12,10 +12,6 @@
 #ifndef _ENRYPTIONH_
 #define _ENRYPTIONH_
 
-union symmetric_encrypt {
-  struct AesEnryptionCtx *rsa_ctx;
-};
-
 // 128 10
 // 256 12
 // 256 14

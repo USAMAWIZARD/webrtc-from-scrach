@@ -262,11 +262,7 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
           return NULL;
         }
 
-        dtls_packet->handshake_payload =
-            malloc(handshake_header->fragment_length);
-
-        if (dtls_packet->isfragmented)
-          dtls_packet->handshake_payload = malloc(handshake_header->length);
+        dtls_packet->handshake_payload = malloc(handshake_header->length);
 
         memcpy(dtls_packet->handshake_payload, packet,
                handshake_header->fragment_length);
@@ -326,8 +322,6 @@ int get_candidates_fd_array(struct RTCPeerConnection *peer,
   // printf("testong\n");
   return i - fd_array;
 }
-
-struct Stun *parse_stun_header(struct Stun *stun_header) {}
 
 uint32_t hton24(uint32_t host24) {
   host24 &= 0xFFFFFF;

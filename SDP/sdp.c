@@ -72,42 +72,40 @@ char *generate_unmached_desc(struct RTCRtpTransceivers *transceiver) {
 }
 
 JsonObject *get_test_ofer() {
-  char *sdp =
-      "v=0\n"
-      "o=- 4395291772417888753 2 IN IP4 127.0.0.1\n"
-      "s=-\n"
-      "t=0 0\n"
-      "a=group:BUNDLE 0\n"
-      "a=msid-semantic: WMS\n"
+  char *sdp = "v=0\n"
+              "o=- 4395291772417888753 2 IN IP4 127.0.0.1\n"
+              "s=-\n"
+              "t=0 0\n"
+              "a=group:BUNDLE 0\n"
+              "a=msid-semantic: WMS\n"
 
-      "m=video 9 UDP/TLS/RTP/SAVPF 102 103\n"
-      "c=IN IP4 0.0.0.0\n"
-      "a=rtcp:9 IN IP4 0.0.0.0\n"
+              "m=video 9 UDP/TLS/RTP/SAVPF 102 103\n"
+              "c=IN IP4 0.0.0.0\n"
+              "a=rtcp:9 IN IP4 0.0.0.0\n"
 
-      "a=ice-ufrag:H0Tz\n"
-      "a=ice-pwd:HXeKrqNxtoH7MLYV/gQXytWJ\n" // this is used
-      "a=ice-options:trickle\n"
+              "a=ice-ufrag:H0Tz\n"
+              "a=ice-pwd:HXeKrqNxtoH7MLYV/gQXytWJ\n" // this is used
+              "a=ice-options:trickle\n"
 
-      "a=fingerprint:sha-256 "
-      "3C:4A:AA:DA:3A:F5:7F:B1:60:B2:1A:BB:59:20:22:DB:FC:44:FB:71:BB:88:"
-      "6D:E5:"
-      "BB:2E:C6:7F:6A:9E:0B:83\n"
-      "a=setup:active\n"
+              "a=fingerprint:sha-256 "
+              "83:FA:64:DE:BE:89:4A:0F:D6:28:74:A0:BA:AD:2A:33:87:62:FB:84:39:"
+              "B0:DE:4C:AE:68:AA:F9:79:92:40:FC\n"
+              "a=setup:active\n"
 
-      "a=mid:0\n"
-      "a=sendrecv\n"
-      "a=msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n"
-      "a=rtcp-mux\n"
-      "a=rtcp-rsize\n"
+              "a=mid:0\n"
+              "a=sendrecv\n"
+              "a=msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n"
+              "a=rtcp-mux\n"
+              "a=rtcp-rsize\n"
 
-      "a=rtpmap:102 H264/90000\n"
-      "a=fmtp:102 "
-      "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id="
-      "42001f\n"
-      "a=rtpmap:103 rtx/90000\n"
-      "a=fmtp:103 apt=102\n"
-      "a=ssrc:1044859037 cname:Dp9Bc6LU+k7YLLrs\n"
-      "a=ssrc:1044859037 msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n";
+              "a=rtpmap:102 H264/90000\n"
+              "a=fmtp:102 "
+              "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id="
+              "42001f\n"
+              "a=rtpmap:103 rtx/90000\n"
+              "a=fmtp:103 apt=102\n"
+              "a=ssrc:1044859037 cname:Dp9Bc6LU+k7YLLrs\n"
+              "a=ssrc:1044859037 msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n";
 
   JsonObject *sdp_object = json_object_new();
 

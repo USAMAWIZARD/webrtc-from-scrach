@@ -55,6 +55,10 @@ enum HandshakeType {
   handshake_type_finished = 255
 };
 
+union symmetric_encrypt {
+  struct AesEnryptionCtx *rsa_ctx;
+};
+
 struct RTCDtlsTransport {
   enum DTLS_MODE mode;
   char *fingerprint;
@@ -75,6 +79,7 @@ struct RTCDtlsTransport {
   X509 *client_certificate;
   struct encryption_keys *encryption_keys;
   union symmetric_encrypt *symitric_encrypt_ctx;
+  struct ALLDtlsMessages *all_previous_handshake_msgs;
   EVP_PKEY *pub_key;
 };
 
@@ -110,7 +115,7 @@ struct __attribute__((packed)) DtlsServerHello {
 };
 struct __attribute__((packed)) Certificate {
   uint32_t certificate_len : 24;
-  guchar *certificate;
+  guchar certificate[];
 };
 
 struct __attribute__((packed)) CertificateRequest {
@@ -119,6 +124,12 @@ struct __attribute__((packed)) CertificateRequest {
   uint16_t signature_hash_algo_len;
   uint16_t *signature_hash_algo;
   uint16_t distiguished_name_len;
+};
+
+struct __attribute__((packed)) CertificateVerify {
+  uint16_t signature_algorithms;
+  uint16_t signature_len;
+  guchar signature[];
 };
 
 struct __attribute__((packed)) HelloVerifyRequest {
@@ -178,6 +189,14 @@ struct encryption_keys {
   BIGNUM *server_write_IV;
 };
 
+struct ALLDtlsMessages {
+  bool isfragmented;
+  struct ALLDtlsMessages *next_message;
+  struct HandshakeHeader *handshake_header;
+  uint32_t payload_len;
+  guchar *payload;
+};
+
 struct RTCDtlsTransport *create_dtls_transport();
 void start_dtls_negosiation(struct RTCPeerConnection *peer,
                             struct CandidataPair *pair);
@@ -209,10 +228,15 @@ void handle_certificate_request(struct RTCDtlsTransport *transport,
 struct DtlsServerHello *parse_server_hello(guchar *handshake_payload,
                                            uint32_t length);
 
-struct Certificate *
-get_client_certificate(struct RTCDtlsTransport *transport,
-                       struct CertificateRequest *certificate_request);
+uint32_t get_client_certificate(guchar **certificate,
+                                struct CertificateRequest *certificate_request);
 
 bool do_client_key_exchange(struct RTCDtlsTransport *transport);
 bool do_change_cipher_spec(struct RTCDtlsTransport *transport);
+bool do_client_finished(struct RTCDtlsTransport *transport);
+bool send_certificate(struct RTCDtlsTransport *transport);
+bool do_certificate_verify(struct RTCDtlsTransport *transport);
+void store_concated_handshake_msgs(struct RTCDtlsTransport *transport,
+                                   struct HandshakeHeader *handshake_header,
+                                   guchar *payload, uint32_t payload_len,bool isfragmented);
 #endif

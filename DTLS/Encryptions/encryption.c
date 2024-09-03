@@ -11,7 +11,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-
 gchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
            GChecksumType checksum_type, uint16_t num_bytes) {
 
@@ -95,22 +94,29 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, gchar *key_block) {
                              &hash_size)) {
     return false;
   }
+
+  encryption_keys->client_write_mac_key = BN_new();
   BN_bin2bn(bin_key_block, hash_size, encryption_keys->client_write_mac_key);
   bin_key_block += hash_size;
 
+  encryption_keys->server_write_mac_key = BN_new();
   BN_bin2bn(bin_key_block, hash_size, encryption_keys->server_write_mac_key);
   bin_key_block += hash_size;
 
+  encryption_keys->client_write_key = BN_new();
   BN_bin2bn(bin_key_block, key_size, encryption_keys->client_write_key);
   bin_key_block += key_size;
 
+  encryption_keys->server_wirte_key = BN_new();
   BN_bin2bn(bin_key_block, key_size, encryption_keys->server_wirte_key);
   bin_key_block += key_size;
 
+  encryption_keys->client_write_IV = BN_new();
   BN_bin2bn(bin_key_block, iv_size, encryption_keys->client_write_IV);
   bin_key_block += iv_size;
 
-  BN_bin2bn(bin_key_block, iv_size, encryption_keys->server_wirte_key);
+  encryption_keys->server_write_IV = BN_new();
+  BN_bin2bn(bin_key_block, iv_size, encryption_keys->server_write_IV);
 
   switch (selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
@@ -142,12 +148,12 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
   return false;
 }
 
-
 bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
   BIGNUM *master_secret = transport->encryption_keys->master_secret;
 
   uint16_t total_itration_required =
       ceil(128 / g_checksum_type_get_length(G_CHECKSUM_SHA256));
+  printf("\n% d\n", total_itration_required);
 
   gchar *key_block =
       PRF(master_secret, (guchar *)"key expanstion", transport->rand_sum,

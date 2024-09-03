@@ -66,7 +66,7 @@ void print_hex(const unsigned char *data, size_t length) {
   printf("\n");
 }
 
-uint32_t hexstr_to_char_2(guchar **p_str, guchar *str) {
+uint32_t hexstr_to_char_2(guchar **p_str, gchar *str) {
   BIGNUM *bignum = BN_new();
   BN_hex2bn(&bignum, str);
   uint32_t byte_required = BN_num_bytes(bignum);

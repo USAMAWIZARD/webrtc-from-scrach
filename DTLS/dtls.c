@@ -1,4 +1,3 @@
-
 #include "dtls.h"
 #include "../Network/network.h"
 #include "../STUN/stun.h"
@@ -9,7 +8,6 @@
 #include "json-glib/json-glib.h"
 #include <glib.h>
 #include <malloc.h>
-#include <math.h>
 #include <netinet/in.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
@@ -27,10 +25,62 @@
 #include <time.h>
 
 gchar *my_rsa_public_cert =
-    "MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgGpMr0YKNVMgfHyXHheUGlsAdEQ7\
-P6Fd75nVsdxelyVNokubJ9NiSAtG03x35xiGo6zASpi8vzjslArGczuwsdMAescr\
-tREGoJxphqnoO1eaPUh2Nr7OU06X+SeB3Ooem5JTJO7F8jg9TohDsvN+RnSHRE4P\
-FDZfrv9gRGK9qz9lAgMBAAE=";
+    "308202f0308201d8a00302010202060191b72d1cc4300d06092a864886f70d01010b050030"
+    "39310d300b06035504030c0474657374310b3009060355040613025553311b301906092a86"
+    "4886f70d010901160c7465737440746573742e696f301e170d323430393033303931373532"
+    "5a170d3235303930333039313735325a3039310d300b06035504030c0474657374310b3009"
+    "060355040613025553311b301906092a864886f70d010901160c7465737440746573742e69"
+    "6f30820122300d06092a864886f70d01010105000382010f003082010a02820101009da3b9"
+    "42f90af45d38462fade4304c738e6503aee887b41d42c203186fb1eb269b0c9b779cd90744"
+    "96cb075659cd9bd7acc208438a97717821625fffb7f761266a7589d049398e4dba6eca6969"
+    "2055f57e02871ad99f43bcfbb2e58ca6a14b5a53e1ebd1601ddea4200084a8d01494dad18f"
+    "90cb01aa00932eeb93adc345d1742586a54755217c9bebee79c9ecfe6a3a14d2a0abb7cc1d"
+    "e87341d8cdb451e8a94e6bba08d0e70959f2b8e3b32dce1f951b9df1acf0183240c2452ef6"
+    "c80a4cd988f11d3603b4282513b89a72fda79c8a09aaecd6a8f79851f50ace0a33f67172b1"
+    "d8e9beb2ec71b40a013894d0edef5fad8fb9185ea4ed636f35ecfe7c25906d020301000130"
+    "0d06092a864886f70d01010b0500038201010031885530f32f767e3b04dda840183214c77c"
+    "76a73568145d7d7a3a83ff5d95aaff6ddf0ba2957d2adc8b9a9a78099b4a7c66d9fc51656c"
+    "0c2b16e4e2abbe7320a86d175012d6a4e36109615b4da6f48f4245b5dfdf1eff886aa17ca4"
+    "7f522a3efa8a9dbc12a8a5006f51ef5c10c5d2e0ba9568452638a6e1b8c8125f7578def1b7"
+    "7a6932af456e01d5e60030a60a00b60c386e942701b3fe8c56e8a84a22c28e1932d19610ea"
+    "03c8c01ec3beb5999a31a33e70bc63cc5046dfce79b4c4bd46fb9878bcbcee3bd4703fda0e"
+    "2119c6459b8998e86d241003538aab47224dec83da02ef9a758a2aca197cba009aba784ee7"
+    "d2a25457c15107917ee8d97cb56a7660";
+
+gchar *my_rsa_private_key =
+    "308204bc020100300d06092a864886f70d0101010500048204a6308204a202010002820101"
+    "009da3b942f90af45d38462fade4304c738e6503aee887b41d42c203186fb1eb269b0c9b77"
+    "9cd9074496cb075659cd9bd7acc208438a97717821625fffb7f761266a7589d049398e4dba"
+    "6eca69692055f57e02871ad99f43bcfbb2e58ca6a14b5a53e1ebd1601ddea4200084a8d014"
+    "94dad18f90cb01aa00932eeb93adc345d1742586a54755217c9bebee79c9ecfe6a3a14d2a0"
+    "abb7cc1de87341d8cdb451e8a94e6bba08d0e70959f2b8e3b32dce1f951b9df1acf0183240"
+    "c2452ef6c80a4cd988f11d3603b4282513b89a72fda79c8a09aaecd6a8f79851f50ace0a33"
+    "f67172b1d8e9beb2ec71b40a013894d0edef5fad8fb9185ea4ed636f35ecfe7c25906d0203"
+    "010001028201000873b6a3567555bc73ca763efabcf389bf3e3f9aceabe1512fa5a058873b"
+    "4107925e4982f9c811cc307b95454b7900873ea383f6e9c4e1ed6b78cf50877d68da3af0af"
+    "616eb3a5236f6b5b9ded92dc190157185b025a62dd8c99e9c0874f499a2a64dd69c89f56b3"
+    "1d10cf616510081a780c47054e185e81db0d001f866df00e1671088b77b8fe39b5b4a901de"
+    "d5d4c89aae3fd3c2aabd2226068c55620fac98b7dcc83332be416c5f070fb56a63461aeb8a"
+    "d1637442d2b0bdecd16048d04396052a4841177182312642e02f6198a2e236cbc884fa54f1"
+    "8d9363c422af5cfb32c21f702dd236b471e48cb97f571dc8e160d92e901228022afcf9e6b0"
+    "50d35dff02818100cfe297e52302d58437c14a867626396401970149c3af836847150dde1f"
+    "ceb7c94fc87e5bea6ed9db4aff4518311853b205205d7efc9af71fe33ddfec3c12c773e079"
+    "e45c68f3f8472fbb67f86c6b687240985526ddd9147a8403a6ebf23078e08de3e24b55f033"
+    "e1092aaa509735f10c00e80eee969c5255887da57d5abf452302818100c220072dbebb8992"
+    "52da10e17c6100ed3bc356ac37a911f775fca874ca7514fdd4ed9d0907896d889a7b87ab81"
+    "8c198311056f19ced8e5eb7c03ae34dfaf8f554ee17668d2a5be307fd2e8a87522dd14212d"
+    "be927aec7f1173492b6ead3bfdcfa49de281a68e033ac9155a6cee51227cc8cbfd45b1715c"
+    "0c14de8d741ff4152f0281801cb8333fe6ac578f229cc38cfbf99fe81f081b97733f662a1b"
+    "d7dec8972059e7a7ec0cf8e9d452a8a71dc90fe48875d79c39b270feb8f1f727cfbe85c66e"
+    "d9bb3a81dc789fcf44b7a0f285149ef5dfc21906728d220d01754393b595d729b7295eb0e2"
+    "ec817ce3cded1445df48649d5e89298616941c188bd485773d7032087d0281804301451910"
+    "15b155954d79b82af35c9b861e55a35a0efc899aeb1bc63c3f8f8051e7b66570798a1a35a0"
+    "5fe2ddf35ab6f7c0156a26108dc3eb6965cf104a8bc1d9594f42bd3ac25c0132ee657f110a"
+    "98311f9600ff76f42134d6d3abff158ef506100d27cd328580dbf987ddc3a0b3b3b8a75883"
+    "9ecccf05c88a4cef013c81b70281801796d64f3cc9a8f42f02abd7193432fadcd856fc685d"
+    "ec12f89101b610ba8bbf9e49f220b73bcb9afdc57beead41dff2409a8a21cdef7b917eea53"
+    "12dbce6cdea4e1ac90a6e915a6011c64f33df1b59e39d944d10f4d88c29fc7e7b8a66836f5"
+    "2b075c42e80c1c74b2af94c79e3b28a2f98f5929a6fba389dd3c8fb4c90c6c53";
 
 uint16_t cipher_suite_list[CIPHER_SUITE_LEN] = {TLS_RSA_WITH_AES_128_CBC_SHA};
 
@@ -43,6 +93,9 @@ struct RTCDtlsTransport *create_dtls_transport() {
       calloc(1, sizeof(struct RTCDtlsTransport));
 
   dtls_transport->dtls_flights = json_object_new();
+  dtls_transport->encryption_keys = malloc(sizeof(struct encryption_keys));
+  dtls_transport->symitric_encrypt_ctx =
+      malloc(sizeof(union symmetric_encrypt));
 
   dtls_transport->state = DTLS_CONNECTION_STATE_NEW;
   dtls_transport->fingerprint =
@@ -86,11 +139,11 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer,
   struct dtls_ext *srtp_extention;
   uint8_t mki_len = 0;
 
-  // ext_len =
-  //     make_extentention(&srtp_extention, SRTP_EXT, srtp_supported_profiles,
-  //                       sizeof(srtp_supported_profiles), &mki_len, 1);
-  // add_dtls_extention(&dtls_client_hello, srtp_extention, ext_len);
-  // free(srtp_extention);
+  ext_len =
+      make_extentention(&srtp_extention, SRTP_EXT, srtp_supported_profiles,
+                        sizeof(srtp_supported_profiles), &mki_len, 1);
+  add_dtls_extention(&dtls_client_hello, srtp_extention, ext_len);
+  free(srtp_extention);
 
   struct dtls_ext *supported_signature_algorithms;
   ext_len = make_extentention(&supported_signature_algorithms, SIGN_ALGO_EXT,
@@ -100,16 +153,21 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer,
                      ext_len);
   free(supported_signature_algorithms);
 
-  // struct dtls_ext *other_extention;
-  // ext_len =
-  //     make_extentention(&other_extention, EXTEND_MASTER_SEC_EXT, 0, 0, 0, 0);
-  // add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
-  // free(other_extention);
+  struct dtls_ext *other_extention;
+  ext_len =
+      make_extentention(&other_extention, EXTEND_MASTER_SEC_EXT, 0, 0, 0, 0);
+  add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
+  free(other_extention);
   //
   // // session ticket extention
-  // ext_len = make_extentention(&other_extention, SESS_TICKET_EXT, 0, 0, 0, 0);
-  // add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
-  // free(other_extention);
+  ext_len = make_extentention(&other_extention, SESS_TICKET_EXT, 0, 0, 0, 0);
+  add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
+  free(other_extention);
+
+  int a = 0;
+  ext_len = make_extentention(&other_extention, 0xff01, 0, 0, &a, 1);
+  add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
+  free(other_extention);
 
   dtls_client_hello->extention_len = htons(dtls_client_hello->extention_len);
 
@@ -146,7 +204,8 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
 
   struct HandshakeHeader *handshake = NULL;
 
-  if (!(handshake_type == handshake_type_change_cipher_spec)) {
+  if (!(handshake_type == handshake_type_change_cipher_spec ||
+        handshake_type == handshake_type_finished)) {
 
     dtls_header->length =
         htons(ntohs(dtls_header->length) + sizeof(struct HandshakeHeader));
@@ -161,6 +220,9 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
   guchar *dtls_packet;
   int packet_len = make_dtls_packet(&dtls_packet, dtls_header, handshake,
                                     dtls_payload, dtls_payload_len);
+
+  store_concated_handshake_msgs(dtls_transport, handshake, dtls_payload,
+                                dtls_payload_len, false);
 
   printf("test change cipher %d \n", packet_len);
   struct CandidataPair *pair = dtls_transport->pair;
@@ -267,11 +329,17 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
   struct DtlsParsedPacket *dtls_packet = netowrk_packet->payload.dtls_parsed;
 
   while (dtls_packet != NULL) {
+    store_concated_handshake_msgs(
+        peer->dtls_transport, dtls_packet->handshake_header,
+        dtls_packet->handshake_payload,
+        dtls_packet->handshake_header->fragment_length,
+        dtls_packet->isfragmented);
 
     uint32_t total_fragment_len = dtls_packet->handshake_header->length;
     uint32_t fragment_length = dtls_packet->handshake_header->fragment_length;
     uint32_t fragment_offset = dtls_packet->handshake_header->fragment_offset;
     guchar *handshake_payload = dtls_packet->handshake_payload;
+
     gchar *handshake_type_str =
         g_strdup_printf("%d", dtls_packet->handshake_type);
 
@@ -356,9 +424,9 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
 
       uint32_t certificate_len = ntohl(*((uint32_t *)handshake_payload)) >> 8;
 
-      struct Certificate *certificate = malloc(certificate_len);
+      struct Certificate *certificate =
+          malloc(sizeof(struct Certificate) + certificate_len + 1000);
       certificate->certificate_len = certificate_len;
-      certificate->certificate = malloc(certificate_len);
 
       handshake_payload += 3;
 
@@ -423,6 +491,7 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
           //        j_supported_sign_algo);
           //
           if (i_sign_hash_algo == j_supported_sign_algo) {
+
             selected_sign_hash_algo = i_sign_hash_algo;
             printf("slected signature algo %x \n", i_sign_hash_algo);
             break;
@@ -442,8 +511,11 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
     case handshake_type_server_hello_done:
       printf("server hello done \n");
 
+      send_certificate(peer->dtls_transport);
+      do_certificate_verify(peer->dtls_transport);
       do_client_key_exchange(peer->dtls_transport);
       do_change_cipher_spec(peer->dtls_transport);
+      do_client_finished(peer->dtls_transport);
 
       // client_finshed();
       break;
@@ -464,8 +536,9 @@ void handle_server_hello(struct RTCDtlsTransport *transport,
 void handle_certificate(struct RTCDtlsTransport *transport,
                         struct Certificate *certificate) {
   X509 *cert;
-  cert =
-      d2i_X509(NULL, &(certificate->certificate), certificate->certificate_len);
+  printf("%d\n", certificate->certificate_len);
+  const guchar *ptr_certificate = certificate->certificate;
+  cert = d2i_X509(NULL, (&ptr_certificate), certificate->certificate_len);
 
   if (!cert) {
     printf("unable to parse certificate\n");
@@ -531,19 +604,44 @@ struct DtlsServerHello *parse_server_hello(guchar *handshake_payload,
   return server_hello;
 }
 
-struct Certificate *
-get_client_certificate(struct RTCDtlsTransport *transport,
+uint32_t
+get_client_certificate(guchar **certificate,
                        struct CertificateRequest *certificate_request) {
+  // todo
+  // check if we support these Certificae requete
+  //
+  guchar *my_rsa_public_cert_bin;
+  uint32_t cert_509_len =
+      hexstr_to_char_2(&my_rsa_public_cert_bin, my_rsa_public_cert);
+  printf("%d\n", cert_509_len);
 
-  struct Certificate *client_certificate = malloc(sizeof(struct Certificate));
+  uint32_t certificate_len = cert_509_len + sizeof(struct Certificate);
+  struct Certificate *client_certificate = malloc(certificate_len);
 
-  uint32_t certificate_len = strlen(my_rsa_public_cert);
-  client_certificate->certificate = malloc(certificate_len);
-  client_certificate->certificate_len = certificate_len;
+  memcpy(client_certificate->certificate, my_rsa_public_cert_bin, cert_509_len);
 
-  return client_certificate;
+  uint32_t total_certificates_len = certificate_len;
+  guchar *all_certificates = malloc(total_certificates_len);
+
+  uint32_t n_total_certificates_len = htonl(total_certificates_len) >> 8;
+  client_certificate->certificate_len = htonl(cert_509_len) >> 8;
+
+  memcpy(all_certificates, &n_total_certificates_len, 3);
+  memcpy(all_certificates + 3, client_certificate, certificate_len);
+
+  *certificate = all_certificates;
+
+  return total_certificates_len + 3;
 }
+bool send_certificate(struct RTCDtlsTransport *transport) {
+  guchar *certificate;
+  uint32_t certificate_len = get_client_certificate(&certificate, NULL);
 
+  send_dtls_packet(transport, handshake_type_certificate, certificate,
+                   certificate_len);
+
+  return true;
+}
 bool do_client_key_exchange(struct RTCDtlsTransport *transport) {
   uint16_t selected_cipher_suite = transport->selected_cipher_suite;
   // add better struct here
@@ -564,7 +662,9 @@ bool do_client_key_exchange(struct RTCDtlsTransport *transport) {
 
     BIGNUM *master_secret =
         generate_master_key(premaster_key, transport->rand_sum);
+
     transport->encryption_keys->master_secret = master_secret;
+
     init_symitric_encryption(transport);
 
     struct ClientKeyExchange *client_key_xchange =
@@ -591,4 +691,70 @@ bool do_change_cipher_spec(struct RTCDtlsTransport *transport) {
   return true;
 }
 
-bool do_client_finished(struct RTCDtlsTransport *transport) {}
+void store_concated_handshake_msgs(struct RTCDtlsTransport *transport,
+                                   struct HandshakeHeader *handshake_header,
+                                   guchar *payload, uint32_t payload_len,
+                                   bool isfragmented) {
+  struct ALLDtlsMessages *handshake_message =
+      malloc(sizeof(struct ALLDtlsMessages));
+
+  if (!transport->all_previous_handshake_msgs) {
+    transport->all_previous_handshake_msgs = handshake_message;
+  }
+
+  handshake_message->handshake_header = handshake_header;
+  handshake_message->payload = payload;
+  handshake_message->payload_len = payload_len;
+  handshake_message->next_message = NULL;
+
+  struct ALLDtlsMessages *last_message = transport->all_previous_handshake_msgs;
+  while (last_message->next_message != NULL)
+    last_message = last_message->next_message;
+
+  last_message->next_message = handshake_message;
+}
+
+bool do_certificate_verify(struct RTCDtlsTransport *transport) {
+  // RSA sha256
+
+  if (transport->selected_signatuire_hash_algo ==
+      supported_signature_algorithms[0]) {
+    uint16_t test = 1243;
+    uint16_t cert_verify_size = sizeof(struct CertificateVerify);
+    struct CertificateVerify *certificate_verify = malloc(cert_verify_size);
+
+    certificate_verify->signature_algorithms =
+        htons(transport->selected_signatuire_hash_algo);
+
+    certificate_verify->signature_len;
+    certificate_verify->signature;
+
+    guchar *private_key_bin;
+    uint32_t private_key_len =
+        hexstr_to_char_2(&private_key_bin, my_rsa_private_key);
+
+    // g_compute_hmac_for_data(G_CHECKSUM_SHA256, private_key_bin,
+    // private_key_len,
+    //                         transport->all_previous_handshake_msgs,
+    //                         transport->all_previos_messages_len);
+    //
+    send_dtls_packet(transport, handshake_type_certificate_verify, "fsafd", 1);
+    return true;
+  } else {
+    printf("signature algo not supported \n");
+  }
+
+  return false;
+}
+
+bool do_client_finished(struct RTCDtlsTransport *transport) {
+
+  gchar *verify_data =
+      PRF(transport->encryption_keys->master_secret, "client finished",
+          transport->rand_sum, G_CHECKSUM_SHA256, 1);
+  transport->epoch = htons(1);
+
+  send_dtls_packet(transport, handshake_type_finished, verify_data, 12);
+
+  return true;
+}
