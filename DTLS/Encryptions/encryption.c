@@ -32,8 +32,6 @@ gchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
   guint16 A_seed_concat_len = label_seed_len;
   memcpy(A_seed_concat, label_seed, label_seed_len);
 
-  printf("sum of random %s\n", BN_bn2hex(seed));
-
   gchar *ALL_hmac = calloc(1, 1);
   gchar *previous;
 

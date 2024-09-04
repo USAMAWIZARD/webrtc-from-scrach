@@ -238,5 +238,6 @@ bool send_certificate(struct RTCDtlsTransport *transport);
 bool do_certificate_verify(struct RTCDtlsTransport *transport);
 void store_concated_handshake_msgs(struct RTCDtlsTransport *transport,
                                    struct HandshakeHeader *handshake_header,
-                                   guchar *payload, uint32_t payload_len,bool isfragmented);
+                                   guchar *payload, uint32_t payload_len,
+                                   bool isfragmented);
 #endif

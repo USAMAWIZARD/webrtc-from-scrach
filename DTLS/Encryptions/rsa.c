@@ -134,5 +134,9 @@ BIGNUM *get_dtls_rand_hello_sum(struct RTCDtlsTransport *transport) {
   BIGNUM *r = BN_new();
   BN_add(r, r1, r2);
 
+  printf("client random %s\n", BN_bn2hex(r1));
+  printf("server random %s\n", BN_bn2hex(r2));
+  printf("sum random %s", BN_bn2hex(r));
+
   return r;
 }

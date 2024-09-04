@@ -147,21 +147,21 @@ uint32_t g_func_sub_byte(uint32_t word) {
 
 uint32_t g_function(uint32_t word, uint16_t round_num) {
   uint32_t first_byte = (word & 0x000000FF) << (3 * 8);
-  printf("\n word %x first bypte %x \n", word, first_byte);
+  g_debug("\n word %x first bypte %x \n", word, first_byte);
   word = word >> 8;
   word = (word & 0x00FFFFFF) | first_byte;
 
-  printf("rotated %x ", word);
+  g_debug("rotated %x ", word);
 
   word = g_func_sub_byte(word);
 
-  printf("subutityed %x %d ", word, round_num);
+  g_debug("subutityed %x %d ", word, round_num);
 
   return word ^ round_constants[round_num];
 }
 
 void sub_bytes(uint8_t (*block)[4]) {
-  printf("before sub byte\n");
+  g_debug("before sub byte\n");
   print_rsa_matrix(block, 4);
 
   for (int i = 0; i < 4; i++) {
@@ -174,7 +174,7 @@ void sub_bytes(uint8_t (*block)[4]) {
       block[i][j] = s_box[upper4bit][lower4bit];
     }
   }
-  printf("after sub byte\n");
+  g_debug("after sub byte\n");
   print_rsa_matrix(block, 4);
 }
 
@@ -261,7 +261,6 @@ void add_round_key(uint8_t (*roundkey)[4], uint8_t (*block)[4]) {
 }
 
 void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block) {
-
   printf("string encryption prooces\n");
   print_rsa_matrix(block, 4);
   add_round_key(ctx->roundkeys[0], block);

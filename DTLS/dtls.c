@@ -10,6 +10,7 @@
 #include <malloc.h>
 #include <netinet/in.h>
 #include <openssl/bio.h>
+#include <openssl/bn.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/types.h>
@@ -329,12 +330,6 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
 
   while (dtls_packet != NULL) {
 
-    store_concated_handshake_msgs(
-        peer->dtls_transport, dtls_packet->handshake_header,
-        dtls_packet->handshake_payload,
-        dtls_packet->handshake_header->fragment_length,
-        dtls_packet->isfragmented);
-
     uint32_t total_fragment_len =
         ntohl((uint32_t)dtls_packet->handshake_header->length) >> 8;
     uint32_t fragment_length =
@@ -348,6 +343,11 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
 
     bool was_last_pkt_fragmented = false;
     bool is_this_last_fragment = false;
+
+    store_concated_handshake_msgs(peer->dtls_transport,
+                                  dtls_packet->handshake_header,
+                                  dtls_packet->handshake_payload,
+                                  fragment_length, dtls_packet->isfragmented);
 
     if (dtls_packet->isfragmented) {
       printf("fragmented \n");
@@ -515,8 +515,8 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       printf("server hello done \n");
 
       send_certificate(peer->dtls_transport);
-      // do_certificate_verify(peer->dtls_transport);
       do_client_key_exchange(peer->dtls_transport);
+      do_certificate_verify(peer->dtls_transport);
       do_change_cipher_spec(peer->dtls_transport);
       do_client_finished(peer->dtls_transport);
 
@@ -664,6 +664,7 @@ bool do_client_key_exchange(struct RTCDtlsTransport *transport) {
 
     BIGNUM *master_secret =
         generate_master_key(premaster_key, transport->rand_sum);
+    printf("master %s\n ", BN_bn2hex(master_secret));
 
     transport->encryption_keys->master_secret = master_secret;
 
@@ -717,31 +718,87 @@ void store_concated_handshake_msgs(struct RTCDtlsTransport *transport,
   last_message->next_message = handshake_message;
 }
 
+const gchar *compute_all_message_hash(struct RTCDtlsTransport *transport,
+                                      bool for_finished_message,
+                                      GChecksumType checksum_hash_algo) {
+
+  if (!transport->selected_signatuire_hash_algo) {
+    printf("no signature algorityhms selected\n");
+    return 0;
+  }
+
+  struct ALLDtlsMessages *all_handshake_msgs =
+      transport->all_previous_handshake_msgs;
+
+  if (!all_handshake_msgs) {
+    printf("no handshaekk mesage \n");
+    exit(0);
+  }
+
+  guchar *my_rsa_private_key_bin;
+  uint32_t private_key_len =
+      hexstr_to_char_2(&my_rsa_private_key_bin, my_rsa_private_key);
+
+  GHmac *hmac =
+      g_hmac_new(checksum_hash_algo, my_rsa_private_key_bin, private_key_len);
+
+  while (all_handshake_msgs != NULL) {
+    if (all_handshake_msgs->handshake_header != NULL) {
+      if (for_finished_message && all_handshake_msgs->isfragmented) {
+        if (all_handshake_msgs->handshake_header->fragment_offset == 0) {
+
+          all_handshake_msgs->handshake_header->fragment_offset = 0;
+          all_handshake_msgs->handshake_header->fragment_length =
+              all_handshake_msgs->handshake_header->length;
+          goto update_handshake_header;
+        }
+      } else {
+      update_handshake_header:
+        g_hmac_update(hmac, (guchar *)all_handshake_msgs->handshake_header,
+                      sizeof(struct HandshakeHeader));
+      }
+    }
+
+    printf("payload len  %d\n", all_handshake_msgs->payload_len);
+
+    uint32_t payload_len = all_handshake_msgs->payload_len;
+
+    if (payload_len)
+      g_hmac_update(hmac, (guchar *)all_handshake_msgs->payload, payload_len);
+    all_handshake_msgs = all_handshake_msgs->next_message;
+  }
+
+  return g_hmac_get_string(hmac);
+}
+
 bool do_certificate_verify(struct RTCDtlsTransport *transport) {
   // RSA sha256
 
   if (transport->selected_signatuire_hash_algo ==
       supported_signature_algorithms[0]) {
-    uint16_t test = 1243;
-    uint16_t cert_verify_size = sizeof(struct CertificateVerify);
-    struct CertificateVerify *certificate_verify = malloc(cert_verify_size);
-
-    certificate_verify->signature_algorithms =
-        htons(transport->selected_signatuire_hash_algo);
-
-    certificate_verify->signature_len;
-    certificate_verify->signature;
 
     guchar *private_key_bin;
     uint32_t private_key_len =
         hexstr_to_char_2(&private_key_bin, my_rsa_private_key);
 
-    // g_compute_hmac_for_data(G_CHECKSUM_SHA256, private_key_bin,
-    // private_key_len,
-    //                         transport->all_previous_handshake_msgs,
-    //                         transport->all_previos_messages_len);
-    //
-    send_dtls_packet(transport, handshake_type_certificate_verify, "fsafd", 1);
+    gchar *all_msgs_hash =
+        (gchar *)compute_all_message_hash(transport, false, G_CHECKSUM_SHA256);
+    printf("%s", all_msgs_hash);
+    guchar *all_msgs_hash_bin;
+
+    uint32_t hash_len = hexstr_to_char_2(&all_msgs_hash_bin, all_msgs_hash);
+
+    uint16_t cert_verify_size = sizeof(struct CertificateVerify) + hash_len;
+    struct CertificateVerify *certificate_verify = malloc(cert_verify_size);
+
+    certificate_verify->signature_algorithms =
+        htons(transport->selected_signatuire_hash_algo);
+
+    certificate_verify->signature_len = htons(hash_len);
+    memcpy(certificate_verify->signature, all_msgs_hash_bin, hash_len);
+
+    send_dtls_packet(transport, handshake_type_certificate_verify,
+                     (guchar *)certificate_verify, cert_verify_size);
     return true;
   } else {
     printf("signature algo not supported \n");
@@ -752,10 +809,19 @@ bool do_certificate_verify(struct RTCDtlsTransport *transport) {
 
 bool do_client_finished(struct RTCDtlsTransport *transport) {
 
+  transport->epoch = htons(1);
+
+  const gchar *all_message_hash =
+      compute_all_message_hash(transport, true, G_CHECKSUM_SHA256);
+
+  BIGNUM *all_message_hash_bn = BN_new();
+  BN_hex2bn(&all_message_hash_bn, all_message_hash);
+
   gchar *verify_data =
       PRF(transport->encryption_keys->master_secret, "client finished",
-          transport->rand_sum, G_CHECKSUM_SHA256, 1);
-  transport->epoch = htons(1);
+          all_message_hash_bn, G_CHECKSUM_SHA256, 1);
+
+  //  encrypt_aes(transport->symitric_encrypt_ctx, verify_data);
 
   send_dtls_packet(transport, handshake_type_finished, verify_data, 12);
 
