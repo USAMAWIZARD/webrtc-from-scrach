@@ -239,6 +239,7 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
           ntohl((uint32_t)handshake_header->fragment_offset) >> 8;
 
       if (fragment_len != length) {
+        printf("fraggggggggggggggggggggggggg\n");
         dtls_packet->isfragmented = true;
         uint16_t total_recvied_len = fragment_offset + fragment_len;
         if (total_recvied_len == length)
@@ -246,6 +247,7 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
         else
           dtls_packet->islastfragment = false;
       } else {
+        printf("noooooooooooooooooooooooooooooooo\n");
         dtls_packet->isfragmented = false;
         dtls_packet->islastfragment = false;
       }

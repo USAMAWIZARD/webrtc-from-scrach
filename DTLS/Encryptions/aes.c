@@ -11,7 +11,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-void transpose_matrix(gchar (*round_key)[4]);
+void transpose_matrix(uint8_t (*round_key)[4]);
 uint8_t s_box[16][16] = {
     {0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
      0xfe, 0xd7, 0xab, 0x76},
@@ -115,7 +115,7 @@ bool aes_expand_key(struct AesEnryptionCtx *ctx) {
   return true;
 }
 
-void transpose_matrix(gchar (*round_key)[4]) {
+void transpose_matrix(uint8_t (*round_key)[4]) {
   gchar temp;
   for (int i = 0; i < 4; i++) {
     for (int j = i + 1; j < 4; j++) {
@@ -194,7 +194,7 @@ uint8_t gf_mult(uint8_t a, uint8_t b) {
   }
   return p;
 }
-void shift_rows(uint8_t *block) {
+void shift_rows(uint8_t (*block)[4]) {
 
   printf("before shift row\n");
   print_rsa_matrix(block, 4);
@@ -260,19 +260,29 @@ void add_round_key(uint8_t (*roundkey)[4], uint8_t (*block)[4]) {
   print_rsa_matrix(block, 4);
 }
 
-void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block) {
+void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4],
+                 uint32_t data_len) {
+
   printf("string encryption prooces\n");
-  print_rsa_matrix(block, 4);
-  add_round_key(ctx->roundkeys[0], block);
 
-  for (int i = 1; i <= ctx->no_rounds; i++) {
-    sub_bytes(block);
-    shift_rows(block);
+  uint32_t data_encrytion_itration = data_len / 16;
 
-    if (ctx->no_rounds != i)
-      mix_columns(block);
+  for (int j = 0; j < data_encrytion_itration; j++) {
+    block = block + (j * 4);
+    print_rsa_matrix(block, 4);
 
-    add_round_key(ctx->roundkeys[i], block);
+    transpose_matrix(block);
+    add_round_key(ctx->roundkeys[0], block);
+
+    for (int i = 1; i <= ctx->no_rounds; i++) {
+      sub_bytes(block);
+      shift_rows(block);
+
+      if (ctx->no_rounds != i)
+        mix_columns(block);
+
+      add_round_key(ctx->roundkeys[i], block);
+    }
   }
 }
 

@@ -51,8 +51,8 @@ enum HandshakeType {
   handshake_type_server_hello_done,
   handshake_type_certificate_verify,
   handshake_type_client_key_exchange,
-  handshake_type_change_cipher_spec = 20,
-  handshake_type_finished = 255
+  handshake_type_finished = 20,
+  handshake_type_change_cipher_spec = 233,
 };
 
 union symmetric_encrypt {
@@ -81,6 +81,8 @@ struct RTCDtlsTransport {
   union symmetric_encrypt *symitric_encrypt_ctx;
   struct ALLDtlsMessages *all_previous_handshake_msgs;
   EVP_PKEY *pub_key;
+  EVP_PKEY *my_private_key;
+  EVP_PKEY *my_public_key;
 };
 
 struct __attribute__((packed)) HandshakeHeader {
@@ -181,6 +183,7 @@ struct ClientKeyExchange {
 
 struct encryption_keys {
   BIGNUM *master_secret;
+  BIGNUM *my_private_key;
   BIGNUM *client_write_mac_key;
   BIGNUM *server_write_mac_key;
   BIGNUM *client_write_key;

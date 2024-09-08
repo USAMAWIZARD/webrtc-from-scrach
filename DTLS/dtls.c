@@ -6,11 +6,13 @@
 #include "./Encryptions/encryption.h"
 #include "glibconfig.h"
 #include "json-glib/json-glib.h"
+#include <bits/pthreadtypes.h>
 #include <glib.h>
 #include <malloc.h>
 #include <netinet/in.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
+#include <openssl/ec.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/types.h>
@@ -104,6 +106,34 @@ struct RTCDtlsTransport *create_dtls_transport() {
       "6D:E5:";
   dtls_transport->mode = DTLS_ACTIVE;
   dtls_transport->pair = NULL;
+
+  guchar *my_private_cert_bin;
+  uint16_t cert_len =
+      hexstr_to_char_2(&my_private_cert_bin, my_rsa_private_key);
+
+  guchar *my_public_key_bin;
+  uint16_t public_key_len =
+      hexstr_to_char_2(&my_public_key_bin, my_rsa_public_cert);
+
+  EVP_PKEY *private_key;
+  private_key =
+      d2i_PrivateKey(EVP_PKEY_RSA, NULL, &my_private_cert_bin, cert_len);
+  dtls_transport->my_private_key = private_key;
+
+  X509 *cert;
+  const guchar *public_certificate;
+  uint32_t certificate_len =
+      hexstr_to_char_2(&public_certificate, my_rsa_public_cert);
+  cert = d2i_X509(NULL, (&public_certificate), certificate_len);
+  EVP_PKEY *pub_key = X509_get_pubkey(cert);
+  dtls_transport->my_public_key = pub_key;
+
+  RSA *rsa = EVP_PKEY_get1_RSA(pub_key);
+  BIGNUM *my_public_exponent = RSA_get0_e(rsa);
+  BIGNUM *my_public_modulus = RSA_get0_n(rsa);
+  printf("my public exponent %s\n", BN_bn2hex(my_public_exponent));
+  printf("my public modulus %s\n", BN_bn2hex(my_public_modulus));
+
   strncpy(dtls_transport->my_random, g_uuid_string_random(), 32);
   dtls_transport->cookie = 1213;
 
@@ -552,6 +582,7 @@ void handle_certificate(struct RTCDtlsTransport *transport,
   transport->server_certificate = cert;
 
   EVP_PKEY *pub_key = X509_get_pubkey(cert);
+
   transport->pub_key = pub_key;
   transport->rand_sum = get_dtls_rand_hello_sum(transport);
 }
@@ -658,9 +689,8 @@ bool do_client_key_exchange(struct RTCDtlsTransport *transport) {
 
     guchar *encrypted_premaster_key;
 
-    uint16_t encrypted_key_len =
-        encrypt_rsa(&encrypted_premaster_key, transport->pub_key, premaster_key,
-                    transport->rand_sum);
+    uint16_t encrypted_key_len = encrypt_rsa(
+        &encrypted_premaster_key, transport->pub_key, premaster_key, 48, -1);
 
     BIGNUM *master_secret =
         generate_master_key(premaster_key, transport->rand_sum);
@@ -705,6 +735,7 @@ void store_concated_handshake_msgs(struct RTCDtlsTransport *transport,
   handshake_message->handshake_header = handshake_header;
   handshake_message->payload = payload;
   handshake_message->payload_len = payload_len;
+  handshake_message->isfragmented = isfragmented;
 
   if (transport->all_previous_handshake_msgs == NULL) {
     transport->all_previous_handshake_msgs = handshake_message;
@@ -722,6 +753,7 @@ const gchar *compute_all_message_hash(struct RTCDtlsTransport *transport,
                                       bool for_finished_message,
                                       GChecksumType checksum_hash_algo) {
 
+  printf("computing all message hash for verify certificate \n");
   if (!transport->selected_signatuire_hash_algo) {
     printf("no signature algorityhms selected\n");
     return 0;
@@ -735,40 +767,51 @@ const gchar *compute_all_message_hash(struct RTCDtlsTransport *transport,
     exit(0);
   }
 
-  guchar *my_rsa_private_key_bin;
-  uint32_t private_key_len =
-      hexstr_to_char_2(&my_rsa_private_key_bin, my_rsa_private_key);
-
-  GHmac *hmac =
-      g_hmac_new(checksum_hash_algo, my_rsa_private_key_bin, private_key_len);
+  GChecksum *checksum = g_checksum_new(checksum_hash_algo);
 
   while (all_handshake_msgs != NULL) {
-    if (all_handshake_msgs->handshake_header != NULL) {
-      if (for_finished_message && all_handshake_msgs->isfragmented) {
-        if (all_handshake_msgs->handshake_header->fragment_offset == 0) {
+    if (all_handshake_msgs->handshake_header == NULL)
+      goto next_handshake_message;
 
-          all_handshake_msgs->handshake_header->fragment_offset = 0;
-          all_handshake_msgs->handshake_header->fragment_length =
-              all_handshake_msgs->handshake_header->length;
-          goto update_handshake_header;
-        }
-      } else {
-      update_handshake_header:
-        g_hmac_update(hmac, (guchar *)all_handshake_msgs->handshake_header,
-                      sizeof(struct HandshakeHeader));
+    if (for_finished_message && all_handshake_msgs->isfragmented) {
+      printf("test1\n");
+      if (all_handshake_msgs->handshake_header->fragment_offset == 0) {
+
+        printf("test2\n");
+        all_handshake_msgs->handshake_header->fragment_offset = 0;
+        all_handshake_msgs->handshake_header->fragment_length =
+            all_handshake_msgs->handshake_header->length;
+        goto update_handshake_header;
       }
+    } else {
+    update_handshake_header:
+
+      printf("test3 %d\n", all_handshake_msgs->isfragmented);
+      g_checksum_update(checksum,
+                        (guchar *)all_handshake_msgs->handshake_header,
+                        sizeof(struct HandshakeHeader));
+      printf("appeding handshake header of type :%d\n",
+             all_handshake_msgs->handshake_header->type);
+      print_hex(all_handshake_msgs->handshake_header,
+                sizeof(struct HandshakeHeader));
     }
 
-    printf("payload len  %d\n", all_handshake_msgs->payload_len);
-
     uint32_t payload_len = all_handshake_msgs->payload_len;
+    printf("appending paylaod of type %d len %d\n",
+           all_handshake_msgs->handshake_header->type, payload_len);
 
-    if (payload_len)
-      g_hmac_update(hmac, (guchar *)all_handshake_msgs->payload, payload_len);
+    if (payload_len) {
+      g_checksum_update(checksum, (guchar *)all_handshake_msgs->payload,
+                        payload_len);
+      print_hex(all_handshake_msgs->payload, payload_len);
+    }
+
+  next_handshake_message:
     all_handshake_msgs = all_handshake_msgs->next_message;
   }
 
-  return g_hmac_get_string(hmac);
+  printf("\nend \n");
+  return g_checksum_get_string(checksum);
 }
 
 bool do_certificate_verify(struct RTCDtlsTransport *transport) {
@@ -777,28 +820,31 @@ bool do_certificate_verify(struct RTCDtlsTransport *transport) {
   if (transport->selected_signatuire_hash_algo ==
       supported_signature_algorithms[0]) {
 
-    guchar *private_key_bin;
-    uint32_t private_key_len =
-        hexstr_to_char_2(&private_key_bin, my_rsa_private_key);
-
     gchar *all_msgs_hash =
-        (gchar *)compute_all_message_hash(transport, false, G_CHECKSUM_SHA256);
-    printf("%s", all_msgs_hash);
-    guchar *all_msgs_hash_bin;
+        (gchar *)compute_all_message_hash(transport, true, G_CHECKSUM_SHA256);
 
+    printf("\nall msg hash %s\n", all_msgs_hash);
+    guchar *all_msgs_hash_bin;
     uint32_t hash_len = hexstr_to_char_2(&all_msgs_hash_bin, all_msgs_hash);
 
-    uint16_t cert_verify_size = sizeof(struct CertificateVerify) + hash_len;
+    guchar *encrypted_hash;
+    uint16_t encrypte_hash_len =
+        encrypt_rsa(&encrypted_hash, transport->my_private_key,
+                    all_msgs_hash_bin, hash_len, G_CHECKSUM_SHA256);
+
+    uint16_t cert_verify_size =
+        sizeof(struct CertificateVerify) + encrypte_hash_len;
     struct CertificateVerify *certificate_verify = malloc(cert_verify_size);
 
     certificate_verify->signature_algorithms =
         htons(transport->selected_signatuire_hash_algo);
 
-    certificate_verify->signature_len = htons(hash_len);
-    memcpy(certificate_verify->signature, all_msgs_hash_bin, hash_len);
+    certificate_verify->signature_len = htons(encrypte_hash_len);
+    memcpy(certificate_verify->signature, encrypted_hash, encrypte_hash_len);
 
     send_dtls_packet(transport, handshake_type_certificate_verify,
                      (guchar *)certificate_verify, cert_verify_size);
+
     return true;
   } else {
     printf("signature algo not supported \n");
@@ -819,9 +865,9 @@ bool do_client_finished(struct RTCDtlsTransport *transport) {
 
   gchar *verify_data =
       PRF(transport->encryption_keys->master_secret, "client finished",
-          all_message_hash_bn, G_CHECKSUM_SHA256, 1);
+          all_message_hash_bn, G_CHECKSUM_SHA256, 12);
 
-  //  encrypt_aes(transport->symitric_encrypt_ctx, verify_data);
+  encrypt_aes(transport->symitric_encrypt_ctx, verify_data, 12);
 
   send_dtls_packet(transport, handshake_type_finished, verify_data, 12);
 

@@ -14,6 +14,10 @@
 gchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
            GChecksumType checksum_type, uint16_t num_bytes) {
 
+  uint16_t total_itration_required =
+      ceil((float)num_bytes / g_checksum_type_get_length(checksum_type));
+  printf("\n% d\n", total_itration_required);
+
   uint16_t secret_size = BN_num_bytes(secret);
   guchar secret_str[secret_size];
   guchar seed_str[BN_num_bytes(seed)];
@@ -38,7 +42,7 @@ gchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
   // one extra loop because of PRF
   // https://www.ietf.org/rfc/rfc5246.html#section-5
 
-  for (int i = 0; i <= num_bytes; i++) {
+  for (int i = 0; i <= total_itration_required; i++) {
     gchar *computed_hmac =
         g_compute_hmac_for_data(checksum_type, secret_str, secret_size,
                                 A_seed_concat, A_seed_concat_len);
@@ -149,13 +153,8 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
 bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
   BIGNUM *master_secret = transport->encryption_keys->master_secret;
 
-  uint16_t total_itration_required =
-      ceil(128 / g_checksum_type_get_length(G_CHECKSUM_SHA256));
-  printf("\n% d\n", total_itration_required);
-
-  gchar *key_block =
-      PRF(master_secret, (guchar *)"key expanstion", transport->rand_sum,
-          G_CHECKSUM_SHA256, total_itration_required);
+  gchar *key_block = PRF(master_secret, (guchar *)"key expanstion",
+                         transport->rand_sum, G_CHECKSUM_SHA256, 128);
 
   if (!init_enryption_ctx(transport, key_block))
     return false;

@@ -30,8 +30,8 @@ struct AesEnryptionCtx {
 };
 #define MASTER_SECRET_LEN 48.0
 
-uint16_t encrypt_rsa(guchar **pp_encrypted_premaster_secret, EVP_PKEY *pub_key,
-                     guchar *premaster_secret, BIGNUM *random_hello_sum);
+uint16_t encrypt_rsa(guchar **encrypted_data, EVP_PKEY *pub_key, guchar *data,
+                     uint16_t data_len, GChecksumType hash);
 
 BIGNUM *calcualte_master_secret(BIGNUM *premaster_secret);
 BIGNUM *get_dtls_rand_hello_sum(struct RTCDtlsTransport *transport);
@@ -56,10 +56,11 @@ bool aes_expand_key(struct AesEnryptionCtx *ctx);
 
 void sub_bytes(uint8_t (*block)[4]);
 
-void shift_rows(uint8_t *block);
+void shift_rows(uint8_t (*block)[4]);
 
 void mix_columns(uint8_t (*matrix)[4]);
 
-void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block);
+void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4],
+                 uint32_t data_len);
 
 #endif // !_ENRYPTIONH_
