@@ -89,7 +89,7 @@ guchar *hexstr_to_char(const char *hexstr) {
   chrs[final_len] = '\0';
   return chrs;
 }
-void print_rsa_matrix(uint8_t (*ptr)[4], uint8_t numrow) {
+void print_aes_matrix(uint8_t (*ptr)[4], uint8_t numrow) {
   printf("\n\n");
 
   for (int i = 0; i < numrow; i++) {

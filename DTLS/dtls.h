@@ -1,12 +1,13 @@
 #pragma once
-#include "json-glib/json-glib.h"
-#include <openssl/bn.h>
-#include <openssl/types.h>
 #ifndef _DTLSH_
 #define _DTLSH_
 
 #include "../WebRTC/webrtc.h"
+#include "Encryptions/encryption.h"
+#include "json-glib/json-glib.h"
 #include <glib.h>
+#include <openssl/bn.h>
+#include <openssl/types.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -55,10 +56,6 @@ enum HandshakeType {
   handshake_type_change_cipher_spec = 233,
 };
 
-union symmetric_encrypt {
-  struct AesEnryptionCtx *rsa_ctx;
-};
-
 struct RTCDtlsTransport {
   enum DTLS_MODE mode;
   char *fingerprint;
@@ -78,7 +75,7 @@ struct RTCDtlsTransport {
   X509 *server_certificate;
   X509 *client_certificate;
   struct encryption_keys *encryption_keys;
-  union symmetric_encrypt *symitric_encrypt_ctx;
+  union symmetric_encrypt symitric_encrypt_ctx;
   struct ALLDtlsMessages *all_previous_handshake_msgs;
   EVP_PKEY *pub_key;
   EVP_PKEY *my_private_key;

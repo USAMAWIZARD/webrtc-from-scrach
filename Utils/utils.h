@@ -15,4 +15,5 @@ void get_random_string(gchar **data_pointer, uint32_t length, uint8_t type);
 guchar *hexstr_to_char(const char *hexstr); 
 void print_hex(const unsigned char *data, size_t length);
 uint32_t hexstr_to_char_2(guchar **p_str, gchar *str); 
-void print_rsa_matrix(uint8_t (*ptr)[4], uint8_t numrow); 
+void print_aes_matrix(uint8_t (*ptr)[4], uint8_t numrow); 
+

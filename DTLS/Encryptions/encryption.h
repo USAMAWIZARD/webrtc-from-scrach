@@ -1,20 +1,22 @@
-#include "../dtls.h"
 #include <glib.h>
 #include <gmp.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/types.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #pragma once
-
 #ifndef _ENRYPTIONH_
 #define _ENRYPTIONH_
 
 // 128 10
 // 256 12
 // 256 14
+
+struct RTCDtlsTransport;
+enum cipher_suite;
 
 struct AesEnryptionCtx {
   BIGNUM *initial_key_bn;
@@ -25,9 +27,20 @@ struct AesEnryptionCtx {
   uint8_t no_rounds;
 
   uint8_t input_text[4][4];
-  uint8_t IV[8][8];
+  uint8_t *IV;
+  uint8_t *prevoius_cipher;
   gchar *roundkeys[14];
 };
+
+struct aes_ctx {
+  struct AesEnryptionCtx *client;
+  struct AesEnryptionCtx *server;
+};
+
+union symmetric_encrypt {
+  struct aes_ctx aes;
+};
+
 #define MASTER_SECRET_LEN 48.0
 
 uint16_t encrypt_rsa(guchar **encrypted_data, EVP_PKEY *pub_key, guchar *data,
@@ -49,7 +62,7 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
 
 bool init_symitric_encryption(struct RTCDtlsTransport *transport);
 bool init_enryption_ctx(struct RTCDtlsTransport *transport, gchar *key_block);
-bool init_aes(struct RTCDtlsTransport *transport, uint8_t key_size,
+bool init_aes(struct AesEnryptionCtx **encryption_ctx, uint8_t key_size,
               BIGNUM *init_aes_key, BIGNUM *IV);
 
 bool aes_expand_key(struct AesEnryptionCtx *ctx);
@@ -62,5 +75,7 @@ void mix_columns(uint8_t (*matrix)[4]);
 
 void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4],
                  uint32_t data_len);
+
+void transpose_matrix(uint8_t (*round_key)[4]);
 
 #endif // !_ENRYPTIONH_

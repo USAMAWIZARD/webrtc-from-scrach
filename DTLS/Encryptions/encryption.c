@@ -2,7 +2,6 @@
 #include "./encryption.h"
 #include "../../DTLS/dtls.h"
 #include "../../Utils/utils.h"
-#include "glibconfig.h"
 #include <glib.h>
 #include <math.h>
 #include <openssl/bn.h>
@@ -122,7 +121,8 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, gchar *key_block) {
 
   switch (selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
-    init_aes(transport, key_size, encryption_keys->client_write_key,
+    init_aes(&transport->symitric_encrypt_ctx.aes.client, key_size,
+             encryption_keys->client_write_key,
              encryption_keys->client_write_IV);
   default:
 
@@ -153,7 +153,7 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
 bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
   BIGNUM *master_secret = transport->encryption_keys->master_secret;
 
-  gchar *key_block = PRF(master_secret, (guchar *)"key expanstion",
+  gchar *key_block = PRF(master_secret, (guchar *)"key expansion",
                          transport->rand_sum, G_CHECKSUM_SHA256, 128);
 
   if (!init_enryption_ctx(transport, key_block))

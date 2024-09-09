@@ -97,8 +97,8 @@ struct RTCDtlsTransport *create_dtls_transport() {
 
   dtls_transport->dtls_flights = json_object_new();
   dtls_transport->encryption_keys = malloc(sizeof(struct encryption_keys));
-  dtls_transport->symitric_encrypt_ctx =
-      malloc(sizeof(union symmetric_encrypt));
+  // dtls_transport->symitric_encrypt_ctx =
+  //     malloc(sizeof(union symmetric_encrypt));
 
   dtls_transport->state = DTLS_CONNECTION_STATE_NEW;
   dtls_transport->fingerprint =
@@ -867,7 +867,8 @@ bool do_client_finished(struct RTCDtlsTransport *transport) {
       PRF(transport->encryption_keys->master_secret, "client finished",
           all_message_hash_bn, G_CHECKSUM_SHA256, 12);
 
-  encrypt_aes(transport->symitric_encrypt_ctx, verify_data, 12);
+  // wrap it in function symmetric_encrypt
+  encrypt_aes(transport->symitric_encrypt_ctx.aes.client, verify_data, 12);
 
   send_dtls_packet(transport, handshake_type_finished, verify_data, 12);
 

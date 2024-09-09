@@ -1,12 +1,11 @@
+#pragma once
+#ifndef _WEBRTCH_
+#define _WEBRTCH_
 
 #include "../DTLS/dtls.h"
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-#pragma once
-#ifndef _WEBRTCH_
-#define _WEBRTCH_
 
 #define SEND_ONLY "sendonly"
 #define RECV_ONLY "recvonly"
