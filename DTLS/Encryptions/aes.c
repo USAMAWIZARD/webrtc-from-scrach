@@ -265,16 +265,16 @@ void add_vector(uint8_t (*block)[4], uint8_t (*iv)[4]) {
 void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4],
                  uint32_t data_len) {
 
-  bool is_cbc = false;
+  bool is_cbc = true;
   printf("string encryption prooces\n");
 
   uint32_t data_encrytion_itration = data_len / 16;
 
   for (int j = 0; j < data_encrytion_itration; j++) {
     block = block + (4 * j);
+    transpose_matrix(block);
     print_aes_matrix(block, 4);
 
-    transpose_matrix(block);
     if (is_cbc)
       add_vector(block, ctx->IV);
 
