@@ -73,8 +73,8 @@ void shift_rows(uint8_t (*block)[4]);
 
 void mix_columns(uint8_t (*matrix)[4]);
 
-void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4],
-                 uint32_t data_len);
+uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_block,
+                     uint8_t (*block)[4], uint32_t data_len);
 
 void transpose_matrix(uint8_t (*round_key)[4]);
 

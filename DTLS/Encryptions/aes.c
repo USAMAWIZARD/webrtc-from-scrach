@@ -160,7 +160,7 @@ uint32_t g_function(uint32_t word, uint16_t round_num) {
 }
 
 void sub_bytes(uint8_t (*block)[4]) {
-  g_debug("before sub byte\n");
+  printf("before sub byte\n");
   print_aes_matrix(block, 4);
 
   for (int i = 0; i < 4; i++) {
@@ -173,7 +173,7 @@ void sub_bytes(uint8_t (*block)[4]) {
       block[i][j] = s_box[upper4bit][lower4bit];
     }
   }
-  g_debug("after sub byte\n");
+  printf("after sub byte\n");
   print_aes_matrix(block, 4);
 }
 
@@ -262,22 +262,33 @@ void add_round_key(uint8_t (*roundkey)[4], uint8_t (*block)[4]) {
 void add_vector(uint8_t (*block)[4], uint8_t (*iv)[4]) {
   add_round_key(iv, block);
 }
-void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4],
-                 uint32_t data_len) {
+void add_aes_padding(uint8_t *block, uint16_t data_len, uint8_t padding_size) {
+  block = block + data_len;
+
+  for (int i = 16 - padding_size; i < 16; i++) {
+    block[i] = padding_size;
+  }
+}
+uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_block,
+                     uint8_t (*block_data)[4], uint32_t data_len) {
 
   bool is_cbc = true;
   printf("string encryption prooces\n");
 
-  uint32_t data_encrytion_itration = data_len / 16;
+  uint8_t padding_size = 16 - (data_len % 16);
+  uint32_t total_size = data_len + padding_size;
+  uint8_t(*block)[4] = realloc(block_data, total_size);
+  *encrypted_block = block;
+  uint32_t data_encrytion_itration = (total_size) / 16;
+  printf("%d %d %d\n", data_encrytion_itration, padding_size, total_size);
+
+  add_aes_padding(block, data_len, padding_size);
 
   for (int j = 0; j < data_encrytion_itration; j++) {
-    block = block + (4 * j);
     transpose_matrix(block);
-    print_aes_matrix(block, 4);
 
     if (is_cbc)
       add_vector(block, ctx->IV);
-
     add_round_key(ctx->roundkeys[0], block);
 
     for (int i = 1; i <= ctx->no_rounds; i++) {
@@ -290,9 +301,13 @@ void encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4],
 
       add_round_key(ctx->roundkeys[i], block);
     }
+
     if (is_cbc)
       ctx->IV = block;
+
+    block = block + 4;
   }
+  return total_size;
 }
 
 bool init_aes(struct AesEnryptionCtx **encryption_ctx, uint8_t key_size,
