@@ -2,6 +2,7 @@
 #include "./encryption.h"
 #include "../../DTLS/dtls.h"
 #include "../../Utils/utils.h"
+#include "glibconfig.h"
 #include <glib.h>
 #include <math.h>
 #include <openssl/bn.h>
@@ -9,9 +10,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-
-gchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
-           GChecksumType checksum_type, uint16_t num_bytes) {
+#include <string.h>
+guchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
+            GChecksumType checksum_type, uint16_t num_bytes) {
 
   uint16_t total_itration_required =
       ceil((float)num_bytes / g_checksum_type_get_length(checksum_type));
@@ -24,51 +25,45 @@ gchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
   BN_bn2bin(seed, seed_str);
 
   uint8_t label_len = strlen(label);
-  uint16_t label_seed_len = label_len + BN_num_bytes(seed);
+  gsize label_seed_len = label_len + BN_num_bytes(seed);
 
   guchar label_seed[label_seed_len];
   memcpy(label_seed, label, label_len);
   memcpy(label_seed + label_len, seed_str, label_seed_len);
 
-  uint16_t checksum_len = g_checksum_type_get_length(checksum_type);
-  guchar A_seed_concat[checksum_len + label_seed_len];
-  guint16 A_seed_concat_len = label_seed_len;
-  memcpy(A_seed_concat, label_seed, label_seed_len);
+  gsize checksum_len = g_checksum_type_get_length(checksum_type);
+  guchar a_concat_seed[checksum_len + label_seed_len];
+  gsize a_concat_seed_len = checksum_len + label_seed_len;
+  memcpy(a_concat_seed + checksum_len, label_seed, label_seed_len);
 
-  gchar *ALL_hmac = calloc(1, 1);
-  gchar *previous;
+  printf("label seed concated %s %d\n", label, label_seed_len);
 
-  // one extra loop because of PRF
-  // https://www.ietf.org/rfc/rfc5246.html#section-5
+  guchar *ALL_hmac = malloc(checksum_len * total_itration_required);
+  for (int i = 1; i <= total_itration_required; i++) {
 
-  for (int i = 0; i <= total_itration_required; i++) {
-    gchar *computed_hmac =
-        g_compute_hmac_for_data(checksum_type, secret_str, secret_size,
-                                A_seed_concat, A_seed_concat_len);
+    guchar *A_seed = a_concat_seed + checksum_len;
+    uint16_t A_seed_len = label_seed_len;
+    for (int j = 0; j <= i - 1; j++) {
 
-    guchar *hmac_bin;
-    hexstr_to_char_2(&hmac_bin, computed_hmac);
+      GHmac *a_hmac = g_hmac_new(checksum_type, secret_str, secret_size);
+      g_hmac_update(a_hmac, A_seed, A_seed_len);
+      g_hmac_get_digest(a_hmac, a_concat_seed, &checksum_len);
 
-    memcpy(A_seed_concat, hmac_bin, checksum_len);
-    memcpy(A_seed_concat + checksum_len, label_seed, label_seed_len);
+      A_seed = a_concat_seed;
+      A_seed_len = checksum_len;
 
-    A_seed_concat_len = label_seed_len + checksum_len;
+      print_hex(a_concat_seed, checksum_len);
+      g_hmac_unref(a_hmac);
+    }
 
-    previous = ALL_hmac;
-    ALL_hmac = g_strdup_printf("%s%s", ALL_hmac, computed_hmac);
-    free(previous);
-
-    printf("\n computer hmac %s\n", computed_hmac);
-
-    // print_hex(A_seed_concat, A_seed_concat_len);
+    GHmac *hmac = g_hmac_new(G_CHECKSUM_SHA256, secret_str, secret_size);
+    g_hmac_update(hmac, a_concat_seed, a_concat_seed_len);
+    g_hmac_get_digest(hmac, ALL_hmac + ((i - 1) * checksum_len), &checksum_len);
+    print_hex(ALL_hmac, checksum_len * 2);
+    g_hmac_unref(hmac);
   }
-  printf("checksum len %d\n", checksum_len);
-  printf("all hmacs %ld %s  \n\n", strlen(ALL_hmac), ALL_hmac);
 
-  previous = ALL_hmac;
-  hexstr_to_char_2(&ALL_hmac, ALL_hmac);
-  ALL_hmac = ALL_hmac + checksum_len;
-  free(previous);
+  printf("all hmacs \n");
 
   return ALL_hmac;
 }
@@ -91,6 +86,7 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, gchar *key_block) {
   uint16_t total_size = hexstr_to_char_2(&bin_key_block, key_block);
 
   int key_size, iv_size, hash_size;
+
   if (!get_cipher_suite_info(selected_cipher_suite, &key_size, &iv_size,
                              &hash_size)) {
     return false;
@@ -153,8 +149,10 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
 bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
   BIGNUM *master_secret = transport->encryption_keys->master_secret;
 
-  gchar *key_block = PRF(master_secret, (guchar *)"key expansion",
-                         transport->rand_sum, G_CHECKSUM_SHA256, 128);
+  gchar *key_block =
+      PRF(master_secret, (guchar *)"key expansion",
+          get_dtls_rand_appended(transport->my_random, transport->peer_random),
+          G_CHECKSUM_SHA256, 128);
 
   if (!init_enryption_ctx(transport, key_block))
     return false;

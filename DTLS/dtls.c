@@ -134,7 +134,10 @@ struct RTCDtlsTransport *create_dtls_transport() {
   printf("my public exponent %s\n", BN_bn2hex(my_public_exponent));
   printf("my public modulus %s\n", BN_bn2hex(my_public_modulus));
 
-  strncpy(dtls_transport->my_random, g_uuid_string_random(), 32);
+  BIGNUM *r1 = BN_new();
+  BN_bin2bn(g_uuid_string_random(), 32, r1);
+  dtls_transport->my_random = r1;
+
   dtls_transport->cookie = 1213;
 
   return dtls_transport;
@@ -147,7 +150,10 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer,
       malloc(sizeof(struct DtlsClientHello));
 
   dtls_client_hello->client_version = htons(DTLS_1_2);
-  memcpy(dtls_client_hello->random, peer->dtls_transport->my_random, 32);
+  guchar *myrandom = malloc(32);
+  BN_bn2bin(peer->dtls_transport->my_random, myrandom);
+  memcpy(dtls_client_hello->random, myrandom, 32);
+  free(myrandom);
   dtls_client_hello->cookie_len =
       with_cookie ? peer->dtls_transport->cookie : with_cookie;
   dtls_client_hello->cipher_suite_len = sizeof(cipher_suite_list);
@@ -235,8 +241,7 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
 
   struct HandshakeHeader *handshake = NULL;
 
-  if (!(handshake_type == handshake_type_change_cipher_spec ||
-        handshake_type == handshake_type_finished)) {
+  if (!(handshake_type == handshake_type_change_cipher_spec)) {
 
     dtls_header->length =
         htons(ntohs(dtls_header->length) + sizeof(struct HandshakeHeader));
@@ -249,8 +254,12 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
     handshake->fragment_offset = 0;
   }
   guchar *dtls_packet;
+
   int packet_len = make_dtls_packet(&dtls_packet, dtls_header, handshake,
                                     dtls_payload, dtls_payload_len);
+
+  if (dtls_transport->epoch) {
+  }
 
   store_concated_handshake_msgs(dtls_transport, handshake, dtls_payload,
                                 dtls_payload_len, false);
@@ -268,6 +277,7 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
   }
   return true;
 }
+
 uint32_t make_dtls_packet(guchar **dtls_packet, struct DtlsHeader *dtls_header,
                           struct HandshakeHeader *handshake,
                           guchar *dtls_payload, uint32_t payload_len) {
@@ -563,8 +573,11 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
 void handle_server_hello(struct RTCDtlsTransport *transport,
                          struct DtlsServerHello *hello) {
 
-  memcpy(transport->peer_random, hello->random, sizeof(hello->random));
   transport->selected_cipher_suite = ntohs(hello->cipher_suite);
+
+  BIGNUM *r2 = BN_new();
+  BN_bin2bn(&hello->random[0], 32, r2);
+  transport->peer_random = r2;
 }
 void handle_certificate(struct RTCDtlsTransport *transport,
                         struct Certificate *certificate) {
@@ -584,7 +597,6 @@ void handle_certificate(struct RTCDtlsTransport *transport,
   EVP_PKEY *pub_key = X509_get_pubkey(cert);
 
   transport->pub_key = pub_key;
-  transport->rand_sum = get_dtls_rand_hello_sum(transport);
 }
 
 void handle_certificate_request(
@@ -692,8 +704,9 @@ bool do_client_key_exchange(struct RTCDtlsTransport *transport) {
     uint16_t encrypted_key_len = encrypt_rsa(
         &encrypted_premaster_key, transport->pub_key, premaster_key, 48, -1);
 
-    BIGNUM *master_secret =
-        generate_master_key(premaster_key, transport->rand_sum);
+    BIGNUM *master_secret = generate_master_key(
+        premaster_key,
+        get_dtls_rand_appended(transport->my_random, transport->peer_random));
     printf("master %s\n ", BN_bn2hex(master_secret));
 
     transport->encryption_keys->master_secret = master_secret;
@@ -868,9 +881,14 @@ bool do_client_finished(struct RTCDtlsTransport *transport) {
           all_message_hash_bn, G_CHECKSUM_SHA256, 12);
 
   // wrap it in function symmetric_encrypt
-  encrypt_aes(transport->symitric_encrypt_ctx.aes.client, verify_data, 12);
 
-  send_dtls_packet(transport, handshake_type_finished, verify_data, 12);
+  guchar *verify_data_encrypted;
+  uint32_t enrypted_len =
+      encrypt_aes(transport->symitric_encrypt_ctx.aes.client,
+                  &verify_data_encrypted, &verify_data, 12);
+
+  send_dtls_packet(transport, handshake_type_finished, verify_data_encrypted,
+                   enrypted_len);
 
   return true;
 }

@@ -47,10 +47,11 @@ uint16_t encrypt_rsa(guchar **encrypted_data, EVP_PKEY *pub_key, guchar *data,
                      uint16_t data_len, GChecksumType hash);
 
 BIGNUM *calcualte_master_secret(BIGNUM *premaster_secret);
-BIGNUM *get_dtls_rand_hello_sum(struct RTCDtlsTransport *transport);
 
-gchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
-           GChecksumType checksum_type, uint16_t num_bytes);
+BIGNUM *get_dtls_rand_appended(BIGNUM *r1, BIGNUM *r2);
+
+guchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
+            GChecksumType checksum_type, uint16_t num_bytes);
 
 BIGNUM *generate_master_key(guchar *premaster_key, BIGNUM *seed);
 gchar *generate_encryption_key_block(BIGNUM *master_secret, BIGNUM *seed,
@@ -73,8 +74,8 @@ void shift_rows(uint8_t (*block)[4]);
 
 void mix_columns(uint8_t (*matrix)[4]);
 
-uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_block,
-                     uint8_t (*block)[4], uint32_t data_len);
+uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypte_data,
+                     uint8_t (**block)[4], uint32_t data_len);
 
 void transpose_matrix(uint8_t (*round_key)[4]);
 

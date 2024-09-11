@@ -269,16 +269,16 @@ void add_aes_padding(uint8_t *block, uint16_t data_len, uint8_t padding_size) {
     block[i] = padding_size;
   }
 }
-uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_block,
-                     uint8_t (*block_data)[4], uint32_t data_len) {
+uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
+                     uint8_t (**block_data)[4], uint32_t data_len) {
 
   bool is_cbc = true;
   printf("string encryption prooces\n");
 
   uint8_t padding_size = 16 - (data_len % 16);
   uint32_t total_size = data_len + padding_size;
-  uint8_t(*block)[4] = realloc(block_data, total_size);
-  *encrypted_block = block;
+  uint8_t(*block)[4] = realloc(*block_data, total_size);
+  *encrypted_data = block;
   uint32_t data_encrytion_itration = (total_size) / 16;
   printf("%d %d %d\n", data_encrytion_itration, padding_size, total_size);
 

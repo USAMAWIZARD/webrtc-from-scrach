@@ -67,9 +67,8 @@ struct RTCDtlsTransport {
   uint16_t epoch;
   int cookie;
   int cookie_len;
-  guchar my_random[32];
-  guchar peer_random[32];
-  BIGNUM *rand_sum;
+  BIGNUM *my_random;
+  BIGNUM *peer_random;
   uint16_t selected_cipher_suite;
   uint16_t selected_signatuire_hash_algo;
   X509 *server_certificate;
@@ -104,7 +103,7 @@ struct __attribute__((packed)) DtlsClientHello {
 };
 struct __attribute__((packed)) DtlsServerHello {
   uint16_t client_version;
-  gchar random[32];
+  guchar random[32];
   uint8_t session_id_len;
   gchar *session_id;
   uint16_t cipher_suite;

@@ -161,27 +161,20 @@ BIGNUM *generate_master_key(guchar *premaster_secret, BIGNUM *seed) {
   printf("unpadded premaster key %s\n",
          BN_bn2hex(unpadded_premaster_secret_bn));
 
-  gchar *master_secret =
-      PRF(unpadded_premaster_secret_bn, (guchar *)"master secret", seed,
-          G_CHECKSUM_SHA256, MASTER_SECRET_LEN);
+  gchar *master_secret = PRF(unpadded_premaster_secret_bn, "master secret",
+                             seed, G_CHECKSUM_SHA256, MASTER_SECRET_LEN);
 
   BIGNUM *master_secret_bn = BN_new();
-  BN_bin2bn((guchar *)master_secret, 48, master_secret_bn);
+  BN_bin2bn(master_secret, 48, master_secret_bn);
   return master_secret_bn;
 }
 
-BIGNUM *get_dtls_rand_hello_sum(struct RTCDtlsTransport *transport) {
-  BIGNUM *r1 = BN_new();
-  BN_bin2bn(transport->my_random, 32, r1);
-  BIGNUM *r2 = BN_new();
-  BN_bin2bn(transport->peer_random, 32, r2);
-
+BIGNUM *get_dtls_rand_appended(BIGNUM *r1, BIGNUM *r2) {
+  gchar *appended = g_strdup_printf("%s%s", BN_bn2hex(r1), BN_bn2hex(r2));
   BIGNUM *r = BN_new();
-  BN_add(r, r1, r2);
 
-  printf("client random %s\n", BN_bn2hex(r1));
-  printf("server random %s\n", BN_bn2hex(r2));
-  printf("sum random %s", BN_bn2hex(r));
+  BN_hex2bn(&r, appended);
 
+  printf("apppended random %s\n", BN_bn2hex(r));
   return r;
 }
