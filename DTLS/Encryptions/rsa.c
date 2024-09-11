@@ -166,6 +166,7 @@ BIGNUM *generate_master_key(guchar *premaster_secret, BIGNUM *seed) {
 
   BIGNUM *master_secret_bn = BN_new();
   BN_bin2bn(master_secret, 48, master_secret_bn);
+  free(master_secret);
   return master_secret_bn;
 }
 

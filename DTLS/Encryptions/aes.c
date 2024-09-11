@@ -146,15 +146,15 @@ uint32_t g_func_sub_byte(uint32_t word) {
 
 uint32_t g_function(uint32_t word, uint16_t round_num) {
   uint32_t first_byte = (word & 0x000000FF) << (3 * 8);
-  g_debug("\n word %x first bypte %x \n", word, first_byte);
+  // g_debug("\n word %x first bypte %x \n", word, first_byte);
   word = word >> 8;
   word = (word & 0x00FFFFFF) | first_byte;
 
-  g_debug("rotated %x ", word);
+  // g_debug("rotated %x ", word);
 
   word = g_func_sub_byte(word);
 
-  g_debug("subutityed %x %d ", word, round_num);
+  // g_debug("subutityed %x %d ", word, round_num);
 
   return word ^ round_constants[round_num];
 }
@@ -265,25 +265,29 @@ void add_vector(uint8_t (*block)[4], uint8_t (*iv)[4]) {
 void add_aes_padding(uint8_t *block, uint16_t data_len, uint8_t padding_size) {
   block = block + data_len;
 
-  for (int i = 16 - padding_size; i < 16; i++) {
+  for (int i = padding_size; i < 16; i++) {
     block[i] = padding_size;
   }
 }
 uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
-                     uint8_t (**block_data)[4], uint32_t data_len) {
+                     uint8_t (**block_data)[4], uint16_t block_encrypt_offset,
+                     uint32_t total_packet_len) {
 
   bool is_cbc = true;
   printf("string encryption prooces\n");
 
-  uint8_t padding_size = 16 - (data_len % 16);
-  uint32_t total_size = data_len + padding_size;
-  uint8_t(*block)[4] = realloc(*block_data, total_size);
+  uint16_t block_len = total_packet_len - block_encrypt_offset;
+  uint8_t padding_size = 16 - (block_len % 16);
+
+  uint8_t(*block)[4] = realloc(*block_data, total_packet_len + padding_size);
+
   *encrypted_data = block;
-  uint32_t data_encrytion_itration = (total_size) / 16;
-  printf("%d %d %d\n", data_encrytion_itration, padding_size, total_size);
+  block = (*encrypted_data) + block_encrypt_offset;
 
-  add_aes_padding(block, data_len, padding_size);
+  uint32_t data_encrytion_itration = (block_len) / 16;
+  printf("%d %d %d\n", data_encrytion_itration, padding_size, total_packet_len);
 
+  add_aes_padding(block, block_len, padding_size);
   for (int j = 0; j < data_encrytion_itration; j++) {
     transpose_matrix(block);
 
@@ -307,7 +311,7 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
 
     block = block + 4;
   }
-  return total_size;
+  return total_packet_len + block_encrypt_offset;
 }
 
 bool init_aes(struct AesEnryptionCtx **encryption_ctx, uint8_t key_size,

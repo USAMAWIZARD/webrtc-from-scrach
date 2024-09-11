@@ -29,6 +29,7 @@ enum key_exchange { RSA_KEY_EXCHANGE };
 enum cipher { AES_128_CBC = 128 };
 
 struct NetworkPacket;
+struct RTCPeerConnection;
 
 enum DtlsState {
   DTLS_CONNECTION_STATE_NEW,
@@ -203,7 +204,8 @@ void start_dtls_negosiation(struct RTCPeerConnection *peer,
 void send_dtls_client_hello(struct RTCPeerConnection *peer,
                             struct CandidataPair *pair, bool with_cookie);
 bool check_if_dtls(uint8_t);
-uint32_t make_dtls_packet(guchar **dtls_packet, struct DtlsHeader *dtls_header,
+uint32_t make_dtls_packet(union symmetric_encrypt, guchar **dtls_packet,
+                          struct DtlsHeader *dtls_header,
                           struct HandshakeHeader *handshake,
                           guchar *dtls_payload, uint32_t payload_len);
 bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,

@@ -253,16 +253,13 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
     handshake->fragment_length = handshake->length;
     handshake->fragment_offset = 0;
   }
-  guchar *dtls_packet;
-
-  int packet_len = make_dtls_packet(&dtls_packet, dtls_header, handshake,
-                                    dtls_payload, dtls_payload_len);
-
-  if (dtls_transport->epoch) {
-  }
-
   store_concated_handshake_msgs(dtls_transport, handshake, dtls_payload,
                                 dtls_payload_len, false);
+
+  guchar *dtls_packet;
+  uint32_t packet_len =
+      make_dtls_packet(dtls_transport->symitric_encrypt_ctx, &dtls_packet,
+                       dtls_header, handshake, dtls_payload, dtls_payload_len);
 
   struct CandidataPair *pair = dtls_transport->pair;
   int bytes = sendto(pair->p0->sock_desc, dtls_packet, packet_len, 0,
@@ -278,10 +275,12 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
   return true;
 }
 
-uint32_t make_dtls_packet(guchar **dtls_packet, struct DtlsHeader *dtls_header,
+uint32_t make_dtls_packet(union symmetric_encrypt encryption_ctx,
+                          guchar **dtls_packet, struct DtlsHeader *dtls_header,
                           struct HandshakeHeader *handshake,
                           guchar *dtls_payload, uint32_t payload_len) {
 
+  bool encrypt_packet = ntohs(dtls_header->epoch);
   int total_packet_len = sizeof(struct DtlsHeader) + payload_len;
 
   if (handshake != NULL)
@@ -299,6 +298,25 @@ uint32_t make_dtls_packet(guchar **dtls_packet, struct DtlsHeader *dtls_header,
   }
 
   memcpy(ptr, dtls_payload, payload_len);
+
+  if (encrypt_packet) {
+    guchar *encrypted_dtls_packet;
+
+    if (total_packet_len > 200)
+      exit(0);
+
+    uint32_t enrypted_len =
+        encrypt_aes(encryption_ctx.aes.client, &encrypted_dtls_packet, &packet,
+                    sizeof(struct DtlsHeader), total_packet_len);
+
+    uint16_t n_encrypted_len = htons((uint16_t)enrypted_len);
+
+    memcpy(encrypted_dtls_packet + sizeof(struct DtlsHeader) - 2,
+           &n_encrypted_len, 2);
+
+    packet = encrypted_dtls_packet;
+    total_packet_len = enrypted_len;
+  }
 
   *dtls_packet = packet;
 
@@ -368,6 +386,7 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
   JsonObject *flight = peer->dtls_transport->dtls_flights;
   struct DtlsParsedPacket *dtls_packet = netowrk_packet->payload.dtls_parsed;
 
+  printf("packet type : %d\n", dtls_packet->dtls_header->type);
   while (dtls_packet != NULL) {
 
     uint32_t total_fragment_len =
@@ -565,15 +584,16 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
     default:
       break;
     }
-  next_dtls_packet:
     dtls_packet = dtls_packet->next_record;
   }
+  printf("testinginignign \n");
 }
 
 void handle_server_hello(struct RTCDtlsTransport *transport,
                          struct DtlsServerHello *hello) {
 
   transport->selected_cipher_suite = ntohs(hello->cipher_suite);
+  transport->epoch = 0;
 
   BIGNUM *r2 = BN_new();
   BN_bin2bn(&hello->random[0], 32, r2);
@@ -876,19 +896,11 @@ bool do_client_finished(struct RTCDtlsTransport *transport) {
   BIGNUM *all_message_hash_bn = BN_new();
   BN_hex2bn(&all_message_hash_bn, all_message_hash);
 
-  gchar *verify_data =
+  guchar *verify_data =
       PRF(transport->encryption_keys->master_secret, "client finished",
           all_message_hash_bn, G_CHECKSUM_SHA256, 12);
 
-  // wrap it in function symmetric_encrypt
-
-  guchar *verify_data_encrypted;
-  uint32_t enrypted_len =
-      encrypt_aes(transport->symitric_encrypt_ctx.aes.client,
-                  &verify_data_encrypted, &verify_data, 12);
-
-  send_dtls_packet(transport, handshake_type_finished, verify_data_encrypted,
-                   enrypted_len);
+  send_dtls_packet(transport, handshake_type_finished, verify_data, 12);
 
   return true;
 }

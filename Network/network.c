@@ -2,6 +2,7 @@
 #include "../DTLS/dtls.h"
 #include "../STUN/stun.h"
 #include <arpa/inet.h>
+#include <assert.h>
 #include <bits/pthreadtypes.h>
 #include <glib.h>
 #include <netinet/in.h>
@@ -132,8 +133,10 @@ void *packet_listner_thread(void *peer_v) {
       packet->total_bytes_recvied = bytes;
 
       if (packet->protocol == STUN) {
+        printf("stun packet \n");
         on_stun_packet(packet, peer);
       } else if (packet->protocol == DTLS) {
+
         // printf("%d aa\n", packet->total_bytes_recvied);
         // print_hex(packet, packet->total_bytes_recvied);
         on_dtls_packet(packet, peer);
@@ -150,7 +153,7 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
 
   // check if its a STUN
   struct NetworkPacket *network_packet = malloc(sizeof(struct NetworkPacket));
-  struct Stun *stun = malloc(sizeof(struct Stun));
+  struct Stun *stun = (struct Stun *)malloc(sizeof(struct Stun));
   memcpy(stun, packet, sizeof(struct Stun));
   network_packet->total_bytes_recvied = bytes;
 
@@ -201,6 +204,7 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
   uint8_t first_byte = packet[0];
 
   if (check_if_dtls(first_byte)) {
+    printf("dtls packet \n");
     network_packet->protocol = DTLS;
 
     struct DtlsParsedPacket *dtls_packet =

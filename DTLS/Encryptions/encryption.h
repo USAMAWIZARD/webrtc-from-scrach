@@ -74,9 +74,9 @@ void shift_rows(uint8_t (*block)[4]);
 
 void mix_columns(uint8_t (*matrix)[4]);
 
-uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypte_data,
-                     uint8_t (**block)[4], uint32_t data_len);
-
+uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
+                     uint8_t (**block_data)[4], uint16_t block_encrypt_offset,
+                     uint32_t data_len);
 void transpose_matrix(uint8_t (*round_key)[4]);
 
 #endif // !_ENRYPTIONH_

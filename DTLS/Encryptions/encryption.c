@@ -36,8 +36,6 @@ guchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
   gsize a_concat_seed_len = checksum_len + label_seed_len;
   memcpy(a_concat_seed + checksum_len, label_seed, label_seed_len);
 
-  printf("label seed concated %s %d\n", label, label_seed_len);
-
   guchar *ALL_hmac = malloc(checksum_len * total_itration_required);
   for (int i = 1; i <= total_itration_required; i++) {
 
@@ -151,7 +149,7 @@ bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
 
   gchar *key_block =
       PRF(master_secret, (guchar *)"key expansion",
-          get_dtls_rand_appended(transport->my_random, transport->peer_random),
+          get_dtls_rand_appended(transport->peer_random, transport->my_random),
           G_CHECKSUM_SHA256, 128);
 
   if (!init_enryption_ctx(transport, key_block))
