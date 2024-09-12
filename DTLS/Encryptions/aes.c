@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <glib.h>
 #include <math.h>
+#include <openssl/bn.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,13 +58,7 @@ uint8_t aes_galois_fild[4][4] = {{0x02, 0x03, 0x01, 0x01},
 uint32_t g_function(uint32_t word, uint16_t round_num);
 bool aes_expand_key(struct AesEnryptionCtx *ctx) {
   uint16_t aes_key_len = ctx->key_size_bytes;
-  if (aes_key_len != ctx->key_size_bytes) {
-    printf("not enuph data in the key");
-    return false;
-  }
-  guchar *key = calloc(1, aes_key_len);
-
-  BN_bn2bin(ctx->initial_key_bn, key);
+  guchar *key = ctx->initial_key;
 
   //
   // for (int i = 0; i < num_row; i++) {
@@ -265,7 +260,7 @@ void add_vector(uint8_t (*block)[4], uint8_t (*iv)[4]) {
 void add_aes_padding(uint8_t *block, uint16_t data_len, uint8_t padding_size) {
   block = block + data_len;
 
-  for (int i = padding_size; i < 16; i++) {
+  for (int i = 0; i <= padding_size; i++) {
     block[i] = padding_size;
   }
 }
@@ -278,16 +273,22 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
 
   uint16_t block_len = total_packet_len - block_encrypt_offset;
   uint8_t padding_size = 16 - (block_len % 16);
+  uint16_t to_encypt_len = block_len + padding_size;
 
   uint8_t(*block)[4] = realloc(*block_data, total_packet_len + padding_size);
 
   *encrypted_data = block;
   block = (*encrypted_data) + block_encrypt_offset;
 
-  uint32_t data_encrytion_itration = (block_len) / 16;
-  printf("%d %d %d\n", data_encrytion_itration, padding_size, total_packet_len);
+  uint32_t data_encrytion_itration = (to_encypt_len) / 16;
+  printf("%d %d %d %d  %d\n", data_encrytion_itration, padding_size,
+         total_packet_len, block_len, block_encrypt_offset);
 
   add_aes_padding(block, block_len, padding_size);
+  print_hex(block, to_encypt_len);
+  //  exit(0);
+
+  transpose_matrix(ctx->IV);
   for (int j = 0; j < data_encrytion_itration; j++) {
     transpose_matrix(block);
 
@@ -311,11 +312,18 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
 
     block = block + 4;
   }
-  return total_packet_len + block_encrypt_offset;
+  block = (*encrypted_data) + block_encrypt_offset;
+
+  for (int i = 0; i < data_encrytion_itration; i++) {
+    transpose_matrix(block);
+    block = block + 4;
+  }
+
+  return total_packet_len + padding_size;
 }
 
 bool init_aes(struct AesEnryptionCtx **encryption_ctx, uint8_t key_size,
-              BIGNUM *init_aes_key, BIGNUM *IV) {
+              BIGNUM *init_aes_key_bn, BIGNUM *IV) {
 
   struct AesEnryptionCtx *aes_ctx = malloc(sizeof(struct AesEnryptionCtx));
   aes_ctx->key_size_bytes = key_size;
@@ -324,8 +332,13 @@ bool init_aes(struct AesEnryptionCtx **encryption_ctx, uint8_t key_size,
   } else {
     return false;
   }
-  aes_ctx->initial_key_bn = init_aes_key;
-  aes_ctx->IV = IV;
+
+  aes_ctx->initial_key = malloc(BN_num_bytes(init_aes_key_bn));
+  BN_bn2bin(init_aes_key_bn, aes_ctx->initial_key);
+
+  aes_ctx->IV = malloc(BN_num_bytes(IV));
+  BN_bn2bin(IV, aes_ctx->IV);
+
   aes_ctx->row_size = (uint8_t)((float)aes_ctx->key_size_bytes / 4.0);
 
   aes_expand_key(aes_ctx);

@@ -66,7 +66,7 @@ guchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
   return ALL_hmac;
 }
 
-bool init_enryption_ctx(struct RTCDtlsTransport *transport, gchar *key_block) {
+bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block) {
   uint16_t selected_cipher_suite = transport->selected_cipher_suite;
   struct encryption_keys *encryption_keys = transport->encryption_keys;
   // ideallly get it from a hash map all the len of the fields
@@ -80,9 +80,6 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, gchar *key_block) {
   encryption_keys->client_write_IV = BN_new();
   encryption_keys->server_write_IV = BN_new();
 
-  guchar *bin_key_block;
-  uint16_t total_size = hexstr_to_char_2(&bin_key_block, key_block);
-
   int key_size, iv_size, hash_size;
 
   if (!get_cipher_suite_info(selected_cipher_suite, &key_size, &iv_size,
@@ -90,28 +87,31 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, gchar *key_block) {
     return false;
   }
 
+  printf("key expanstion block\n");
+  print_hex(key_block, (key_size * 4 * 2) + (20 * 2));
+
   encryption_keys->client_write_mac_key = BN_new();
-  BN_bin2bn(bin_key_block, hash_size, encryption_keys->client_write_mac_key);
-  bin_key_block += hash_size;
+  BN_bin2bn(key_block, hash_size, encryption_keys->client_write_mac_key);
+  key_block += hash_size;
 
   encryption_keys->server_write_mac_key = BN_new();
-  BN_bin2bn(bin_key_block, hash_size, encryption_keys->server_write_mac_key);
-  bin_key_block += hash_size;
+  BN_bin2bn(key_block, hash_size, encryption_keys->server_write_mac_key);
+  key_block += hash_size;
 
   encryption_keys->client_write_key = BN_new();
-  BN_bin2bn(bin_key_block, key_size, encryption_keys->client_write_key);
-  bin_key_block += key_size;
+  BN_bin2bn(key_block, key_size, encryption_keys->client_write_key);
+  key_block += key_size;
 
   encryption_keys->server_wirte_key = BN_new();
-  BN_bin2bn(bin_key_block, key_size, encryption_keys->server_wirte_key);
-  bin_key_block += key_size;
+  BN_bin2bn(key_block, key_size, encryption_keys->server_wirte_key);
+  key_block += key_size;
 
   encryption_keys->client_write_IV = BN_new();
-  BN_bin2bn(bin_key_block, iv_size, encryption_keys->client_write_IV);
-  bin_key_block += iv_size;
+  BN_bin2bn(key_block, iv_size, encryption_keys->client_write_IV);
+  key_block += iv_size;
 
   encryption_keys->server_write_IV = BN_new();
-  BN_bin2bn(bin_key_block, iv_size, encryption_keys->server_write_IV);
+  BN_bin2bn(key_block, iv_size, encryption_keys->server_write_IV);
 
   switch (selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
@@ -147,8 +147,8 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
 bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
   BIGNUM *master_secret = transport->encryption_keys->master_secret;
 
-  gchar *key_block =
-      PRF(master_secret, (guchar *)"key expansion",
+  guchar *key_block =
+      PRF(master_secret, "key expansion",
           get_dtls_rand_appended(transport->peer_random, transport->my_random),
           G_CHECKSUM_SHA256, 128);
 

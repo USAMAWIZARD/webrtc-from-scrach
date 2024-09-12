@@ -305,17 +305,33 @@ uint32_t make_dtls_packet(union symmetric_encrypt encryption_ctx,
     if (total_packet_len > 200)
       exit(0);
 
+    printf("to encrypt \n");
+    print_hex(packet + sizeof(struct DtlsHeader),
+              total_packet_len - sizeof(struct DtlsHeader));
+
+    printf("------------IV \n");
+    print_hex(encryption_ctx.aes.client->IV,
+              encryption_ctx.aes.client->row_size * 4);
+
+    printf("-------------initial key \n");
+    print_hex(encryption_ctx.aes.client->initial_key,
+              encryption_ctx.aes.client->row_size * 4);
+
     uint32_t enrypted_len =
         encrypt_aes(encryption_ctx.aes.client, &encrypted_dtls_packet, &packet,
                     sizeof(struct DtlsHeader), total_packet_len);
 
-    uint16_t n_encrypted_len = htons((uint16_t)enrypted_len);
+    uint16_t n_encrypted_len =
+        htons((uint16_t)enrypted_len - sizeof(struct DtlsHeader));
 
     memcpy(encrypted_dtls_packet + sizeof(struct DtlsHeader) - 2,
            &n_encrypted_len, 2);
 
     packet = encrypted_dtls_packet;
     total_packet_len = enrypted_len;
+    printf("encrypted \n");
+    print_hex(packet + sizeof(struct DtlsHeader),
+              total_packet_len - sizeof(struct DtlsHeader));
   }
 
   *dtls_packet = packet;

@@ -19,9 +19,8 @@ struct RTCDtlsTransport;
 enum cipher_suite;
 
 struct AesEnryptionCtx {
-  BIGNUM *initial_key_bn;
+  uint8_t *initial_key;
   uint8_t row_size;
-  uint8_t initial_key[7][7];
 
   uint8_t key_size_bytes;
   uint8_t no_rounds;
@@ -62,7 +61,7 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
                            int *hash_size);
 
 bool init_symitric_encryption(struct RTCDtlsTransport *transport);
-bool init_enryption_ctx(struct RTCDtlsTransport *transport, gchar *key_block);
+bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block);
 bool init_aes(struct AesEnryptionCtx **encryption_ctx, uint8_t key_size,
               BIGNUM *init_aes_key, BIGNUM *IV);
 
