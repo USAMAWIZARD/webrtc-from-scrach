@@ -258,8 +258,8 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
 
   guchar *dtls_packet;
   uint32_t packet_len =
-      make_dtls_packet(dtls_transport->symitric_encrypt_ctx, &dtls_packet,
-                       dtls_header, handshake, dtls_payload, dtls_payload_len);
+      make_dtls_packet(dtls_transport, &dtls_packet, dtls_header, handshake,
+                       dtls_payload, dtls_payload_len);
 
   struct CandidataPair *pair = dtls_transport->pair;
   int bytes = sendto(pair->p0->sock_desc, dtls_packet, packet_len, 0,
@@ -274,8 +274,7 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
   }
   return true;
 }
-
-uint32_t make_dtls_packet(union symmetric_encrypt encryption_ctx,
+uint32_t make_dtls_packet(struct RTCDtlsTransport *transport,
                           guchar **dtls_packet, struct DtlsHeader *dtls_header,
                           struct HandshakeHeader *handshake,
                           guchar *dtls_payload, uint32_t payload_len) {
@@ -286,7 +285,8 @@ uint32_t make_dtls_packet(union symmetric_encrypt encryption_ctx,
   if (handshake != NULL)
     total_packet_len += sizeof(struct HandshakeHeader);
 
-  guchar *packet = malloc(total_packet_len);
+  guchar *packet =
+      malloc(total_packet_len + 64 + 16); // max hmac size max paddign size
   guchar *ptr = packet;
 
   memcpy(ptr, dtls_header, sizeof(struct DtlsHeader));
@@ -300,34 +300,50 @@ uint32_t make_dtls_packet(union symmetric_encrypt encryption_ctx,
   memcpy(ptr, dtls_payload, payload_len);
 
   if (encrypt_packet) {
-    guchar *encrypted_dtls_packet;
-
-    if (total_packet_len > 200)
-      exit(0);
+    struct aes_ctx *encryption_ctx = transport->symitric_encrypt_ctx.aes;
 
     printf("to encrypt \n");
     print_hex(packet + sizeof(struct DtlsHeader),
               total_packet_len - sizeof(struct DtlsHeader));
 
     printf("------------IV \n");
-    print_hex(encryption_ctx.aes.client->IV,
-              encryption_ctx.aes.client->row_size * 4);
+    print_hex(encryption_ctx->client->IV, encryption_ctx->client->row_size * 4);
 
     printf("-------------initial key \n");
-    print_hex(encryption_ctx.aes.client->initial_key,
-              encryption_ctx.aes.client->row_size * 4);
+    print_hex(encryption_ctx->client->initial_key,
+              encryption_ctx->client->row_size * 4);
+
+    struct AesEnryptionCtx *client_Ectx = encryption_ctx->client;
+
+    // calculate mac of the packet
+
+    gsize hmac_len = transport->cipher_suite->hmac_len;
+    GHmac *hmac = g_hmac_new(transport->cipher_suite->hmac_algo,
+                             client_Ectx->mac_key, client_Ectx->mac_key_size);
+
+    g_hmac_update(hmac, (guchar *)&dtls_header->epoch,
+                  8); // copies epoch and seq number
+    g_hmac_update(hmac, &dtls_header->type, 1);
+
+    g_hmac_update(hmac, (guchar *)&dtls_header->version, 2);
+    g_hmac_update(hmac, (guchar *)&dtls_header->length, 2);
+    g_hmac_update(hmac, (guchar *)&handshake, sizeof(struct HandshakeHeader));
+    g_hmac_update(hmac, dtls_payload, payload_len);
+
+    guchar *dtls_packet_mac = malloc(hmac_len);
+    g_hmac_get_digest(hmac, dtls_packet_mac, &hmac_len);
+
+    memcpy(packet + total_packet_len, dtls_packet_mac, hmac_len);
 
     uint32_t enrypted_len =
-        encrypt_aes(encryption_ctx.aes.client, &encrypted_dtls_packet, &packet,
-                    sizeof(struct DtlsHeader), total_packet_len);
+        encrypt_aes(client_Ectx, &packet, sizeof(struct DtlsHeader),
+                    total_packet_len + hmac_len);
 
     uint16_t n_encrypted_len =
         htons((uint16_t)enrypted_len - sizeof(struct DtlsHeader));
 
-    memcpy(encrypted_dtls_packet + sizeof(struct DtlsHeader) - 2,
-           &n_encrypted_len, 2);
+    memcpy(packet + sizeof(struct DtlsHeader) - 2, &n_encrypted_len, 2);
 
-    packet = encrypted_dtls_packet;
     total_packet_len = enrypted_len;
     printf("encrypted \n");
     print_hex(packet + sizeof(struct DtlsHeader),
@@ -610,6 +626,21 @@ void handle_server_hello(struct RTCDtlsTransport *transport,
 
   transport->selected_cipher_suite = ntohs(hello->cipher_suite);
   transport->epoch = 0;
+  struct cipher_suite_info *cipher_info =
+      malloc(sizeof(struct cipher_suite_info));
+
+  switch (transport->selected_cipher_suite) {
+  case TLS_RSA_WITH_AES_128_CBC_SHA:
+    cipher_info->selected_cipher_suite = transport->selected_cipher_suite;
+    cipher_info->hmac_algo = G_CHECKSUM_SHA1;
+    cipher_info->hmac_len = g_checksum_type_get_length(cipher_info->hmac_algo);
+    break;
+
+  default:
+    printf("cipher sute not supported %x \n", transport->selected_cipher_suite);
+    exit(0);
+  }
+  transport->cipher_suite = cipher_info;
 
   BIGNUM *r2 = BN_new();
   BN_bin2bn(&hello->random[0], 32, r2);

@@ -33,8 +33,6 @@ int strcicmp(char const *a, char const *b) {
   }
 }
 
-uint32_t hton_24(uint32_t no) { return NULL; }
-
 void get_random_string(gchar **data_pointer, uint32_t length, uint8_t type) {
   guchar *random_data;
 

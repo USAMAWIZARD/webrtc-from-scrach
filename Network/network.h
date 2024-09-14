@@ -8,10 +8,10 @@
 #include "../STUN/stun.h"
 #include "../WebRTC/webrtc.h"
 #include <arpa/inet.h>
+#include <glib.h>
 #include <poll.h>
 #include <sched.h>
 #include <sys/socket.h>
-#include <glib.h>
 
 enum packet_protocol { STUN, DTLS, RTP, RTCP };
 enum subtype { BINDING_REQUEST, BINDING_RESPONSE };
@@ -42,7 +42,7 @@ struct NetworkPacket {
   struct sockaddr *receiver_sock;
   uint16_t total_bytes_recvied;
 };
-char *get_ip_str(const struct sockaddr *sa, char *s_ip, int *port,
+char *get_ip_str(const struct sockaddr *sa, char *s_ip, uint16_t *port,
                  size_t maxlen);
 int get_udp_sock_desc();
 void *packet_listner_thread(void *peer_v);

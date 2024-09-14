@@ -1,7 +1,5 @@
 #include "../../Utils/utils.h"
-
 #include "encryption.h"
-#include "glibconfig.h"
 #include <arpa/inet.h>
 #include <glib.h>
 #include <math.h>
@@ -261,12 +259,11 @@ void add_aes_padding(uint8_t *block, uint16_t data_len, uint8_t padding_size) {
   block = block + data_len;
 
   for (int i = 0; i <= padding_size; i++) {
-    block[i] = padding_size;
+    block[i] = padding_size - 1;
   }
 }
-uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
-                     uint8_t (**block_data)[4], uint16_t block_encrypt_offset,
-                     uint32_t total_packet_len) {
+uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
+                     uint16_t block_encrypt_offset, uint32_t total_packet_len) {
 
   bool is_cbc = true;
   printf("string encryption prooces\n");
@@ -275,10 +272,9 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
   uint8_t padding_size = 16 - (block_len % 16);
   uint16_t to_encypt_len = block_len + padding_size;
 
-  uint8_t(*block)[4] = realloc(*block_data, total_packet_len + padding_size);
+  uint8_t(*block)[4] = block_data;
 
-  *encrypted_data = block;
-  block = (*encrypted_data) + block_encrypt_offset;
+  block = (*block_data) + block_encrypt_offset;
 
   uint32_t data_encrytion_itration = (to_encypt_len) / 16;
   printf("%d %d %d %d  %d\n", data_encrytion_itration, padding_size,
@@ -312,7 +308,7 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
 
     block = block + 4;
   }
-  block = (*encrypted_data) + block_encrypt_offset;
+  block = (*block_data) + block_encrypt_offset;
 
   for (int i = 0; i < data_encrytion_itration; i++) {
     transpose_matrix(block);
@@ -322,27 +318,72 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
   return total_packet_len + padding_size;
 }
 
-bool init_aes(struct AesEnryptionCtx **encryption_ctx, uint8_t key_size,
-              BIGNUM *init_aes_key_bn, BIGNUM *IV) {
+bool init_aes(struct aes_ctx **encryption_ctx,
+              struct encryption_keys *encryption_keys) {
 
-  struct AesEnryptionCtx *aes_ctx = malloc(sizeof(struct AesEnryptionCtx));
-  aes_ctx->key_size_bytes = key_size;
-  if (aes_ctx->key_size_bytes == 16) {
-    aes_ctx->no_rounds = 10;
+  struct AesEnryptionCtx *client_aes_ctx =
+      malloc(sizeof(struct AesEnryptionCtx));
+  client_aes_ctx->key_size_bytes = encryption_keys->key_size;
+  if (client_aes_ctx->key_size_bytes == 16) {
+    client_aes_ctx->no_rounds = 10;
   } else {
     return false;
   }
 
-  aes_ctx->initial_key = malloc(BN_num_bytes(init_aes_key_bn));
-  BN_bn2bin(init_aes_key_bn, aes_ctx->initial_key);
+  client_aes_ctx->initial_key =
+      malloc(BN_num_bytes(encryption_keys->client_write_key));
+  BN_bn2bin(encryption_keys->client_write_key, client_aes_ctx->initial_key);
 
-  aes_ctx->IV = malloc(BN_num_bytes(IV));
-  BN_bn2bin(IV, aes_ctx->IV);
+  client_aes_ctx->IV = malloc(BN_num_bytes(encryption_keys->client_write_IV));
+  BN_bn2bin(encryption_keys->client_write_IV, client_aes_ctx->IV);
 
-  aes_ctx->row_size = (uint8_t)((float)aes_ctx->key_size_bytes / 4.0);
+  client_aes_ctx->mac_key =
+      malloc(BN_num_bytes(encryption_keys->client_write_mac_key));
+  BN_bn2bin(encryption_keys->client_write_mac_key, client_aes_ctx->mac_key);
 
-  aes_expand_key(aes_ctx);
-  *encryption_ctx = aes_ctx;
+  client_aes_ctx->row_size =
+      (uint8_t)((float)client_aes_ctx->key_size_bytes / 4.0);
+
+  client_aes_ctx->mac_key_size = encryption_keys->mac_key_size;
+  client_aes_ctx->iv_size = encryption_keys->iv_size;
+  client_aes_ctx->key_size = encryption_keys->key_size;
+
+  aes_expand_key(client_aes_ctx);
+
+  struct AesEnryptionCtx *server_aes_ctx =
+      malloc(sizeof(struct AesEnryptionCtx));
+  server_aes_ctx->key_size_bytes = encryption_keys->key_size;
+  if (server_aes_ctx->key_size_bytes == 16) {
+    server_aes_ctx->no_rounds = 10;
+  } else {
+    return false;
+  }
+
+  server_aes_ctx->initial_key =
+      malloc(BN_num_bytes(encryption_keys->server_write_key));
+  BN_bn2bin(encryption_keys->server_write_key, server_aes_ctx->initial_key);
+
+  server_aes_ctx->IV = malloc(BN_num_bytes(encryption_keys->server_write_IV));
+  BN_bn2bin(encryption_keys->server_write_IV, server_aes_ctx->IV);
+
+  server_aes_ctx->mac_key =
+      malloc(BN_num_bytes(encryption_keys->server_write_mac_key));
+  BN_bn2bin(encryption_keys->server_write_mac_key, server_aes_ctx->mac_key);
+
+  server_aes_ctx->row_size =
+      (uint8_t)((float)server_aes_ctx->key_size_bytes / 4.0);
+
+  aes_expand_key(server_aes_ctx);
+
+  server_aes_ctx->mac_key_size = encryption_keys->mac_key_size;
+  server_aes_ctx->iv_size = encryption_keys->iv_size;
+  server_aes_ctx->key_size = encryption_keys->key_size;
+
+  struct aes_ctx *server_server_aes_ctx = malloc(sizeof(struct aes_ctx));
+  server_server_aes_ctx->client = client_aes_ctx;
+  server_server_aes_ctx->server = server_aes_ctx;
+
+  *encryption_ctx = server_server_aes_ctx;
 
   return true;
 }

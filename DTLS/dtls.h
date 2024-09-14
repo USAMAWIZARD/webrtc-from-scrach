@@ -57,13 +57,20 @@ enum HandshakeType {
   handshake_type_change_cipher_spec = 233,
 };
 
+struct cipher_suite_info {
+  uint16_t selected_cipher_suite;
+  GChecksumType hmac_algo;
+  gsize hmac_len;
+};
+
 struct RTCDtlsTransport {
   enum DTLS_MODE mode;
-  char *fingerprint;
   enum DtlsState state;
   struct CandidataPair *pair;
   struct DtlsParsedPacket *last_dtl_packet;
   JsonObject *dtls_flights;
+  struct cipher_suite_info *cipher_suite;
+  char *fingerprint;
   uint16_t current_seq_no;
   uint16_t epoch;
   int cookie;
@@ -76,6 +83,7 @@ struct RTCDtlsTransport {
   X509 *client_certificate;
   struct encryption_keys *encryption_keys;
   union symmetric_encrypt symitric_encrypt_ctx;
+
   struct ALLDtlsMessages *all_previous_handshake_msgs;
   EVP_PKEY *pub_key;
   EVP_PKEY *my_private_key;
@@ -178,17 +186,6 @@ struct ClientKeyExchange {
   gchar encrypted_premaster_key[];
 };
 
-struct encryption_keys {
-  BIGNUM *master_secret;
-  BIGNUM *my_private_key;
-  BIGNUM *client_write_mac_key;
-  BIGNUM *server_write_mac_key;
-  BIGNUM *client_write_key;
-  BIGNUM *server_wirte_key;
-  BIGNUM *client_write_IV;
-  BIGNUM *server_write_IV;
-};
-
 struct ALLDtlsMessages {
   bool isfragmented;
   struct ALLDtlsMessages *next_message;
@@ -204,8 +201,8 @@ void start_dtls_negosiation(struct RTCPeerConnection *peer,
 void send_dtls_client_hello(struct RTCPeerConnection *peer,
                             struct CandidataPair *pair, bool with_cookie);
 bool check_if_dtls(uint8_t);
-uint32_t make_dtls_packet(union symmetric_encrypt, guchar **dtls_packet,
-                          struct DtlsHeader *dtls_header,
+uint32_t make_dtls_packet(struct RTCDtlsTransport *transport,
+                          guchar **dtls_packet, struct DtlsHeader *dtls_header,
                           struct HandshakeHeader *handshake,
                           guchar *dtls_payload, uint32_t payload_len);
 bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,

@@ -75,7 +75,7 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block) {
   encryption_keys->server_write_mac_key = BN_new();
 
   encryption_keys->client_write_key = BN_new();
-  encryption_keys->server_write_mac_key = BN_new();
+  encryption_keys->server_write_key = BN_new();
 
   encryption_keys->client_write_IV = BN_new();
   encryption_keys->server_write_IV = BN_new();
@@ -90,34 +90,30 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block) {
   printf("key expanstion block\n");
   print_hex(key_block, (key_size * 4 * 2) + (20 * 2));
 
-  encryption_keys->client_write_mac_key = BN_new();
   BN_bin2bn(key_block, hash_size, encryption_keys->client_write_mac_key);
   key_block += hash_size;
 
-  encryption_keys->server_write_mac_key = BN_new();
   BN_bin2bn(key_block, hash_size, encryption_keys->server_write_mac_key);
   key_block += hash_size;
 
-  encryption_keys->client_write_key = BN_new();
   BN_bin2bn(key_block, key_size, encryption_keys->client_write_key);
   key_block += key_size;
 
-  encryption_keys->server_wirte_key = BN_new();
-  BN_bin2bn(key_block, key_size, encryption_keys->server_wirte_key);
+  BN_bin2bn(key_block, key_size, encryption_keys->server_write_key);
   key_block += key_size;
 
-  encryption_keys->client_write_IV = BN_new();
   BN_bin2bn(key_block, iv_size, encryption_keys->client_write_IV);
   key_block += iv_size;
 
-  encryption_keys->server_write_IV = BN_new();
   BN_bin2bn(key_block, iv_size, encryption_keys->server_write_IV);
+
+  encryption_keys->key_size = key_size;
+  encryption_keys->mac_key_size = hash_size;
+  encryption_keys->iv_size = iv_size;
 
   switch (selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
-    init_aes(&transport->symitric_encrypt_ctx.aes.client, key_size,
-             encryption_keys->client_write_key,
-             encryption_keys->client_write_IV);
+    init_aes(&transport->symitric_encrypt_ctx.aes, encryption_keys);
   default:
 
     break;

@@ -15,11 +15,16 @@
 // 256 12
 // 256 14
 
-struct RTCDtlsTransport;
 enum cipher_suite;
+struct RTCDtlsTransport;
+struct encryption_keys;
 
 struct AesEnryptionCtx {
   uint8_t *initial_key;
+  uint8_t *mac_key;
+  uint16_t mac_key_size;
+  uint16_t iv_size;
+  uint16_t key_size;
   uint8_t row_size;
 
   uint8_t key_size_bytes;
@@ -37,7 +42,20 @@ struct aes_ctx {
 };
 
 union symmetric_encrypt {
-  struct aes_ctx aes;
+  struct aes_ctx *aes;
+};
+struct encryption_keys {
+  uint16_t key_size;
+  uint16_t iv_size;
+  uint16_t mac_key_size;
+  BIGNUM *master_secret;
+  BIGNUM *my_private_key;
+  BIGNUM *client_write_mac_key;
+  BIGNUM *server_write_mac_key;
+  BIGNUM *client_write_key;
+  BIGNUM *server_write_key;
+  BIGNUM *client_write_IV;
+  BIGNUM *server_write_IV;
 };
 
 #define MASTER_SECRET_LEN 48.0
@@ -62,8 +80,8 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
 
 bool init_symitric_encryption(struct RTCDtlsTransport *transport);
 bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block);
-bool init_aes(struct AesEnryptionCtx **encryption_ctx, uint8_t key_size,
-              BIGNUM *init_aes_key, BIGNUM *IV);
+bool init_aes(struct aes_ctx **encryption_ctx,
+              struct encryption_keys *encryption_keys);
 
 bool aes_expand_key(struct AesEnryptionCtx *ctx);
 
@@ -73,9 +91,8 @@ void shift_rows(uint8_t (*block)[4]);
 
 void mix_columns(uint8_t (*matrix)[4]);
 
-uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **encrypted_data,
-                     uint8_t (**block_data)[4], uint16_t block_encrypt_offset,
-                     uint32_t data_len);
+uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
+                     uint16_t block_encrypt_offset, uint32_t data_len);
 void transpose_matrix(uint8_t (*round_key)[4]);
 
 #endif // !_ENRYPTIONH_

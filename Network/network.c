@@ -42,7 +42,7 @@ int get_udp_sock_desc() {
   return socket_desc;
 }
 
-char *get_ip_str(const struct sockaddr *sa, char *s_ip, int *port,
+char *get_ip_str(const struct sockaddr *sa, char *s_ip, uint16_t *port,
                  size_t maxlen) {
   switch (sa->sa_family) {
   case AF_INET:
@@ -72,8 +72,8 @@ char *get_ip_str(const struct sockaddr *sa, char *s_ip, int *port,
 //
 void *packet_listner_thread(void *peer_v) {
   struct RTCPeerConnection *peer = (struct RTCPeerConnection *)peer_v;
-  int *sport = malloc(sizeof(int));
-  int *rport = malloc(sizeof(int));
+  uint16_t *sport = malloc(sizeof(uint16_t));
+  uint16_t *rport = malloc(sizeof(uint16_t));
   char *sender_ip = malloc(20);
   char *recv_ip = malloc(20);
   char *udp_packet = malloc(1000);
