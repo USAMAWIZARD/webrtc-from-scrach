@@ -7,6 +7,8 @@
 #include "glibconfig.h"
 #include "json-glib/json-glib.h"
 #include <bits/pthreadtypes.h>
+#include <bits/types/struct_iovec.h>
+#include <errno.h>
 #include <glib.h>
 #include <malloc.h>
 #include <netinet/in.h>
@@ -25,6 +27,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/uio.h>
 #include <time.h>
 
 gchar *my_rsa_public_cert =
@@ -176,12 +179,6 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer,
   struct dtls_ext *srtp_extention;
   uint8_t mki_len = 0;
 
-  ext_len =
-      make_extentention(&srtp_extention, SRTP_EXT, srtp_supported_profiles,
-                        sizeof(srtp_supported_profiles), &mki_len, 1);
-  add_dtls_extention(&dtls_client_hello, srtp_extention, ext_len);
-  free(srtp_extention);
-
   struct dtls_ext *supported_signature_algorithms;
   ext_len = make_extentention(&supported_signature_algorithms, SIGN_ALGO_EXT,
                               signature_algorithms,
@@ -190,21 +187,27 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer,
                      ext_len);
   free(supported_signature_algorithms);
 
-  struct dtls_ext *other_extention;
   ext_len =
-      make_extentention(&other_extention, EXTEND_MASTER_SEC_EXT, 0, 0, 0, 0);
-  add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
-  free(other_extention);
+      make_extentention(&srtp_extention, SRTP_EXT, srtp_supported_profiles,
+                        sizeof(srtp_supported_profiles), &mki_len, 1);
+  add_dtls_extention(&dtls_client_hello, srtp_extention, ext_len);
+  free(srtp_extention);
+
+  // struct dtls_ext *other_extention;
+  // ext_len =
+  //     make_extentention(&other_extention, EXTEND_MASTER_SEC_EXT, 0, 0, 0, 0);
+  // add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
+  // free(other_extention);
   //
   // // session ticket extention
-  ext_len = make_extentention(&other_extention, SESS_TICKET_EXT, 0, 0, 0, 0);
-  add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
-  free(other_extention);
+  // ext_len = make_extentention(&other_extention, SESS_TICKET_EXT, 0, 0, 0, 0);
+  // add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
+  // free(other_extention);
 
-  int a = 0;
-  ext_len = make_extentention(&other_extention, 0xff01, 0, 0, &a, 1);
-  add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
-  free(other_extention);
+  // int a = 0;
+  // ext_len = make_extentention(&other_extention, 0xff01, 0, 0, &a, 1);
+  // add_dtls_extention(&dtls_client_hello, other_extention, ext_len);
+  // free(other_extention);
 
   dtls_client_hello->extention_len = htons(dtls_client_hello->extention_len);
 
@@ -256,41 +259,49 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
   store_concated_handshake_msgs(dtls_transport, handshake, dtls_payload,
                                 dtls_payload_len, false);
 
-  guchar *dtls_packet;
-  uint32_t packet_len =
-      make_dtls_packet(dtls_transport, &dtls_packet, dtls_header, handshake,
-                       dtls_payload, dtls_payload_len);
+  struct iovec dtls_packet[4];
+
+  uint8_t len = make_dtls_packet(dtls_transport, &dtls_packet[0], dtls_header,
+                                 handshake, dtls_payload, dtls_payload_len);
 
   struct CandidataPair *pair = dtls_transport->pair;
-  int bytes = sendto(pair->p0->sock_desc, dtls_packet, packet_len, 0,
-                     (struct sockaddr *)pair->p1->src_socket,
-                     sizeof(struct sockaddr_in));
+
+  struct msghdr msghdr = {0};
+  msghdr.msg_iov = dtls_packet;
+  msghdr.msg_iovlen = len;
+  msghdr.msg_name = (struct sockaddr *)pair->p1->src_socket;
+  msghdr.msg_namelen = sizeof(struct sockaddr_in);
+
+  int bytes = sendmsg(pair->p0->sock_desc, &msghdr, 0);
 
   dtls_transport->current_seq_no++;
 
   if (bytes < 0) {
-    printf("cannot send DTLS packet\n");
+    printf("error no : %d\n", errno);
+    printf("cannot send DTLS packet %d\n", len);
     exit(0);
   }
   return true;
 }
-uint32_t make_dtls_packet(struct RTCDtlsTransport *transport,
-                          guchar **dtls_packet, struct DtlsHeader *dtls_header,
-                          struct HandshakeHeader *handshake,
-                          guchar *dtls_payload, uint32_t payload_len) {
+uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
+                         struct DtlsHeader *dtls_header,
+                         struct HandshakeHeader *handshake,
+                         guchar *dtls_payload, uint32_t payload_len) {
 
+  uint8_t iov_len = 0;
   bool encrypt_packet = ntohs(dtls_header->epoch);
-  int total_packet_len = sizeof(struct DtlsHeader) + payload_len;
+  size_t total_packet_len = payload_len;
 
   if (handshake != NULL)
     total_packet_len += sizeof(struct HandshakeHeader);
 
-  guchar *packet =
-      malloc(total_packet_len + 64 + 16); // max hmac size max paddign size
+  guchar *packet = malloc(total_packet_len + 64 +
+                          16); //  length max hmac size max paddign size
   guchar *ptr = packet;
 
-  memcpy(ptr, dtls_header, sizeof(struct DtlsHeader));
-  ptr = ptr + sizeof(struct DtlsHeader);
+  iov[iov_len].iov_base = dtls_header;
+  iov[iov_len].iov_len = sizeof(struct DtlsHeader);
+  iov_len++;
 
   if (handshake != NULL) {
     memcpy(ptr, handshake, sizeof(struct HandshakeHeader));
@@ -301,10 +312,7 @@ uint32_t make_dtls_packet(struct RTCDtlsTransport *transport,
 
   if (encrypt_packet) {
     struct aes_ctx *encryption_ctx = transport->symitric_encrypt_ctx.aes;
-
-    printf("to encrypt \n");
-    print_hex(packet + sizeof(struct DtlsHeader),
-              total_packet_len - sizeof(struct DtlsHeader));
+    struct AesEnryptionCtx *client_Ectx = encryption_ctx->client;
 
     printf("------------IV \n");
     print_hex(encryption_ctx->client->IV, encryption_ctx->client->row_size * 4);
@@ -313,18 +321,19 @@ uint32_t make_dtls_packet(struct RTCDtlsTransport *transport,
     print_hex(encryption_ctx->client->initial_key,
               encryption_ctx->client->row_size * 4);
 
-    struct AesEnryptionCtx *client_Ectx = encryption_ctx->client;
+    iov[iov_len].iov_base = client_Ectx->recordIV;
+    iov[iov_len].iov_len = 16;
+    iov_len++;
+    dtls_header->length = 16;
 
     // calculate mac of the packet
 
     gsize hmac_len = transport->cipher_suite->hmac_len;
     GHmac *hmac = g_hmac_new(transport->cipher_suite->hmac_algo,
                              client_Ectx->mac_key, client_Ectx->mac_key_size);
-
     g_hmac_update(hmac, (guchar *)&dtls_header->epoch,
                   8); // copies epoch and seq number
     g_hmac_update(hmac, &dtls_header->type, 1);
-
     g_hmac_update(hmac, (guchar *)&dtls_header->version, 2);
     g_hmac_update(hmac, (guchar *)&dtls_header->length, 2);
     g_hmac_update(hmac, (guchar *)&handshake, sizeof(struct HandshakeHeader));
@@ -332,27 +341,30 @@ uint32_t make_dtls_packet(struct RTCDtlsTransport *transport,
 
     guchar *dtls_packet_mac = malloc(hmac_len);
     g_hmac_get_digest(hmac, dtls_packet_mac, &hmac_len);
-
     memcpy(packet + total_packet_len, dtls_packet_mac, hmac_len);
+    //
+
+    printf("to encrypt \n");
+    print_hex(packet, total_packet_len + hmac_len);
 
     uint32_t enrypted_len =
-        encrypt_aes(client_Ectx, &packet, sizeof(struct DtlsHeader),
-                    total_packet_len + hmac_len);
+        encrypt_aes(client_Ectx, &packet, 0, total_packet_len + hmac_len);
+    print_hex(packet, enrypted_len);
 
-    uint16_t n_encrypted_len =
-        htons((uint16_t)enrypted_len - sizeof(struct DtlsHeader));
+    uint16_t n_encrypted_len = htons((uint16_t)enrypted_len);
 
-    memcpy(packet + sizeof(struct DtlsHeader) - 2, &n_encrypted_len, 2);
+    dtls_header->length += enrypted_len;
 
     total_packet_len = enrypted_len;
-    printf("encrypted \n");
-    print_hex(packet + sizeof(struct DtlsHeader),
-              total_packet_len - sizeof(struct DtlsHeader));
+
+    dtls_header->length = htons(dtls_header->length);
   }
 
-  *dtls_packet = packet;
+  iov[iov_len].iov_base = packet;
+  iov[iov_len].iov_len = total_packet_len;
+  iov_len++;
 
-  return total_packet_len;
+  return iov_len;
 }
 
 uint16_t add_dtls_extention(struct DtlsClientHello **dtls_hello,
@@ -609,8 +621,10 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       do_client_key_exchange(peer->dtls_transport);
       do_certificate_verify(peer->dtls_transport);
       do_change_cipher_spec(peer->dtls_transport);
+      peer->dtls_transport->current_seq_no = 0;
       do_client_finished(peer->dtls_transport);
 
+      exit(0);
       // client_finshed();
       break;
     default:
@@ -854,10 +868,8 @@ const gchar *compute_all_message_hash(struct RTCDtlsTransport *transport,
       goto next_handshake_message;
 
     if (for_finished_message && all_handshake_msgs->isfragmented) {
-      printf("test1\n");
       if (all_handshake_msgs->handshake_header->fragment_offset == 0) {
 
-        printf("test2\n");
         all_handshake_msgs->handshake_header->fragment_offset = 0;
         all_handshake_msgs->handshake_header->fragment_length =
             all_handshake_msgs->handshake_header->length;
@@ -866,7 +878,6 @@ const gchar *compute_all_message_hash(struct RTCDtlsTransport *transport,
     } else {
     update_handshake_header:
 
-      printf("test3 %d\n", all_handshake_msgs->isfragmented);
       g_checksum_update(checksum,
                         (guchar *)all_handshake_msgs->handshake_header,
                         sizeof(struct HandshakeHeader));

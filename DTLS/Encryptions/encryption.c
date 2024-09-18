@@ -111,6 +111,7 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block) {
   encryption_keys->mac_key_size = hash_size;
   encryption_keys->iv_size = iv_size;
 
+
   switch (selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
     init_aes(&transport->symitric_encrypt_ctx.aes, encryption_keys);
@@ -135,6 +136,7 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
     *iv_size = 0;
     *hash_size = 0;
     printf("Unknown cipher suite\n");
+    exit(0);
     break;
   }
   return false;

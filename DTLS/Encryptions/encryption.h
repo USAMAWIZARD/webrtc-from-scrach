@@ -31,6 +31,7 @@ struct AesEnryptionCtx {
   uint8_t no_rounds;
 
   uint8_t input_text[4][4];
+  uint8_t *recordIV;
   uint8_t *IV;
   uint8_t *prevoius_cipher;
   gchar *roundkeys[14];

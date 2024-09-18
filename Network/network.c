@@ -76,7 +76,7 @@ void *packet_listner_thread(void *peer_v) {
   uint16_t *rport = malloc(sizeof(uint16_t));
   char *sender_ip = malloc(20);
   char *recv_ip = malloc(20);
-  char *udp_packet = malloc(1000);
+  guchar *udp_packet = malloc(1000);
   socklen_t socklen = sizeof(struct sockaddr_in);
 
   struct sockaddr *sender_addr = malloc(sizeof(struct sockaddr));

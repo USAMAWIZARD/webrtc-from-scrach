@@ -1,15 +1,18 @@
 #pragma once
+
 #ifndef _DTLSH_
 #define _DTLSH_
 
 #include "../WebRTC/webrtc.h"
 #include "Encryptions/encryption.h"
 #include "json-glib/json-glib.h"
+#include <bits/types/struct_iovec.h>
 #include <glib.h>
 #include <openssl/bn.h>
 #include <openssl/types.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/socket.h>
 
 #define DTLS_1_2 0xfefd
 #define DTLS_1_0 0xfeff
@@ -201,10 +204,11 @@ void start_dtls_negosiation(struct RTCPeerConnection *peer,
 void send_dtls_client_hello(struct RTCPeerConnection *peer,
                             struct CandidataPair *pair, bool with_cookie);
 bool check_if_dtls(uint8_t);
-uint32_t make_dtls_packet(struct RTCDtlsTransport *transport,
-                          guchar **dtls_packet, struct DtlsHeader *dtls_header,
-                          struct HandshakeHeader *handshake,
-                          guchar *dtls_payload, uint32_t payload_len);
+uint8_t make_dtls_packet(struct RTCDtlsTransport *transport,
+                         struct iovec *dtls_packet,
+                         struct DtlsHeader *dtls_header,
+                         struct HandshakeHeader *handshake,
+                         guchar *dtls_payload, uint32_t payload_len);
 bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
                       uint8_t handshake_type, guchar *dtls_payload,
                       uint32_t dtls_payload_len);

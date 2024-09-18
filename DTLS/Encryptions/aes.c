@@ -284,7 +284,11 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
   print_hex(block, to_encypt_len);
   //  exit(0);
 
+  memcpy(ctx->recordIV, ctx->IV, ctx->iv_size);
+
+  ctx->recordIV = ctx->IV;
   transpose_matrix(ctx->IV);
+
   for (int j = 0; j < data_encrytion_itration; j++) {
     transpose_matrix(block);
 
@@ -308,6 +312,8 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
 
     block = block + 4;
   }
+  get_random_string(ctx->IV, ctx->iv_size, 1);
+
   block = (*block_data) + block_encrypt_offset;
 
   for (int i = 0; i < data_encrytion_itration; i++) {
@@ -322,7 +328,7 @@ bool init_aes(struct aes_ctx **encryption_ctx,
               struct encryption_keys *encryption_keys) {
 
   struct AesEnryptionCtx *client_aes_ctx =
-      malloc(sizeof(struct AesEnryptionCtx));
+      calloc(1, sizeof(struct AesEnryptionCtx));
   client_aes_ctx->key_size_bytes = encryption_keys->key_size;
   if (client_aes_ctx->key_size_bytes == 16) {
     client_aes_ctx->no_rounds = 10;
@@ -348,11 +354,14 @@ bool init_aes(struct aes_ctx **encryption_ctx,
   client_aes_ctx->iv_size = encryption_keys->iv_size;
   client_aes_ctx->key_size = encryption_keys->key_size;
 
+  client_aes_ctx->recordIV = calloc(1, client_aes_ctx->iv_size);
+
   aes_expand_key(client_aes_ctx);
 
   struct AesEnryptionCtx *server_aes_ctx =
-      malloc(sizeof(struct AesEnryptionCtx));
+      calloc(1, sizeof(struct AesEnryptionCtx));
   server_aes_ctx->key_size_bytes = encryption_keys->key_size;
+
   if (server_aes_ctx->key_size_bytes == 16) {
     server_aes_ctx->no_rounds = 10;
   } else {
@@ -378,6 +387,8 @@ bool init_aes(struct aes_ctx **encryption_ctx,
   server_aes_ctx->mac_key_size = encryption_keys->mac_key_size;
   server_aes_ctx->iv_size = encryption_keys->iv_size;
   server_aes_ctx->key_size = encryption_keys->key_size;
+
+  server_aes_ctx->recordIV = calloc(1, server_aes_ctx->iv_size);
 
   struct aes_ctx *server_server_aes_ctx = malloc(sizeof(struct aes_ctx));
   server_server_aes_ctx->client = client_aes_ctx;

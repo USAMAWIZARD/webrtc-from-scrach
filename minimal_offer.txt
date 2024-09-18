@@ -47,3 +47,91 @@ MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCdo7lC+Qr0XThGL63kMExzjmUDruiH
 
 
 
+DTLSv1.2 Record Layer: Handshake Protocol: Client Hello
+    Content Type: Handshake (22)
+    Version: DTLS 1.0 (0xfeff)
+    Epoch: 0
+    Sequence Number: 0
+    Length: 75
+    Handshake Protocol: Client Hello
+        Handshake Type: Client Hello (1)
+        Length: 63
+        Message Sequence: 0
+        Fragment Offset: 0
+        Fragment Length: 63
+        Version: DTLS 1.2 (0xfefd)
+        Random: 35333631326534622d303233312d343031612d396463352d3364323938366665
+        Session ID Length: 0
+        Cookie Length: 0
+        Cipher Suites Length: 2
+        Cipher Suites (1 suite)
+            Cipher Suite: TLS_RSA_WITH_AES_128_CBC_SHA (0x002f)
+        Compression Methods Length: 1
+        Compression Methods (1 method)
+            Compression Method: null (0)
+        Extensions Length: 19
+        Extension: use_srtp (len=5)
+            Type: use_srtp (14)
+            Length: 5
+            SRTP Protection Profiles Length: 2
+            SRTP Protection Profile: SRTP_AES128_CM_HMAC_SHA1_80 (0x0001)
+            MKI Length: 0
+        Extension: signature_algorithms (len=6)
+            Type: signature_algorithms (13)
+            Length: 6
+            Signature Hash Algorithms Length: 4
+            Signature Hash Algorithms (2 algorithms)
+                Signature Algorithm: rsa_pkcs1_sha1 (0x0201)
+                    Signature Hash Algorithm Hash: SHA1 (2)
+                    Signature Hash Algorithm Signature: RSA (1)
+                Signature Algorithm: rsa_pkcs1_sha256 (0x0401)
+                    Signature Hash Algorithm Hash: SHA256 (4)
+                    Signature Hash Algorithm Signature: RSA (1)
+        [JA3 Fullstring: 65277,47,14-13,,]
+        [JA3: 30abed3938e3296fd330aafadca96fe8]
+
+Frame 706: 201 bytes on wire (1608 bits), 201 bytes captured (1608 bits) on interface any, id 0
+Linux cooked capture v1
+Internet Protocol Version 4, Src: usama-H110M-H.local (192.168.0.115), Dst: usama-H110M-H.local (192.168.0.115)
+User Datagram Protocol, Src Port: 50870, Dst Port: 51795
+Datagram Transport Layer Security
+    DTLSv1.2 Record Layer: Handshake Protocol: Client Hello
+        Content Type: Handshake (22)
+        Version: DTLS 1.0 (0xfeff)
+        Epoch: 0
+        Sequence Number: 0
+        Length: 144
+        Handshake Protocol: Client Hello
+            Handshake Type: Client Hello (1)
+            Length: 132
+            Message Sequence: 0
+            Fragment Offset: 0
+            Fragment Length: 132
+            Version: DTLS 1.2 (0xfefd)
+            Random: 6bdacb89310eb32ea9d62e6f26ff3d2d1ab8af564209bae48fb7b51a555580e3
+            Session ID Length: 0
+            Cookie Length: 0
+            Cipher Suites Length: 22
+            Cipher Suites (11 suites)
+                Cipher Suite: TLS_RSA_WITH_AES_128_CBC_SHA (0x002f)
+            Compression Methods Length: 1
+            Compression Methods (1 method)
+                Compression Method: null (0)
+            Extensions Length: 68
+            Extension: signature_algorithms (len=20)
+                Type: signature_algorithms (13)
+                Length: 20
+                Signature Hash Algorithms Length: 18
+                Signature Hash Algorithms (9 algorithms)
+                    Signature Algorithm: rsa_pkcs1_sha1 (0x0201)
+                        Signature Hash Algorithm Hash: SHA1 (2)
+                        Signature Hash Algorithm Signature: RSA (1)
+            Extension: use_srtp (len=9)
+                Type: use_srtp (14)
+                Length: 9
+                SRTP Protection Profiles Length: 6
+                SRTP Protection Profile: SRTP_AES128_CM_HMAC_SHA1_80 (0x0001)
+                SRTP Protection Profile: SRTP_AEAD_AES_256_GCM (0x0008)
+                SRTP Protection Profile: SRTP_AEAD_AES_128_GCM (0x0007)
+                MKI Length: 0
+
