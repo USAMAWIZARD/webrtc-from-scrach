@@ -92,6 +92,13 @@ struct RTCDtlsTransport {
   EVP_PKEY *my_private_key;
   EVP_PKEY *my_public_key;
 };
+struct __attribute__((packed)) DtlsHeader {
+  uint8_t type;
+  uint16_t version;
+  uint16_t epoch;
+  uint64_t sequence_number : 48;
+  uint16_t length;
+};
 
 struct __attribute__((packed)) HandshakeHeader {
   uint8_t type : 8;
@@ -145,14 +152,6 @@ struct __attribute__((packed)) CertificateVerify {
 struct __attribute__((packed)) HelloVerifyRequest {
   uint16_t server_version;
   uint16_t cookie_len;
-};
-
-struct __attribute__((packed)) DtlsHeader {
-  uint8_t type;
-  uint16_t version;
-  uint16_t epoch;
-  uint64_t sequence_number : 48;
-  uint16_t length;
 };
 
 struct __attribute__((packed)) dtls_ext {

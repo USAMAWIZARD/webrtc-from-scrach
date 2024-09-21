@@ -290,12 +290,12 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
 
   uint8_t iov_len = 0;
   bool encrypt_packet = ntohs(dtls_header->epoch);
-  size_t total_packet_len = payload_len;
+  size_t Hheader_payload_len = payload_len;
 
   if (handshake != NULL)
-    total_packet_len += sizeof(struct HandshakeHeader);
+    Hheader_payload_len += sizeof(struct HandshakeHeader);
 
-  guchar *packet = malloc(total_packet_len + 64 +
+  guchar *packet = malloc(Hheader_payload_len + 64 +
                           16); //  length max hmac size max paddign size
   guchar *ptr = packet;
 
@@ -304,15 +304,23 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
   iov_len++;
 
   if (handshake != NULL) {
+    if (encrypt_packet)
+      handshake->message_seq = htons(5);
+
     memcpy(ptr, handshake, sizeof(struct HandshakeHeader));
     ptr = ptr + sizeof(struct HandshakeHeader);
   }
 
   memcpy(ptr, dtls_payload, payload_len);
+  ptr = ptr + payload_len;
 
   if (encrypt_packet) {
     struct aes_ctx *encryption_ctx = transport->symitric_encrypt_ctx.aes;
     struct AesEnryptionCtx *client_Ectx = encryption_ctx->client;
+
+    iov[iov_len].iov_base = client_Ectx->recordIV;
+    iov[iov_len].iov_len = 16;
+    iov_len++;
 
     printf("------------IV \n");
     print_hex(encryption_ctx->client->IV, encryption_ctx->client->row_size * 4);
@@ -320,11 +328,6 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
     printf("-------------initial key \n");
     print_hex(encryption_ctx->client->initial_key,
               encryption_ctx->client->row_size * 4);
-
-    iov[iov_len].iov_base = client_Ectx->recordIV;
-    iov[iov_len].iov_len = 16;
-    iov_len++;
-    dtls_header->length = 16;
 
     // calculate mac of the packet
 
@@ -336,32 +339,28 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
     g_hmac_update(hmac, &dtls_header->type, 1);
     g_hmac_update(hmac, (guchar *)&dtls_header->version, 2);
     g_hmac_update(hmac, (guchar *)&dtls_header->length, 2);
-    g_hmac_update(hmac, (guchar *)&handshake, sizeof(struct HandshakeHeader));
+    g_hmac_update(hmac, (guchar *)handshake, sizeof(struct HandshakeHeader));
     g_hmac_update(hmac, dtls_payload, payload_len);
 
     guchar *dtls_packet_mac = malloc(hmac_len);
     g_hmac_get_digest(hmac, dtls_packet_mac, &hmac_len);
-    memcpy(packet + total_packet_len, dtls_packet_mac, hmac_len);
+    memcpy(ptr, dtls_packet_mac, hmac_len);
     //
 
     printf("to encrypt \n");
-    print_hex(packet, total_packet_len + hmac_len);
+    print_hex(packet, Hheader_payload_len + hmac_len);
 
     uint32_t enrypted_len =
-        encrypt_aes(client_Ectx, &packet, 0, total_packet_len + hmac_len);
+        encrypt_aes(client_Ectx, &packet, 0, Hheader_payload_len + hmac_len);
     print_hex(packet, enrypted_len);
 
-    uint16_t n_encrypted_len = htons((uint16_t)enrypted_len);
+    dtls_header->length = htons(enrypted_len + 16); // IV len
 
-    dtls_header->length += enrypted_len;
-
-    total_packet_len = enrypted_len;
-
-    dtls_header->length = htons(dtls_header->length);
+    Hheader_payload_len = enrypted_len;
   }
 
   iov[iov_len].iov_base = packet;
-  iov[iov_len].iov_len = total_packet_len;
+  iov[iov_len].iov_len = Hheader_payload_len;
   iov_len++;
 
   return iov_len;
@@ -958,6 +957,8 @@ bool do_client_finished(struct RTCDtlsTransport *transport) {
       PRF(transport->encryption_keys->master_secret, "client finished",
           all_message_hash_bn, G_CHECKSUM_SHA256, 12);
 
+  printf("verify data finish ");
+  print_hex(verify_data, 12);
   send_dtls_packet(transport, handshake_type_finished, verify_data, 12);
 
   return true;

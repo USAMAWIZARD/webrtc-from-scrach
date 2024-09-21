@@ -312,7 +312,6 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
 
     block = block + 4;
   }
-  get_random_string(ctx->IV, ctx->iv_size, 1);
 
   block = (*block_data) + block_encrypt_offset;
 
@@ -321,6 +320,7 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
     block = block + 4;
   }
 
+  get_random_string(&ctx->IV, ctx->iv_size, 1);
   return total_packet_len + padding_size;
 }
 

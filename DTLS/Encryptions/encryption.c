@@ -88,7 +88,7 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block) {
   }
 
   printf("key expanstion block\n");
-  print_hex(key_block, (key_size * 4 * 2) + (20 * 2));
+  print_hex(key_block, ((key_size * 2) + (iv_size * 2) + (20 * 2)));
 
   BN_bin2bn(key_block, hash_size, encryption_keys->client_write_mac_key);
   key_block += hash_size;
@@ -109,8 +109,6 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block) {
 
   encryption_keys->key_size = key_size;
   encryption_keys->mac_key_size = hash_size;
-  encryption_keys->iv_size = iv_size;
-
 
   switch (selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
@@ -149,6 +147,8 @@ bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
       PRF(master_secret, "key expansion",
           get_dtls_rand_appended(transport->peer_random, transport->my_random),
           G_CHECKSUM_SHA256, 128);
+  printf("tls prf key blcok for key expnsion ");
+  print_hex(key_block, 128);
 
   if (!init_enryption_ctx(transport, key_block))
     return false;
