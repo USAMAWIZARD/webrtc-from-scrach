@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <glib.h>
 #include <malloc.h>
+#include <math.h>
 #include <netinet/in.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
@@ -227,59 +228,90 @@ uint8_t get_content_type(uint8_t handshake_type) {
 
   return content_type;
 }
+bool get_fragment_itration_info(uint32_t total_len, uint8_t *no_of_itrations,
+                                uint16_t *fragment_len) {
+  *no_of_itrations = 1;
+
+  if (total_len < 300) {
+    *fragment_len = total_len;
+    return false;
+  }
+  *no_of_itrations = ceil((float)total_len / 300);
+  *fragment_len = total_len / *no_of_itrations;
+
+  return true;
+}
 bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
                       uint8_t handshake_type, guchar *dtls_payload,
                       uint32_t dtls_payload_len) {
+  uint8_t no_of_itrations;
+  uint16_t fragment_mtu_len;
+  guchar *dtls_payload_fragment = dtls_payload;
 
-  struct DtlsHeader *dtls_header = malloc(sizeof(struct DtlsHeader));
-  dtls_header->type = get_content_type(handshake_type);
+  get_fragment_itration_info(dtls_payload_len, &no_of_itrations,
+                             &fragment_mtu_len);
 
-  dtls_header->version = handshake_type == handshake_type_client_hello
-                             ? htons(DTLS_1_0)
-                             : htons(DTLS_1_2);
-  dtls_header->epoch = dtls_transport->epoch;
-  dtls_header->length = htons(dtls_payload_len);
-  dtls_header->sequence_number = htons(dtls_transport->current_seq_no);
-  dtls_header->sequence_number = dtls_header->sequence_number << 32;
+  uint32_t remaining_data = dtls_payload_len;
+  uint16_t fragment_seq_no = dtls_transport->current_seq_no;
+  while (no_of_itrations > 0) {
+    if (no_of_itrations == 1)
+      fragment_mtu_len = remaining_data;
 
-  struct HandshakeHeader *handshake = NULL;
+    struct CandidataPair *pair = dtls_transport->pair;
+    struct DtlsHeader *dtls_header = malloc(sizeof(struct DtlsHeader));
+    dtls_header->type = get_content_type(handshake_type);
 
-  if (!(handshake_type == handshake_type_change_cipher_spec)) {
+    dtls_header->version = handshake_type == handshake_type_client_hello
+                               ? htons(DTLS_1_0)
+                               : htons(DTLS_1_2);
+    dtls_header->epoch = dtls_transport->epoch;
+    dtls_header->length = htons(fragment_mtu_len);
+    dtls_header->sequence_number = htons(dtls_transport->current_seq_no);
+    dtls_header->sequence_number = dtls_header->sequence_number << 32;
 
-    dtls_header->length =
-        htons(ntohs(dtls_header->length) + sizeof(struct HandshakeHeader));
+    struct HandshakeHeader *handshake = NULL;
 
-    handshake = malloc(sizeof(struct HandshakeHeader));
-    handshake->type = handshake_type;
-    handshake->message_seq = htons(dtls_transport->current_seq_no);
-    handshake->length = htonl(dtls_payload_len) >> 8;
-    handshake->fragment_length = handshake->length;
-    handshake->fragment_offset = 0;
-  }
-  store_concated_handshake_msgs(dtls_transport, handshake, dtls_payload,
-                                dtls_payload_len, false);
+    if (!(handshake_type == handshake_type_change_cipher_spec)) {
 
-  struct iovec dtls_packet[4];
+      dtls_header->length =
+          htons(ntohs(dtls_header->length) + sizeof(struct HandshakeHeader));
 
-  uint8_t len = make_dtls_packet(dtls_transport, &dtls_packet[0], dtls_header,
-                                 handshake, dtls_payload, dtls_payload_len);
+      handshake = malloc(sizeof(struct HandshakeHeader));
+      handshake->type = handshake_type;
+      handshake->message_seq = htons(fragment_seq_no);
+      handshake->length = htonl(dtls_payload_len) >> 8;
+      handshake->fragment_length = htonl(fragment_mtu_len) >> 8;
+      handshake->fragment_offset =
+          htonl(dtls_payload_fragment - dtls_payload) >> 8;
+    }
+    store_concated_handshake_msgs(dtls_transport, handshake,
+                                  dtls_payload_fragment, dtls_payload_len,
+                                  false);
 
-  struct CandidataPair *pair = dtls_transport->pair;
+    struct iovec dtls_packet[4];
 
-  struct msghdr msghdr = {0};
-  msghdr.msg_iov = dtls_packet;
-  msghdr.msg_iovlen = len;
-  msghdr.msg_name = (struct sockaddr *)pair->p1->src_socket;
-  msghdr.msg_namelen = sizeof(struct sockaddr_in);
+    uint8_t len =
+        make_dtls_packet(dtls_transport, &dtls_packet[0], dtls_header,
+                         handshake, dtls_payload_fragment, fragment_mtu_len);
 
-  int bytes = sendmsg(pair->p0->sock_desc, &msghdr, 0);
+    struct msghdr msghdr = {0};
+    msghdr.msg_iov = dtls_packet;
+    msghdr.msg_iovlen = len;
+    msghdr.msg_name = (struct sockaddr *)pair->p1->src_socket;
+    msghdr.msg_namelen = sizeof(struct sockaddr_in);
 
-  dtls_transport->current_seq_no++;
+    int bytes = sendmsg(pair->p0->sock_desc, &msghdr, 0);
 
-  if (bytes < 0) {
-    printf("error no : %d\n", errno);
-    printf("cannot send DTLS packet %d\n", len);
-    exit(0);
+    dtls_transport->current_seq_no++;
+    dtls_payload_fragment = dtls_payload_fragment + fragment_mtu_len;
+    remaining_data -= fragment_mtu_len;
+    no_of_itrations--;
+
+    if (bytes < 0) {
+      printf("error no : %d\n", errno);
+      printf("cannot send DTLS packet %d\n", len);
+      exit(0);
+    }
   }
   return true;
 }
