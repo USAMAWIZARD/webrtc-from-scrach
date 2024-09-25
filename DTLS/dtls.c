@@ -232,15 +232,16 @@ bool get_fragment_itration_info(uint32_t total_len, uint8_t *no_of_itrations,
                                 uint16_t *fragment_len) {
   *no_of_itrations = 1;
 
-  if (total_len < 300) {
+  if (total_len < 255) {
     *fragment_len = total_len;
     return false;
   }
-  *no_of_itrations = ceil((float)total_len / 300);
+  *no_of_itrations = ceil((float)total_len / 260);
   *fragment_len = total_len / *no_of_itrations;
 
   return true;
 }
+
 bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
                       uint8_t handshake_type, guchar *dtls_payload,
                       uint32_t dtls_payload_len) {
@@ -248,11 +249,12 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
   uint16_t fragment_mtu_len;
   guchar *dtls_payload_fragment = dtls_payload;
 
-  get_fragment_itration_info(dtls_payload_len, &no_of_itrations,
-                             &fragment_mtu_len);
+  bool is_fragmented = get_fragment_itration_info(
+      dtls_payload_len, &no_of_itrations, &fragment_mtu_len);
 
   uint32_t remaining_data = dtls_payload_len;
-  uint16_t fragment_seq_no = dtls_transport->current_seq_no;
+  uint16_t fragment_seq_no = dtls_transport->current_flight_no;
+
   while (no_of_itrations > 0) {
     if (no_of_itrations == 1)
       fragment_mtu_len = remaining_data;
@@ -285,8 +287,8 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
           htonl(dtls_payload_fragment - dtls_payload) >> 8;
     }
     store_concated_handshake_msgs(dtls_transport, handshake,
-                                  dtls_payload_fragment, dtls_payload_len,
-                                  false);
+                                  dtls_payload_fragment, fragment_mtu_len,
+                                  is_fragmented);
 
     struct iovec dtls_packet[4];
 
@@ -313,6 +315,8 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
       exit(0);
     }
   }
+  dtls_transport->current_flight_no++;
+
   return true;
 }
 uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
@@ -336,9 +340,6 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
   iov_len++;
 
   if (handshake != NULL) {
-    if (encrypt_packet)
-      handshake->message_seq = htons(5);
-
     memcpy(ptr, handshake, sizeof(struct HandshakeHeader));
     ptr = ptr + sizeof(struct HandshakeHeader);
   }
@@ -655,6 +656,10 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       peer->dtls_transport->current_seq_no = 0;
       do_client_finished(peer->dtls_transport);
 
+      printf("master %s\n ",
+             BN_bn2hex(peer->dtls_transport->encryption_keys->master_secret));
+      printf("client heloow %s\n ", BN_bn2hex(peer->dtls_transport->my_random));
+
       exit(0);
       // client_finshed();
       break;
@@ -668,8 +673,8 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
 
 void handle_server_hello(struct RTCDtlsTransport *transport,
                          struct DtlsServerHello *hello) {
-
   transport->selected_cipher_suite = ntohs(hello->cipher_suite);
+  transport->current_flight_no = 1;
   transport->epoch = 0;
   struct cipher_suite_info *cipher_info =
       malloc(sizeof(struct cipher_suite_info));

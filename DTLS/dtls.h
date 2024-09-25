@@ -75,6 +75,7 @@ struct RTCDtlsTransport {
   struct cipher_suite_info *cipher_suite;
   char *fingerprint;
   uint16_t current_seq_no;
+  uint16_t current_flight_no;
   uint16_t epoch;
   int cookie;
   int cookie_len;

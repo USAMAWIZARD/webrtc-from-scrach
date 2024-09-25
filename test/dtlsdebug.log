@@ -42,8 +42,8 @@ Calculating hash with offset 0 3
 Calculating hash with offset 14 3
 Calculating hash with offset 0 689
 Certificate.KeyID[20]:
-| ad 8c 9f b0 7c a4 5a 6f 33 2a 81 40 a4 bf 71 74 |....|.Zo3*.@..qt|
-| bb f2 72 f4                                     |..r.            |
+| 1e 40 ad ac d0 78 dc 04 22 ce 8c ed d3 7b 91 56 |.@...x.."....{.V|
+| 70 d6 4c fd                                     |p.L.            |
 dissect_dtls_record: content_type 22 epoch 0 seq 5
 decrypt_dtls_record: no session key
 Calculating hash with offset 140 60
@@ -55,116 +55,431 @@ dissect_dtls enter frame #6 (first time)
 packet_from_server: is from server - FALSE
 dissect_dtls_record: content_type 22 epoch 0 seq 1
 decrypt_dtls_record: no session key
-Calculating hash with offset 13 774
 
 dissect_dtls enter frame #7 (first time)
 packet_from_server: is from server - FALSE
 dissect_dtls_record: content_type 22 epoch 0 seq 2
 decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #8 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 6
+Calculating hash with offset 0 3
+Calculating hash with offset 14 3
+Calculating hash with offset 0 762
+
+dissect_dtls enter frame #9 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+decrypt_dtls_record: no session key
 Calculating hash with offset 13 270
 trying to use TLS keylog in /home/usama/learn/webrtc-from-scrach/test/mastersecretkey.txt
   checking keylog line: 
   checking keylog line: # Cipher Suite RSA-AES128-CBC-SHA
-  checking keylog line: CLIENT_RANDOM 63613831383764642d623839612d343334332d613135612d3262653237376333 0E41B618BD5EC7590E1A2704FC419A0BBD775D4C5CBA484C6805ED15435630509DAB9DB1A22651EF5A29D42F827DA88D
+  checking keylog line: CLIENT_RANDOM 36653035316165332D666636322D343162652D393063322D3964623164313762 80DA748C1F4F2B55A5AD5CB9B984DC58F7BBEE90305870AAE0A17CF570CA119F37F1F5BFAF96242D593630565A534A2A
     matched client_random
-  checking keylog line: CLIENT_RANDOM 63613831383764642d623839612d343334332d613135612d3262653237376333 0E41B618BD5EC7590E1A2704FC419A0BBD775D4C5CBA484C6805ED15435630509DAB9DB1A22651EF5A29D42F827DA88D
+  checking keylog line: CLIENT_RANDOM 36653035316165332D666636322D343162652D393063322D3964623164313762 80DA748C1F4F2B55A5AD5CB9B984DC58F7BBEE90305870AAE0A17CF570CA119F37F1F5BFAF96242D593630565A534A2A
     matched client_random
 ssl_generate_pre_master_secret: found SSL_HND_CLIENT_KEY_EXCHG, state 17
 ssl_restore_master_key can't find pre-master secret by Unencrypted pre-master secret
 pre master encrypted[256]:
-| 0e ba 30 0c 5b 74 2b d2 14 56 58 9b 00 6c 5a 02 |..0.[t+..VX..lZ.|
-| 2f 3b 21 31 30 86 eb 32 c6 2e 7b 75 10 cc 06 62 |/;!10..2..{u...b|
-| 64 2d e2 dd d6 c7 84 b0 a9 52 7d 07 3f de f5 ad |d-.......R}.?...|
-| bf 38 e8 96 94 04 f6 ef cb 82 0f 75 06 87 9f b1 |.8.........u....|
-| 1d 2d 06 b7 83 b5 88 a7 de 2f 34 19 ba 99 5a f3 |.-......./4...Z.|
-| 5c 16 c4 67 1c f2 66 ae 73 46 72 16 13 71 92 78 |\..g..f.sFr..q.x|
-| 5c a3 3c d9 7d 7a f9 14 84 76 44 a9 97 c1 b6 2c |\.<.}z...vD....,|
-| 8a 4a 73 52 b7 b8 d5 5b 04 5e 66 35 71 04 11 27 |.JsR...[.^f5q..'|
-| 8b 45 0c 16 e2 80 e7 1e 1d 0a fc 0c f3 1b 48 aa |.E............H.|
-| 31 4b f1 c3 e4 f5 e0 7d 92 4b ff f5 45 e3 0f e1 |1K.....}.K..E...|
-| 58 47 69 af 47 8b 50 65 5c 9e e8 e7 ca ef 7f 8e |XGi.G.Pe\.......|
-| 48 59 c8 5a 2a 44 c6 3c 63 d2 f0 3d af a7 3c a8 |HY.Z*D.<c..=..<.|
-| df b8 43 c9 c1 35 be ca 9c 91 8b 64 a5 59 34 7e |..C..5.....d.Y4~|
-| 8d 5e b8 1d 52 56 11 fb c1 10 2c 87 7a 3f 2f 01 |.^..RV....,.z?/.|
-| 4a d6 5e 06 67 35 93 46 a9 ac f2 91 4b fe 3e 11 |J.^.g5.F....K.>.|
-| c4 40 58 08 8e a1 a8 71 e0 ec d3 1c 3f 17 b4 0c |.@X....q....?...|
+| 21 67 c3 35 f5 c1 41 7c 7b 58 84 fb a4 33 2c 98 |!g.5..A|{X...3,.|
+| cd e6 f1 8f a1 97 8f 9b 4b 2c 4c 58 1e 49 a2 73 |........K,LX.I.s|
+| 8b db 5b 22 f7 df cc e5 4a 25 68 d7 3b 75 c7 66 |..["....J%h.;u.f|
+| 9d a9 f9 cb 50 08 f9 44 6e e2 a7 d4 34 f8 69 b1 |....P..Dn...4.i.|
+| 45 4d 37 9f b3 70 20 dd c8 55 3d 5d cb 50 e3 14 |EM7..p ..U=].P..|
+| d3 17 03 a0 69 b8 c6 c9 80 9a b0 b1 de 38 9b 3d |....i........8.=|
+| ad 73 85 ca 57 ba 79 47 bf 41 18 10 18 27 9a 99 |.s..W.yG.A...'..|
+| 68 de 42 d5 2c 45 3e 17 fc 03 03 6b 19 93 06 61 |h.B.,E>....k...a|
+| f7 88 9d 21 29 0e cf 0b cc c7 1b 1a 7d 87 b1 d8 |...!).......}...|
+| fc 5e 2d d9 86 73 22 0c 2f 7e be cd 1a 85 e7 6c |.^-..s"./~.....l|
+| b9 13 57 6f dc b8 cc a7 43 7a 50 de aa e9 f5 33 |..Wo....CzP....3|
+| d6 ab f2 fe cc c2 6e 6c 97 b9 2e ac 13 ae 0d ac |......nl........|
+| 90 33 dc 63 34 4a 61 b8 8c 34 6a 10 fe 88 fe 58 |.3.c4Ja..4j....X|
+| 21 5f f7 80 c0 04 8d f6 21 14 99 a3 1c a3 a1 5f |!_......!......_|
+| 27 d3 97 9d 26 e8 1e cf 18 83 81 b2 b2 47 03 ad |'...&........G..|
+| 98 87 95 4a 6f 97 2b 7e c3 4f e8 4b 0c ea 04 93 |...Jo.+~.O.K....|
 ssl_decrypt_pre_master_secret: RSA_private_decrypt
 ssl_decrypt_pre_master_secret: decryption failed: -49 (No certificate was found.)
 ssl_generate_pre_master_secret: can't decrypt pre-master secret
 ssl_restore_master_key can't find pre-master secret by Encrypted pre-master secret
 dissect_dtls_handshake can't generate pre master secret
 
+dissect_dtls enter frame #10 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #11 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+decrypt_dtls_record: no session key
+trying to use TLS keylog in /home/usama/learn/webrtc-from-scrach/test/mastersecretkey.txt
+ssl_finalize_decryption state = 0x17
+ssl_restore_master_key can't find master secret by Session ID
+ssl_restore_master_key can't find master secret by Client Random
+  Cannot find master secret
+ssl_change_cipher CLIENT (No decoder found - retransmission?)
+
+dissect_dtls enter frame #12 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #13 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 93
+ssl_try_set_version found version 0xFEFD -> state 0x17
+ssl_dissect_hnd_hello_common found SERVER RANDOM -> state 0x17
+ssl_set_cipher found CIPHER 0x002F TLS_RSA_WITH_AES_128_CBC_SHA -> state 0x17
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #2 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #3 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #4 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #5 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+dissect_dtls_record: content_type 22 epoch 0 seq 6
+
+dissect_dtls enter frame #6 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #7 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #8 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #9 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+
+dissect_dtls enter frame #10 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+
+dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #13 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #2 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #3 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #4 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #5 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+dissect_dtls_record: content_type 22 epoch 0 seq 6
+
+dissect_dtls enter frame #6 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #7 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #8 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #9 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+
+dissect_dtls enter frame #10 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+
+dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #13 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #2 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #3 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #4 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #5 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+dissect_dtls_record: content_type 22 epoch 0 seq 6
+
+dissect_dtls enter frame #6 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #7 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #8 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #9 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+
+dissect_dtls enter frame #10 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+
+dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #13 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+
+dissect_dtls enter frame #1 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 75
+ssl_dissect_hnd_hello_common found CLIENT RANDOM -> state 0x01
+
+dissect_dtls enter frame #2 (first time)
+packet_from_server: is from server - TRUE
+ssl_try_set_version found version 0xFEFD -> state 0x11
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 93
+ssl_try_set_version found version 0xFEFD -> state 0x11
+ssl_dissect_hnd_hello_common found SERVER RANDOM -> state 0x13
+ssl_set_cipher found CIPHER 0x002F TLS_RSA_WITH_AES_128_CBC_SHA -> state 0x17
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #3 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #4 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #5 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 6
+Calculating hash with offset 0 3
+Calculating hash with offset 14 3
+Calculating hash with offset 0 689
+Certificate.KeyID[20]:
+| 1e 40 ad ac d0 78 dc 04 22 ce 8c ed d3 7b 91 56 |.@...x.."....{.V|
+| 70 d6 4c fd                                     |p.L.            |
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+decrypt_dtls_record: no session key
+Calculating hash with offset 140 60
+dissect_dtls_record: content_type 22 epoch 0 seq 6
+decrypt_dtls_record: no session key
+Calculating hash with offset 213 12
+
+dissect_dtls enter frame #6 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #7 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+decrypt_dtls_record: no session key
+
 dissect_dtls enter frame #8 (first time)
 packet_from_server: is from server - FALSE
 dissect_dtls_record: content_type 22 epoch 0 seq 3
 decrypt_dtls_record: no session key
+Calculating hash with offset 13 6
+Calculating hash with offset 0 3
+Calculating hash with offset 14 3
+Calculating hash with offset 0 762
 
 dissect_dtls enter frame #9 (first time)
 packet_from_server: is from server - FALSE
-dissect_dtls_record: content_type 20 epoch 0 seq 4
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 270
+trying to use TLS keylog in /home/usama/learn/webrtc-from-scrach/test/mastersecretkey.txt
+  checking keylog line: 
+  checking keylog line: # Cipher Suite RSA-AES128-CBC-SHA
+  checking keylog line: CLIENT_RANDOM 66316636373364612D383365642D343562662D386265662D3933376430363866 E7E277DFF10CEF50799C9B3D2F8BE75B19B20FFF1344A154DD2767F34984CD3EC22541B3F366329F896A9DB4EB9F9A2D
+    matched client_random
+  checking keylog line: CLIENT_RANDOM 66316636373364612D383365642D343562662D386265662D3933376430363866 E7E277DFF10CEF50799C9B3D2F8BE75B19B20FFF1344A154DD2767F34984CD3EC22541B3F366329F896A9DB4EB9F9A2D
+    matched client_random
+ssl_generate_pre_master_secret: found SSL_HND_CLIENT_KEY_EXCHG, state 17
+ssl_restore_master_key can't find pre-master secret by Unencrypted pre-master secret
+pre master encrypted[256]:
+| 21 67 c3 35 f5 c1 41 7c 7b 58 84 fb a4 33 2c 98 |!g.5..A|{X...3,.|
+| cd e6 f1 8f a1 97 8f 9b 4b 2c 4c 58 1e 49 a2 73 |........K,LX.I.s|
+| 8b db 5b 22 f7 df cc e5 4a 25 68 d7 3b 75 c7 66 |..["....J%h.;u.f|
+| 9d a9 f9 cb 50 08 f9 44 6e e2 a7 d4 34 f8 69 b1 |....P..Dn...4.i.|
+| 45 4d 37 9f b3 70 20 dd c8 55 3d 5d cb 50 e3 14 |EM7..p ..U=].P..|
+| d3 17 03 a0 69 b8 c6 c9 80 9a b0 b1 de 38 9b 3d |....i........8.=|
+| ad 73 85 ca 57 ba 79 47 bf 41 18 10 18 27 9a 99 |.s..W.yG.A...'..|
+| 68 de 42 d5 2c 45 3e 17 fc 03 03 6b 19 93 06 61 |h.B.,E>....k...a|
+| f7 88 9d 21 29 0e cf 0b cc c7 1b 1a 7d 87 b1 d8 |...!).......}...|
+| fc 5e 2d d9 86 73 22 0c 2f 7e be cd 1a 85 e7 6c |.^-..s"./~.....l|
+| b9 13 57 6f dc b8 cc a7 43 7a 50 de aa e9 f5 33 |..Wo....CzP....3|
+| d6 ab f2 fe cc c2 6e 6c 97 b9 2e ac 13 ae 0d ac |......nl........|
+| 90 33 dc 63 34 4a 61 b8 8c 34 6a 10 fe 88 fe 58 |.3.c4Ja..4j....X|
+| 21 5f f7 80 c0 04 8d f6 21 14 99 a3 1c a3 a1 5f |!_......!......_|
+| 27 d3 97 9d 26 e8 1e cf 18 83 81 b2 b2 47 03 ad |'...&........G..|
+| 98 87 95 4a 6f 97 2b 7e c3 4f e8 4b 0c ea 04 93 |...Jo.+~.O.K....|
+ssl_decrypt_pre_master_secret: RSA_private_decrypt
+ssl_decrypt_pre_master_secret: decryption failed: -49 (No certificate was found.)
+ssl_generate_pre_master_secret: can't decrypt pre-master secret
+ssl_restore_master_key can't find pre-master secret by Encrypted pre-master secret
+dissect_dtls_handshake can't generate pre master secret
+
+dissect_dtls enter frame #10 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #11 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
 decrypt_dtls_record: no session key
 trying to use TLS keylog in /home/usama/learn/webrtc-from-scrach/test/mastersecretkey.txt
 ssl_finalize_decryption state = 0x17
 ssl_restore_master_key can't find master secret by Session ID
 ssl_restore_master_key master secret retrieved using Client Random
 Client Random[32]:
-| 63 61 38 31 38 37 64 64 2d 62 38 39 61 2d 34 33 |ca8187dd-b89a-43|
-| 34 33 2d 61 31 35 61 2d 32 62 65 32 37 37 63 33 |43-a15a-2be277c3|
+| 66 31 66 36 37 33 64 61 2d 38 33 65 64 2d 34 35 |f1f673da-83ed-45|
+| 62 66 2d 38 62 65 66 2d 39 33 37 64 30 36 38 66 |bf-8bef-937d068f|
 (pre-)master secret[48]:
-| 0e 41 b6 18 bd 5e c7 59 0e 1a 27 04 fc 41 9a 0b |.A...^.Y..'..A..|
-| bd 77 5d 4c 5c ba 48 4c 68 05 ed 15 43 56 30 50 |.w]L\.HLh...CV0P|
-| 9d ab 9d b1 a2 26 51 ef 5a 29 d4 2f 82 7d a8 8d |.....&Q.Z)./.}..|
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
 ssl_generate_keyring_material CIPHER: AES
 ssl_generate_keyring_material sess key generation
 tls12_prf: tls_hash(hash_alg SHA256 secret_len 48 seed_len 77 )
 tls_hash: hash secret[48]:
-| 0e 41 b6 18 bd 5e c7 59 0e 1a 27 04 fc 41 9a 0b |.A...^.Y..'..A..|
-| bd 77 5d 4c 5c ba 48 4c 68 05 ed 15 43 56 30 50 |.w]L\.HLh...CV0P|
-| 9d ab 9d b1 a2 26 51 ef 5a 29 d4 2f 82 7d a8 8d |.....&Q.Z)./.}..|
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
 tls_hash: hash seed[77]:
-| 6b 65 79 20 65 78 70 61 6e 73 69 6f 6e 91 81 dc |key expansion...|
-| 97 e8 0e d8 43 4a 08 ea f7 dc 6d ab 0e b6 68 bf |....CJ....m...h.|
-| 6b 1b a6 90 62 8e 79 26 5f 71 a9 66 65 63 61 38 |k...b.y&_q.feca8|
-| 31 38 37 64 64 2d 62 38 39 61 2d 34 33 34 33 2d |187dd-b89a-4343-|
-| 61 31 35 61 2d 32 62 65 32 37 37 63 33          |a15a-2be277c3   |
+| 6b 65 79 20 65 78 70 61 6e 73 69 6f 6e 4b 26 86 |key expansionK&.|
+| 6d b1 29 70 64 d7 7b a3 4c 3b c8 b0 9e 53 b5 13 |m.)pd.{.L;...S..|
+| 31 d4 82 2c cc 5e 67 92 f6 3c c5 69 6e 66 31 66 |1..,.^g..<.inf1f|
+| 36 37 33 64 61 2d 38 33 65 64 2d 34 35 62 66 2d |673da-83ed-45bf-|
+| 38 62 65 66 2d 39 33 37 64 30 36 38 66          |8bef-937d068f   |
 hash out[104]:
-| b8 58 63 e2 cf 6c d3 4c 1f 47 63 5f d2 c6 ee 7d |.Xc..l.L.Gc_...}|
-| 1d 6e 59 0b 6a 83 a9 67 16 3c 21 34 15 3e ca c2 |.nY.j..g.<!4.>..|
-| d4 26 b0 0b db c7 5d 9f d9 50 4a 12 01 4d f9 bc |.&....]..PJ..M..|
-| d1 75 8c 2c 19 c8 03 38 e5 71 e3 72 e1 d4 a1 ba |.u.,...8.q.r....|
-| 23 d3 f1 bd 3c f9 82 24 5a 12 da 32 b7 b3 4e de |#...<..$Z..2..N.|
-| a2 c9 80 b9 70 f9 ed 05 d6 37 7b 60 60 7b 41 fc |....p....7{``{A.|
-| 9e 18 6a f0 b4 ad da eb                         |..j.....        |
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 |_$.p.....Z..< .I|
+| 08 2d b9 72 52 85 a1 48 a4 40 78 e4 34 02 9d d1 |.-.rR..H.@x.4...|
+| 4a 3d cf c1 4c c9 30 6d 01 fd a7 40 15 91 55 66 |J=..L.0m...@..Uf|
+| 5e 5f c9 85 89 d8 a5 1f 9b d5 c9 7a 75 f2 3e 2e |^_.........zu.>.|
+| 41 61 16 cb 0e fb 92 5e b0 96 92 c2 54 1d f3 70 |Aa.....^....T..p|
+| 3d 15 d3 4b 5b 8f 3e 01                         |=..K[.>.        |
 PRF out[104]:
-| b8 58 63 e2 cf 6c d3 4c 1f 47 63 5f d2 c6 ee 7d |.Xc..l.L.Gc_...}|
-| 1d 6e 59 0b 6a 83 a9 67 16 3c 21 34 15 3e ca c2 |.nY.j..g.<!4.>..|
-| d4 26 b0 0b db c7 5d 9f d9 50 4a 12 01 4d f9 bc |.&....]..PJ..M..|
-| d1 75 8c 2c 19 c8 03 38 e5 71 e3 72 e1 d4 a1 ba |.u.,...8.q.r....|
-| 23 d3 f1 bd 3c f9 82 24 5a 12 da 32 b7 b3 4e de |#...<..$Z..2..N.|
-| a2 c9 80 b9 70 f9 ed 05 d6 37 7b 60 60 7b 41 fc |....p....7{``{A.|
-| 9e 18 6a f0 b4 ad da eb                         |..j.....        |
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 |_$.p.....Z..< .I|
+| 08 2d b9 72 52 85 a1 48 a4 40 78 e4 34 02 9d d1 |.-.rR..H.@x.4...|
+| 4a 3d cf c1 4c c9 30 6d 01 fd a7 40 15 91 55 66 |J=..L.0m...@..Uf|
+| 5e 5f c9 85 89 d8 a5 1f 9b d5 c9 7a 75 f2 3e 2e |^_.........zu.>.|
+| 41 61 16 cb 0e fb 92 5e b0 96 92 c2 54 1d f3 70 |Aa.....^....T..p|
+| 3d 15 d3 4b 5b 8f 3e 01                         |=..K[.>.        |
 key expansion[104]:
-| b8 58 63 e2 cf 6c d3 4c 1f 47 63 5f d2 c6 ee 7d |.Xc..l.L.Gc_...}|
-| 1d 6e 59 0b 6a 83 a9 67 16 3c 21 34 15 3e ca c2 |.nY.j..g.<!4.>..|
-| d4 26 b0 0b db c7 5d 9f d9 50 4a 12 01 4d f9 bc |.&....]..PJ..M..|
-| d1 75 8c 2c 19 c8 03 38 e5 71 e3 72 e1 d4 a1 ba |.u.,...8.q.r....|
-| 23 d3 f1 bd 3c f9 82 24 5a 12 da 32 b7 b3 4e de |#...<..$Z..2..N.|
-| a2 c9 80 b9 70 f9 ed 05 d6 37 7b 60 60 7b 41 fc |....p....7{``{A.|
-| 9e 18 6a f0 b4 ad da eb                         |..j.....        |
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 |_$.p.....Z..< .I|
+| 08 2d b9 72 52 85 a1 48 a4 40 78 e4 34 02 9d d1 |.-.rR..H.@x.4...|
+| 4a 3d cf c1 4c c9 30 6d 01 fd a7 40 15 91 55 66 |J=..L.0m...@..Uf|
+| 5e 5f c9 85 89 d8 a5 1f 9b d5 c9 7a 75 f2 3e 2e |^_.........zu.>.|
+| 41 61 16 cb 0e fb 92 5e b0 96 92 c2 54 1d f3 70 |Aa.....^....T..p|
+| 3d 15 d3 4b 5b 8f 3e 01                         |=..K[.>.        |
 Client MAC key[20]:
-| b8 58 63 e2 cf 6c d3 4c 1f 47 63 5f d2 c6 ee 7d |.Xc..l.L.Gc_...}|
-| 1d 6e 59 0b                                     |.nY.            |
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70                                     |_$.p            |
 Server MAC key[20]:
-| 6a 83 a9 67 16 3c 21 34 15 3e ca c2 d4 26 b0 0b |j..g.<!4.>...&..|
-| db c7 5d 9f                                     |..].            |
+| 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 08 2d b9 72 |.....Z..< .I.-.r|
+| 52 85 a1 48                                     |R..H            |
 Client Write key[16]:
-| d9 50 4a 12 01 4d f9 bc d1 75 8c 2c 19 c8 03 38 |.PJ..M...u.,...8|
+| a4 40 78 e4 34 02 9d d1 4a 3d cf c1 4c c9 30 6d |.@x.4...J=..L.0m|
 Server Write key[16]:
-| e5 71 e3 72 e1 d4 a1 ba 23 d3 f1 bd 3c f9 82 24 |.q.r....#...<..$|
+| 01 fd a7 40 15 91 55 66 5e 5f c9 85 89 d8 a5 1f |...@..Uf^_......|
 Client Write IV[16]:
-| 5a 12 da 32 b7 b3 4e de a2 c9 80 b9 70 f9 ed 05 |Z..2..N.....p...|
+| 9b d5 c9 7a 75 f2 3e 2e 41 61 16 cb 0e fb 92 5e |...zu.>.Aa.....^|
 Server Write IV[16]:
-| d6 37 7b 60 60 7b 41 fc 9e 18 6a f0 b4 ad da eb |.7{``{A...j.....|
+| b0 96 92 c2 54 1d f3 70 3d 15 d3 4b 5b 8f 3e 01 |....T..p=..K[.>.|
 ssl_generate_keyring_material ssl_create_decoder(client)
 decoder initialized (digest len 20)
 ssl_generate_keyring_material ssl_create_decoder(server)
@@ -172,23 +487,23 @@ decoder initialized (digest len 20)
 ssl_generate_keyring_material: client seq 0, server seq 0
 ssl_save_master_key inserted (pre-)master secret for Client Random
 stored key[32]:
-| 63 61 38 31 38 37 64 64 2d 62 38 39 61 2d 34 33 |ca8187dd-b89a-43|
-| 34 33 2d 61 31 35 61 2d 32 62 65 32 37 37 63 33 |43-a15a-2be277c3|
+| 66 31 66 36 37 33 64 61 2d 38 33 65 64 2d 34 35 |f1f673da-83ed-45|
+| 62 66 2d 38 62 65 66 2d 39 33 37 64 30 36 38 66 |bf-8bef-937d068f|
 stored (pre-)master secret[48]:
-| 0e 41 b6 18 bd 5e c7 59 0e 1a 27 04 fc 41 9a 0b |.A...^.Y..'..A..|
-| bd 77 5d 4c 5c ba 48 4c 68 05 ed 15 43 56 30 50 |.w]L\.HLh...CV0P|
-| 9d ab 9d b1 a2 26 51 ef 5a 29 d4 2f 82 7d a8 8d |.....&Q.Z)./.}..|
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
 ssl_save_master_key inserted (pre-)master secret for Session ID
 stored key[32]:
-| ae 09 ff 64 6d ac fa ad fa 4d 4b 28 85 3c 9f bf |...dm....MK(.<..|
-| 2f bd ef 05 4a 6a cd 2c a2 aa 84 92 7a 44 13 94 |/...Jj.,....zD..|
+| 40 8b b0 63 51 e3 ce cc 1e e9 fb 41 c1 59 50 83 |@..cQ......A.YP.|
+| 5e 7b c3 a6 76 53 ff b6 af ec 97 1c 5f 96 b0 fa |^{..vS......_...|
 stored (pre-)master secret[48]:
-| 0e 41 b6 18 bd 5e c7 59 0e 1a 27 04 fc 41 9a 0b |.A...^.Y..'..A..|
-| bd 77 5d 4c 5c ba 48 4c 68 05 ed 15 43 56 30 50 |.w]L\.HLh...CV0P|
-| 9d ab 9d b1 a2 26 51 ef 5a 29 d4 2f 82 7d a8 8d |.....&Q.Z)./.}..|
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
 ssl_change_cipher CLIENT
 
-dissect_dtls enter frame #10 (first time)
+dissect_dtls enter frame #12 (first time)
 packet_from_server: is from server - FALSE
 dissect_dtls_record: content_type 22 epoch 1 seq 0
 decrypt_dtls_record: app_data len 64, ssl state 3F
@@ -197,24 +512,24 @@ decrypt_dtls_record: using client decoder
 decrypt_dtls_record: allocating 96 bytes for decrypt data (old len 32)
 ssl_decrypt_record ciphertext len 64
 Ciphertext[64]:
-| 5a 12 da 32 b7 b3 4e de a2 c9 80 b9 70 f9 ed 05 |Z..2..N.....p...|
-| 0e 5e d4 27 65 72 28 e4 27 b1 e6 26 04 68 c7 7f |.^.'er(.'..&.h..|
-| ee 73 c7 fc 61 7e cf 2d 8f b5 7f 46 b0 98 0d b2 |.s..a~.-...F....|
-| 5b 22 13 cf 08 3e 79 66 72 6c 38 90 50 5b 27 71 |["...>yfrl8.P['q|
+| 9b d5 c9 7a 75 f2 3e 2e 41 61 16 cb 0e fb 92 5e |...zu.>.Aa.....^|
+| db af a2 9f 0b 55 44 ce c4 ea d2 2c d7 ab 7d dd |.....UD....,..}.|
+| 78 ae 64 69 7c 4a bf c5 2d 7f b9 f7 d9 eb c0 63 |x.di|J..-......c|
+| b0 ab 0d 34 5d aa 58 97 4f 8b a5 d9 1e 76 61 89 |...4].X.O....va.|
 Plaintext[48]:
-| 14 00 00 0c 00 05 00 00 00 00 00 0c f1 87 20 d1 |.............. .|
-| 99 1f 2a bd 69 23 a6 64 b5 05 0d cc 0d bd d8 91 |..*.i#.d........|
-| fb bb 79 3a 4c 96 16 15 6e dd 90 f8 03 03 03 03 |..y:L...n.......|
+| 14 00 00 0c 00 05 00 00 00 00 00 0c ec 98 67 6c |..............gl|
+| c5 79 45 23 5d 81 e5 91 2b 0e cf e0 eb 60 9d 9a |.yE#]...+....`..|
+| e6 fb ba 2f 6f 22 48 4f cf 45 dc 23 03 03 03 03 |.../o"HO.E.#....|
 ssl_decrypt_record found padding 3 final len 44
 checking mac (len 24, version FEFD, ct 22 seq 0)
 dtls_check_mac mac type:SHA1 md 2
 dtls_check_mac seq: 0 epoch: 1
 Mac[20]:
-| b5 05 0d cc 0d bd d8 91 fb bb 79 3a 4c 96 16 15 |..........y:L...|
-| 6e dd 90 f8                                     |n...            |
+| 2b 0e cf e0 eb 60 9d 9a e6 fb ba 2f 6f 22 48 4f |+....`...../o"HO|
+| cf 45 dc 23                                     |.E.#            |
 ssl_decrypt_record: mac ok
 
-dissect_dtls enter frame #11 (first time)
+dissect_dtls enter frame #13 (first time)
 packet_from_server: is from server - TRUE
 dissect_dtls_record: content_type 22 epoch 0 seq 7
 decrypt_dtls_record: app_data len 93, ssl state 3F
@@ -263,13 +578,21 @@ dissect_dtls_record: content_type 22 epoch 0 seq 3
 
 dissect_dtls enter frame #9 (already visited)
 packet_from_server: is from server - FALSE
-dissect_dtls_record: content_type 20 epoch 0 seq 4
+dissect_dtls_record: content_type 22 epoch 0 seq 4
 
 dissect_dtls enter frame #10 (already visited)
 packet_from_server: is from server - FALSE
-dissect_dtls_record: content_type 22 epoch 1 seq 0
+dissect_dtls_record: content_type 22 epoch 0 seq 5
 
 dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #13 (already visited)
 packet_from_server: is from server - TRUE
 dissect_dtls_record: content_type 22 epoch 0 seq 7
 
@@ -314,13 +637,21 @@ dissect_dtls_record: content_type 22 epoch 0 seq 3
 
 dissect_dtls enter frame #9 (already visited)
 packet_from_server: is from server - FALSE
-dissect_dtls_record: content_type 20 epoch 0 seq 4
+dissect_dtls_record: content_type 22 epoch 0 seq 4
 
 dissect_dtls enter frame #10 (already visited)
 packet_from_server: is from server - FALSE
-dissect_dtls_record: content_type 22 epoch 1 seq 0
+dissect_dtls_record: content_type 22 epoch 0 seq 5
 
 dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #13 (already visited)
 packet_from_server: is from server - TRUE
 dissect_dtls_record: content_type 22 epoch 0 seq 7
 
@@ -361,4 +692,773 @@ dissect_dtls_record: content_type 22 epoch 0 seq 3
 
 dissect_dtls enter frame #9 (already visited)
 packet_from_server: is from server - FALSE
-dissect_dtls_reco
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+
+dissect_dtls enter frame #10 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+
+dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #13 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+
+dissect_dtls enter frame #13 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #10 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+
+dissect_dtls enter frame #9 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+
+dissect_dtls enter frame #8 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #7 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #6 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #6 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #6 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #1 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 75
+ssl_dissect_hnd_hello_common found CLIENT RANDOM -> state 0x01
+
+dissect_dtls enter frame #2 (first time)
+packet_from_server: is from server - TRUE
+ssl_try_set_version found version 0xFEFD -> state 0x11
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 93
+ssl_try_set_version found version 0xFEFD -> state 0x11
+ssl_dissect_hnd_hello_common found SERVER RANDOM -> state 0x13
+ssl_set_cipher found CIPHER 0x002F TLS_RSA_WITH_AES_128_CBC_SHA -> state 0x17
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #3 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #4 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #5 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 6
+Calculating hash with offset 0 3
+Calculating hash with offset 14 3
+Calculating hash with offset 0 689
+Certificate.KeyID[20]:
+| 1e 40 ad ac d0 78 dc 04 22 ce 8c ed d3 7b 91 56 |.@...x.."....{.V|
+| 70 d6 4c fd                                     |p.L.            |
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+decrypt_dtls_record: no session key
+Calculating hash with offset 140 60
+dissect_dtls_record: content_type 22 epoch 0 seq 6
+decrypt_dtls_record: no session key
+Calculating hash with offset 213 12
+
+dissect_dtls enter frame #6 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #7 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #8 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 6
+Calculating hash with offset 0 3
+Calculating hash with offset 14 3
+Calculating hash with offset 0 762
+
+dissect_dtls enter frame #9 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 270
+trying to use TLS keylog in /home/usama/learn/webrtc-from-scrach/test/mastersecretkey.txt
+  checking keylog line: 
+  checking keylog line: # Cipher Suite RSA-AES128-CBC-SHA
+  checking keylog line: CLIENT_RANDOM 66316636373364612D383365642D343562662D386265662D3933376430363866 E7E277DFF10CEF50799C9B3D2F8BE75B19B20FFF1344A154DD2767F34984CD3EC22541B3F366329F896A9DB4EB9F9A2D
+    matched client_random
+  checking keylog line: CLIENT_RANDOM 66316636373364612D383365642D343562662D386265662D3933376430363866 E7E277DFF10CEF50799C9B3D2F8BE75B19B20FFF1344A154DD2767F34984CD3EC22541B3F366329F896A9DB4EB9F9A2D
+    matched client_random
+ssl_generate_pre_master_secret: found SSL_HND_CLIENT_KEY_EXCHG, state 17
+ssl_restore_master_key can't find pre-master secret by Unencrypted pre-master secret
+pre master encrypted[256]:
+| 21 67 c3 35 f5 c1 41 7c 7b 58 84 fb a4 33 2c 98 |!g.5..A|{X...3,.|
+| cd e6 f1 8f a1 97 8f 9b 4b 2c 4c 58 1e 49 a2 73 |........K,LX.I.s|
+| 8b db 5b 22 f7 df cc e5 4a 25 68 d7 3b 75 c7 66 |..["....J%h.;u.f|
+| 9d a9 f9 cb 50 08 f9 44 6e e2 a7 d4 34 f8 69 b1 |....P..Dn...4.i.|
+| 45 4d 37 9f b3 70 20 dd c8 55 3d 5d cb 50 e3 14 |EM7..p ..U=].P..|
+| d3 17 03 a0 69 b8 c6 c9 80 9a b0 b1 de 38 9b 3d |....i........8.=|
+| ad 73 85 ca 57 ba 79 47 bf 41 18 10 18 27 9a 99 |.s..W.yG.A...'..|
+| 68 de 42 d5 2c 45 3e 17 fc 03 03 6b 19 93 06 61 |h.B.,E>....k...a|
+| f7 88 9d 21 29 0e cf 0b cc c7 1b 1a 7d 87 b1 d8 |...!).......}...|
+| fc 5e 2d d9 86 73 22 0c 2f 7e be cd 1a 85 e7 6c |.^-..s"./~.....l|
+| b9 13 57 6f dc b8 cc a7 43 7a 50 de aa e9 f5 33 |..Wo....CzP....3|
+| d6 ab f2 fe cc c2 6e 6c 97 b9 2e ac 13 ae 0d ac |......nl........|
+| 90 33 dc 63 34 4a 61 b8 8c 34 6a 10 fe 88 fe 58 |.3.c4Ja..4j....X|
+| 21 5f f7 80 c0 04 8d f6 21 14 99 a3 1c a3 a1 5f |!_......!......_|
+| 27 d3 97 9d 26 e8 1e cf 18 83 81 b2 b2 47 03 ad |'...&........G..|
+| 98 87 95 4a 6f 97 2b 7e c3 4f e8 4b 0c ea 04 93 |...Jo.+~.O.K....|
+ssl_decrypt_pre_master_secret: RSA_private_decrypt
+ssl_decrypt_pre_master_secret: decryption failed: -49 (No certificate was found.)
+ssl_generate_pre_master_secret: can't decrypt pre-master secret
+ssl_restore_master_key can't find pre-master secret by Encrypted pre-master secret
+dissect_dtls_handshake can't generate pre master secret
+
+dissect_dtls enter frame #10 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #11 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+decrypt_dtls_record: no session key
+trying to use TLS keylog in /home/usama/learn/webrtc-from-scrach/test/mastersecretkey.txt
+ssl_finalize_decryption state = 0x17
+ssl_restore_master_key can't find master secret by Session ID
+ssl_restore_master_key master secret retrieved using Client Random
+Client Random[32]:
+| 66 31 66 36 37 33 64 61 2d 38 33 65 64 2d 34 35 |f1f673da-83ed-45|
+| 62 66 2d 38 62 65 66 2d 39 33 37 64 30 36 38 66 |bf-8bef-937d068f|
+(pre-)master secret[48]:
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
+ssl_generate_keyring_material CIPHER: AES
+ssl_generate_keyring_material sess key generation
+tls12_prf: tls_hash(hash_alg SHA256 secret_len 48 seed_len 77 )
+tls_hash: hash secret[48]:
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
+tls_hash: hash seed[77]:
+| 6b 65 79 20 65 78 70 61 6e 73 69 6f 6e 4b 26 86 |key expansionK&.|
+| 6d b1 29 70 64 d7 7b a3 4c 3b c8 b0 9e 53 b5 13 |m.)pd.{.L;...S..|
+| 31 d4 82 2c cc 5e 67 92 f6 3c c5 69 6e 66 31 66 |1..,.^g..<.inf1f|
+| 36 37 33 64 61 2d 38 33 65 64 2d 34 35 62 66 2d |673da-83ed-45bf-|
+| 38 62 65 66 2d 39 33 37 64 30 36 38 66          |8bef-937d068f   |
+hash out[104]:
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 |_$.p.....Z..< .I|
+| 08 2d b9 72 52 85 a1 48 a4 40 78 e4 34 02 9d d1 |.-.rR..H.@x.4...|
+| 4a 3d cf c1 4c c9 30 6d 01 fd a7 40 15 91 55 66 |J=..L.0m...@..Uf|
+| 5e 5f c9 85 89 d8 a5 1f 9b d5 c9 7a 75 f2 3e 2e |^_.........zu.>.|
+| 41 61 16 cb 0e fb 92 5e b0 96 92 c2 54 1d f3 70 |Aa.....^....T..p|
+| 3d 15 d3 4b 5b 8f 3e 01                         |=..K[.>.        |
+PRF out[104]:
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 |_$.p.....Z..< .I|
+| 08 2d b9 72 52 85 a1 48 a4 40 78 e4 34 02 9d d1 |.-.rR..H.@x.4...|
+| 4a 3d cf c1 4c c9 30 6d 01 fd a7 40 15 91 55 66 |J=..L.0m...@..Uf|
+| 5e 5f c9 85 89 d8 a5 1f 9b d5 c9 7a 75 f2 3e 2e |^_.........zu.>.|
+| 41 61 16 cb 0e fb 92 5e b0 96 92 c2 54 1d f3 70 |Aa.....^....T..p|
+| 3d 15 d3 4b 5b 8f 3e 01                         |=..K[.>.        |
+key expansion[104]:
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 |_$.p.....Z..< .I|
+| 08 2d b9 72 52 85 a1 48 a4 40 78 e4 34 02 9d d1 |.-.rR..H.@x.4...|
+| 4a 3d cf c1 4c c9 30 6d 01 fd a7 40 15 91 55 66 |J=..L.0m...@..Uf|
+| 5e 5f c9 85 89 d8 a5 1f 9b d5 c9 7a 75 f2 3e 2e |^_.........zu.>.|
+| 41 61 16 cb 0e fb 92 5e b0 96 92 c2 54 1d f3 70 |Aa.....^....T..p|
+| 3d 15 d3 4b 5b 8f 3e 01                         |=..K[.>.        |
+Client MAC key[20]:
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70                                     |_$.p            |
+Server MAC key[20]:
+| 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 08 2d b9 72 |.....Z..< .I.-.r|
+| 52 85 a1 48                                     |R..H            |
+Client Write key[16]:
+| a4 40 78 e4 34 02 9d d1 4a 3d cf c1 4c c9 30 6d |.@x.4...J=..L.0m|
+Server Write key[16]:
+| 01 fd a7 40 15 91 55 66 5e 5f c9 85 89 d8 a5 1f |...@..Uf^_......|
+Client Write IV[16]:
+| 9b d5 c9 7a 75 f2 3e 2e 41 61 16 cb 0e fb 92 5e |...zu.>.Aa.....^|
+Server Write IV[16]:
+| b0 96 92 c2 54 1d f3 70 3d 15 d3 4b 5b 8f 3e 01 |....T..p=..K[.>.|
+ssl_generate_keyring_material ssl_create_decoder(client)
+decoder initialized (digest len 20)
+ssl_generate_keyring_material ssl_create_decoder(server)
+decoder initialized (digest len 20)
+ssl_generate_keyring_material: client seq 0, server seq 0
+ssl_save_master_key inserted (pre-)master secret for Client Random
+stored key[32]:
+| 66 31 66 36 37 33 64 61 2d 38 33 65 64 2d 34 35 |f1f673da-83ed-45|
+| 62 66 2d 38 62 65 66 2d 39 33 37 64 30 36 38 66 |bf-8bef-937d068f|
+stored (pre-)master secret[48]:
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
+ssl_save_master_key inserted (pre-)master secret for Session ID
+stored key[32]:
+| 40 8b b0 63 51 e3 ce cc 1e e9 fb 41 c1 59 50 83 |@..cQ......A.YP.|
+| 5e 7b c3 a6 76 53 ff b6 af ec 97 1c 5f 96 b0 fa |^{..vS......_...|
+stored (pre-)master secret[48]:
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
+ssl_change_cipher CLIENT
+
+dissect_dtls enter frame #12 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+decrypt_dtls_record: app_data len 64, ssl state 3F
+packet_from_server: is from server - FALSE
+decrypt_dtls_record: using client decoder
+decrypt_dtls_record: allocating 96 bytes for decrypt data (old len 32)
+ssl_decrypt_record ciphertext len 64
+Ciphertext[64]:
+| 9b d5 c9 7a 75 f2 3e 2e 41 61 16 cb 0e fb 92 5e |...zu.>.Aa.....^|
+| db af a2 9f 0b 55 44 ce c4 ea d2 2c d7 ab 7d dd |.....UD....,..}.|
+| 78 ae 64 69 7c 4a bf c5 2d 7f b9 f7 d9 eb c0 63 |x.di|J..-......c|
+| b0 ab 0d 34 5d aa 58 97 4f 8b a5 d9 1e 76 61 89 |...4].X.O....va.|
+Plaintext[48]:
+| 14 00 00 0c 00 05 00 00 00 00 00 0c ec 98 67 6c |..............gl|
+| c5 79 45 23 5d 81 e5 91 2b 0e cf e0 eb 60 9d 9a |.yE#]...+....`..|
+| e6 fb ba 2f 6f 22 48 4f cf 45 dc 23 03 03 03 03 |.../o"HO.E.#....|
+ssl_decrypt_record found padding 3 final len 44
+checking mac (len 24, version FEFD, ct 22 seq 0)
+dtls_check_mac mac type:SHA1 md 2
+dtls_check_mac seq: 0 epoch: 1
+Mac[20]:
+| 2b 0e cf e0 eb 60 9d 9a e6 fb ba 2f 6f 22 48 4f |+....`...../o"HO|
+| cf 45 dc 23                                     |.E.#            |
+ssl_decrypt_record: mac ok
+
+dissect_dtls enter frame #13 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+decrypt_dtls_record: app_data len 93, ssl state 3F
+packet_from_server: is from server - TRUE
+decrypt_dtls_record: using server decoder
+decrypt_dtls_record: no decoder available
+ssl_try_set_version found version 0xFEFD -> state 0x3F
+ssl_reset_session detected renegotiation, clearing 0x28 (server side)
+ssl_dissect_hnd_hello_common found SERVER RANDOM -> state 0x17
+ssl_set_cipher found CIPHER 0x002F TLS_RSA_WITH_AES_128_CBC_SHA -> state 0x17
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #2 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #3 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #4 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #5 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+dissect_dtls_record: content_type 22 epoch 0 seq 6
+
+dissect_dtls enter frame #6 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #7 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #8 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #9 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+
+dissect_dtls enter frame #10 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+
+dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #13 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #2 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #3 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #4 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #5 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+dissect_dtls_record: content_type 22 epoch 0 seq 6
+
+dissect_dtls enter frame #6 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #7 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #8 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #9 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+
+dissect_dtls enter frame #10 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+
+dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #13 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+
+dissect_dtls enter frame #1 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 75
+ssl_dissect_hnd_hello_common found CLIENT RANDOM -> state 0x01
+
+dissect_dtls enter frame #2 (first time)
+packet_from_server: is from server - TRUE
+ssl_try_set_version found version 0xFEFD -> state 0x11
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 93
+ssl_try_set_version found version 0xFEFD -> state 0x11
+ssl_dissect_hnd_hello_common found SERVER RANDOM -> state 0x13
+ssl_set_cipher found CIPHER 0x002F TLS_RSA_WITH_AES_128_CBC_SHA -> state 0x17
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #3 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #4 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #5 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 6
+Calculating hash with offset 0 3
+Calculating hash with offset 14 3
+Calculating hash with offset 0 689
+Certificate.KeyID[20]:
+| 1e 40 ad ac d0 78 dc 04 22 ce 8c ed d3 7b 91 56 |.@...x.."....{.V|
+| 70 d6 4c fd                                     |p.L.            |
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+decrypt_dtls_record: no session key
+Calculating hash with offset 140 60
+dissect_dtls_record: content_type 22 epoch 0 seq 6
+decrypt_dtls_record: no session key
+Calculating hash with offset 213 12
+
+dissect_dtls enter frame #6 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #7 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #8 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 6
+Calculating hash with offset 0 3
+Calculating hash with offset 14 3
+Calculating hash with offset 0 762
+
+dissect_dtls enter frame #9 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+decrypt_dtls_record: no session key
+Calculating hash with offset 13 270
+trying to use TLS keylog in /home/usama/learn/webrtc-from-scrach/test/mastersecretkey.txt
+  checking keylog line: 
+  checking keylog line: # Cipher Suite RSA-AES128-CBC-SHA
+  checking keylog line: CLIENT_RANDOM 66316636373364612D383365642D343562662D386265662D3933376430363866 E7E277DFF10CEF50799C9B3D2F8BE75B19B20FFF1344A154DD2767F34984CD3EC22541B3F366329F896A9DB4EB9F9A2D
+    matched client_random
+  checking keylog line: CLIENT_RANDOM 66316636373364612D383365642D343562662D386265662D3933376430363866 E7E277DFF10CEF50799C9B3D2F8BE75B19B20FFF1344A154DD2767F34984CD3EC22541B3F366329F896A9DB4EB9F9A2D
+    matched client_random
+ssl_generate_pre_master_secret: found SSL_HND_CLIENT_KEY_EXCHG, state 17
+ssl_restore_master_key can't find pre-master secret by Unencrypted pre-master secret
+pre master encrypted[256]:
+| 21 67 c3 35 f5 c1 41 7c 7b 58 84 fb a4 33 2c 98 |!g.5..A|{X...3,.|
+| cd e6 f1 8f a1 97 8f 9b 4b 2c 4c 58 1e 49 a2 73 |........K,LX.I.s|
+| 8b db 5b 22 f7 df cc e5 4a 25 68 d7 3b 75 c7 66 |..["....J%h.;u.f|
+| 9d a9 f9 cb 50 08 f9 44 6e e2 a7 d4 34 f8 69 b1 |....P..Dn...4.i.|
+| 45 4d 37 9f b3 70 20 dd c8 55 3d 5d cb 50 e3 14 |EM7..p ..U=].P..|
+| d3 17 03 a0 69 b8 c6 c9 80 9a b0 b1 de 38 9b 3d |....i........8.=|
+| ad 73 85 ca 57 ba 79 47 bf 41 18 10 18 27 9a 99 |.s..W.yG.A...'..|
+| 68 de 42 d5 2c 45 3e 17 fc 03 03 6b 19 93 06 61 |h.B.,E>....k...a|
+| f7 88 9d 21 29 0e cf 0b cc c7 1b 1a 7d 87 b1 d8 |...!).......}...|
+| fc 5e 2d d9 86 73 22 0c 2f 7e be cd 1a 85 e7 6c |.^-..s"./~.....l|
+| b9 13 57 6f dc b8 cc a7 43 7a 50 de aa e9 f5 33 |..Wo....CzP....3|
+| d6 ab f2 fe cc c2 6e 6c 97 b9 2e ac 13 ae 0d ac |......nl........|
+| 90 33 dc 63 34 4a 61 b8 8c 34 6a 10 fe 88 fe 58 |.3.c4Ja..4j....X|
+| 21 5f f7 80 c0 04 8d f6 21 14 99 a3 1c a3 a1 5f |!_......!......_|
+| 27 d3 97 9d 26 e8 1e cf 18 83 81 b2 b2 47 03 ad |'...&........G..|
+| 98 87 95 4a 6f 97 2b 7e c3 4f e8 4b 0c ea 04 93 |...Jo.+~.O.K....|
+ssl_decrypt_pre_master_secret: RSA_private_decrypt
+ssl_decrypt_pre_master_secret: decryption failed: -49 (No certificate was found.)
+ssl_generate_pre_master_secret: can't decrypt pre-master secret
+ssl_restore_master_key can't find pre-master secret by Encrypted pre-master secret
+dissect_dtls_handshake can't generate pre master secret
+
+dissect_dtls enter frame #10 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+decrypt_dtls_record: no session key
+
+dissect_dtls enter frame #11 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+decrypt_dtls_record: no session key
+trying to use TLS keylog in /home/usama/learn/webrtc-from-scrach/test/mastersecretkey.txt
+ssl_finalize_decryption state = 0x17
+ssl_restore_master_key can't find master secret by Session ID
+ssl_restore_master_key master secret retrieved using Client Random
+Client Random[32]:
+| 66 31 66 36 37 33 64 61 2d 38 33 65 64 2d 34 35 |f1f673da-83ed-45|
+| 62 66 2d 38 62 65 66 2d 39 33 37 64 30 36 38 66 |bf-8bef-937d068f|
+(pre-)master secret[48]:
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
+ssl_generate_keyring_material CIPHER: AES
+ssl_generate_keyring_material sess key generation
+tls12_prf: tls_hash(hash_alg SHA256 secret_len 48 seed_len 77 )
+tls_hash: hash secret[48]:
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
+tls_hash: hash seed[77]:
+| 6b 65 79 20 65 78 70 61 6e 73 69 6f 6e 4b 26 86 |key expansionK&.|
+| 6d b1 29 70 64 d7 7b a3 4c 3b c8 b0 9e 53 b5 13 |m.)pd.{.L;...S..|
+| 31 d4 82 2c cc 5e 67 92 f6 3c c5 69 6e 66 31 66 |1..,.^g..<.inf1f|
+| 36 37 33 64 61 2d 38 33 65 64 2d 34 35 62 66 2d |673da-83ed-45bf-|
+| 38 62 65 66 2d 39 33 37 64 30 36 38 66          |8bef-937d068f   |
+hash out[104]:
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 |_$.p.....Z..< .I|
+| 08 2d b9 72 52 85 a1 48 a4 40 78 e4 34 02 9d d1 |.-.rR..H.@x.4...|
+| 4a 3d cf c1 4c c9 30 6d 01 fd a7 40 15 91 55 66 |J=..L.0m...@..Uf|
+| 5e 5f c9 85 89 d8 a5 1f 9b d5 c9 7a 75 f2 3e 2e |^_.........zu.>.|
+| 41 61 16 cb 0e fb 92 5e b0 96 92 c2 54 1d f3 70 |Aa.....^....T..p|
+| 3d 15 d3 4b 5b 8f 3e 01                         |=..K[.>.        |
+PRF out[104]:
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 |_$.p.....Z..< .I|
+| 08 2d b9 72 52 85 a1 48 a4 40 78 e4 34 02 9d d1 |.-.rR..H.@x.4...|
+| 4a 3d cf c1 4c c9 30 6d 01 fd a7 40 15 91 55 66 |J=..L.0m...@..Uf|
+| 5e 5f c9 85 89 d8 a5 1f 9b d5 c9 7a 75 f2 3e 2e |^_.........zu.>.|
+| 41 61 16 cb 0e fb 92 5e b0 96 92 c2 54 1d f3 70 |Aa.....^....T..p|
+| 3d 15 d3 4b 5b 8f 3e 01                         |=..K[.>.        |
+key expansion[104]:
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 |_$.p.....Z..< .I|
+| 08 2d b9 72 52 85 a1 48 a4 40 78 e4 34 02 9d d1 |.-.rR..H.@x.4...|
+| 4a 3d cf c1 4c c9 30 6d 01 fd a7 40 15 91 55 66 |J=..L.0m...@..Uf|
+| 5e 5f c9 85 89 d8 a5 1f 9b d5 c9 7a 75 f2 3e 2e |^_.........zu.>.|
+| 41 61 16 cb 0e fb 92 5e b0 96 92 c2 54 1d f3 70 |Aa.....^....T..p|
+| 3d 15 d3 4b 5b 8f 3e 01                         |=..K[.>.        |
+Client MAC key[20]:
+| aa 6a 60 5e 02 cd f6 f6 ba d1 c5 86 42 6a e4 1d |.j`^........Bj..|
+| 5f 24 b8 70                                     |_$.p            |
+Server MAC key[20]:
+| 1c 92 18 dd 01 5a 88 98 3c 20 0b 49 08 2d b9 72 |.....Z..< .I.-.r|
+| 52 85 a1 48                                     |R..H            |
+Client Write key[16]:
+| a4 40 78 e4 34 02 9d d1 4a 3d cf c1 4c c9 30 6d |.@x.4...J=..L.0m|
+Server Write key[16]:
+| 01 fd a7 40 15 91 55 66 5e 5f c9 85 89 d8 a5 1f |...@..Uf^_......|
+Client Write IV[16]:
+| 9b d5 c9 7a 75 f2 3e 2e 41 61 16 cb 0e fb 92 5e |...zu.>.Aa.....^|
+Server Write IV[16]:
+| b0 96 92 c2 54 1d f3 70 3d 15 d3 4b 5b 8f 3e 01 |....T..p=..K[.>.|
+ssl_generate_keyring_material ssl_create_decoder(client)
+decoder initialized (digest len 20)
+ssl_generate_keyring_material ssl_create_decoder(server)
+decoder initialized (digest len 20)
+ssl_generate_keyring_material: client seq 0, server seq 0
+ssl_save_master_key inserted (pre-)master secret for Client Random
+stored key[32]:
+| 66 31 66 36 37 33 64 61 2d 38 33 65 64 2d 34 35 |f1f673da-83ed-45|
+| 62 66 2d 38 62 65 66 2d 39 33 37 64 30 36 38 66 |bf-8bef-937d068f|
+stored (pre-)master secret[48]:
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
+ssl_save_master_key inserted (pre-)master secret for Session ID
+stored key[32]:
+| 40 8b b0 63 51 e3 ce cc 1e e9 fb 41 c1 59 50 83 |@..cQ......A.YP.|
+| 5e 7b c3 a6 76 53 ff b6 af ec 97 1c 5f 96 b0 fa |^{..vS......_...|
+stored (pre-)master secret[48]:
+| e7 e2 77 df f1 0c ef 50 79 9c 9b 3d 2f 8b e7 5b |..w....Py..=/..[|
+| 19 b2 0f ff 13 44 a1 54 dd 27 67 f3 49 84 cd 3e |.....D.T.'g.I..>|
+| c2 25 41 b3 f3 66 32 9f 89 6a 9d b4 eb 9f 9a 2d |.%A..f2..j.....-|
+ssl_change_cipher CLIENT
+
+dissect_dtls enter frame #12 (first time)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+decrypt_dtls_record: app_data len 64, ssl state 3F
+packet_from_server: is from server - FALSE
+decrypt_dtls_record: using client decoder
+decrypt_dtls_record: allocating 96 bytes for decrypt data (old len 32)
+ssl_decrypt_record ciphertext len 64
+Ciphertext[64]:
+| 9b d5 c9 7a 75 f2 3e 2e 41 61 16 cb 0e fb 92 5e |...zu.>.Aa.....^|
+| db af a2 9f 0b 55 44 ce c4 ea d2 2c d7 ab 7d dd |.....UD....,..}.|
+| 78 ae 64 69 7c 4a bf c5 2d 7f b9 f7 d9 eb c0 63 |x.di|J..-......c|
+| b0 ab 0d 34 5d aa 58 97 4f 8b a5 d9 1e 76 61 89 |...4].X.O....va.|
+Plaintext[48]:
+| 14 00 00 0c 00 05 00 00 00 00 00 0c ec 98 67 6c |..............gl|
+| c5 79 45 23 5d 81 e5 91 2b 0e cf e0 eb 60 9d 9a |.yE#]...+....`..|
+| e6 fb ba 2f 6f 22 48 4f cf 45 dc 23 03 03 03 03 |.../o"HO.E.#....|
+ssl_decrypt_record found padding 3 final len 44
+checking mac (len 24, version FEFD, ct 22 seq 0)
+dtls_check_mac mac type:SHA1 md 2
+dtls_check_mac seq: 0 epoch: 1
+Mac[20]:
+| 2b 0e cf e0 eb 60 9d 9a e6 fb ba 2f 6f 22 48 4f |+....`...../o"HO|
+| cf 45 dc 23                                     |.E.#            |
+ssl_decrypt_record: mac ok
+
+dissect_dtls enter frame #13 (first time)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+decrypt_dtls_record: app_data len 93, ssl state 3F
+packet_from_server: is from server - TRUE
+decrypt_dtls_record: using server decoder
+decrypt_dtls_record: no decoder available
+ssl_try_set_version found version 0xFEFD -> state 0x3F
+ssl_reset_session detected renegotiation, clearing 0x28 (server side)
+ssl_dissect_hnd_hello_common found SERVER RANDOM -> state 0x17
+ssl_set_cipher found CIPHER 0x002F TLS_RSA_WITH_AES_128_CBC_SHA -> state 0x17
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #2 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #3 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #4 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #5 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+dissect_dtls_record: content_type 22 epoch 0 seq 6
+
+dissect_dtls enter frame #6 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #7 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #8 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #9 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+
+dissect_dtls enter frame #10 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+
+dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #13 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #2 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #3 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #4 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #5 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+dissect_dtls_record: content_type 22 epoch 0 seq 6
+
+dissect_dtls enter frame #6 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #7 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 2
+
+dissect_dtls enter frame #8 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 3
+
+dissect_dtls enter frame #9 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 4
+
+dissect_dtls enter frame #10 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 5
+
+dissect_dtls enter frame #11 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 20 epoch 0 seq 6
+
+dissect_dtls enter frame #12 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 1 seq 0
+
+dissect_dtls enter frame #13 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 7
+
+dissect_dtls enter frame #1 (already visited)
+packet_from_server: is from server - FALSE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+
+dissect_dtls enter frame #2 (already visited)
+packet_from_server: is from server - TRUE
+dissect_dtls_record: content_type 22 epoch 0 seq 0
+dissect_dtls_record: content_type 22 epoch 0 seq 1
+
+dissect_dtls enter frame #3 (already 
