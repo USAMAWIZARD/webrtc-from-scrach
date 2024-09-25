@@ -315,7 +315,8 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
       exit(0);
     }
   }
-  dtls_transport->current_flight_no++;
+  if (get_content_type(handshake_type) == 22)
+    dtls_transport->current_flight_no++;
 
   return true;
 }
@@ -659,10 +660,12 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       printf("master %s\n ",
              BN_bn2hex(peer->dtls_transport->encryption_keys->master_secret));
       printf("client heloow %s\n ", BN_bn2hex(peer->dtls_transport->my_random));
-
       exit(0);
+
       // client_finshed();
       break;
+    case handshake_type_change_cipher_spec:
+    case handshake_type_finished:
     default:
       break;
     }
