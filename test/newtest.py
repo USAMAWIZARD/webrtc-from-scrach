@@ -129,10 +129,10 @@ def prf(secret, label, seed, hash_algorithm, output_length):
     """
     return _p_hash(hash_algorithm, secret, label + seed, output_length)
 
-premaster_secret = bytes.fromhex("dcac0057280e16ddb4ee2bf66863d2b0f5cd181a803055bce96f5d149702bd522b093830554c50528bf1791b35864d12")
+premaster_secret = bytes.fromhex("FEFDCAD27009BDB461CDCE0CBB604D9AFD0ADE93DCDD6E35F4F741AAA9900E965DC21CAD9335BBE00275800BEE46F5B0")
 
-client_random = bytes.fromhex("64636637373230302d633433332d346161352d613835652d3634363464656361")
+client_random = bytes.fromhex("61316330623432302d656630352d346165322d386234642d3234643735656262")
 
-server_random = bytes.fromhex("9aad17a3bf3029bb1d18883c197c2d96c590771031cbf2fb7ac33fbfd5fb2701")
+server_random = bytes.fromhex("a3c2d4eedf835307d121b3c2b38ea81a48eed4db69c9da0ce5c8b07f55d8c80e")
 
-print(prf(premaster_secret,b"key expansion",  server_random +client_random,hashes.SHA256(),128).hex())
+print(prf(premaster_secret,b"master secret",client_random + server_random,hashes.SHA256(),48).hex())

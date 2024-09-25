@@ -1,6 +1,9 @@
+#include "glib-object.h"
+#include "gst/gstbin.h"
 #include "gst/gstelement.h"
 #include "gst/gstpromise.h"
 #include <stdbool.h>
+#include <string.h>
 #if __APPLE__
 #define VIDEO_SINK "osxaudiosink"
 #else
@@ -250,13 +253,26 @@ static void on_negotiation_needed(GstElement *webrtc, gpointer user_data) {
   g_signal_emit_by_name(webrtc, "create-offer", NULL, promise);
 }
 
+static void on_key_set(GstElement *element, gpointer *udata) {}
+static void dtls_element_added(GstBin *webrtcbin, GstBin subbin,
+                               GstElement *element, gpointer *data) {
+  gchar *element_name = gst_element_get_name(element);
+  printf("\nelement Name -----%s\n", element_name);
+
+  if (strncmp(element_name, "dtlssrt", 6) == 0) {
+  }
+}
+
 static void create_webrtc(const gchar *webrtcbin_id, gboolean send_offer) {
 
   GstElement *tee, *audio_q, *video_q, *webrtc;
   GstPad *sinkpad, *srcpad;
   GstPadLinkReturn ret;
-  printf("created webrtc bin with id %s", webrtcbin_id);
+  printf("\ncreated webrtc bin with id %s \n", webrtcbin_id);
   webrtc = gst_element_factory_make("webrtcbin", webrtcbin_id);
+  g_signal_connect(webrtc, "deep-element-added", G_CALLBACK(dtls_element_added),
+                   NULL);
+
   GST_IS_ELEMENT(webrtc);
 
   g_object_set(G_OBJECT(webrtc), "bundle-policy",
