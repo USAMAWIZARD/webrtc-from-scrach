@@ -57,6 +57,10 @@ struct encryption_keys {
   BIGNUM *server_write_key;
   BIGNUM *client_write_IV;
   BIGNUM *server_write_IV;
+  BIGNUM *client_write_SRTP_key;
+  BIGNUM *server_write_SRTP_key;
+  BIGNUM *client_write_SRTP_salt;
+  BIGNUM *server_write_SRTP_salt;
 };
 
 #define MASTER_SECRET_LEN 48.0
@@ -80,7 +84,9 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
                            int *hash_size);
 
 bool init_symitric_encryption(struct RTCDtlsTransport *transport);
-bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block);
+bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
+                        struct encryption_keys *encryption_keys,
+                        uint16_t selected_cipher_suite);
 bool init_aes(struct aes_ctx **encryption_ctx,
               struct encryption_keys *encryption_keys);
 

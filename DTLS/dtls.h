@@ -20,14 +20,17 @@
 #define CIPHER_SUITE_LEN 1
 // #define TLS_RSA_WITH_AES_128_CBC_SHA 0x2f00 // big endian
 
-#define SRTP_AES128_CM_HMAC_SHA1_80 0x0100
+enum dtls_extentions {
+  SRTP_EXT = 0x000e,
+  SIGN_ALGO_EXT = 0x000d,
+  SESS_TICKET_EXT = 0x0023,
+  EXTEND_MASTER_SEC_EXT = 0x0017
+};
 
-#define SRTP_EXT 0x000e
-#define SIGN_ALGO_EXT 0x000d
-#define SESS_TICKET_EXT 0x0023
-#define EXTEND_MASTER_SEC_EXT 0x0017
-
-enum cipher_suite { TLS_RSA_WITH_AES_128_CBC_SHA = 0x2f00 };
+enum cipher_suite {
+  TLS_RSA_WITH_AES_128_CBC_SHA = 0x2f00,
+  SRTP_AES128_CM_HMAC_SHA1_80 = 0x0100
+};
 enum key_exchange { RSA_KEY_EXCHANGE };
 enum cipher { AES_128_CBC = 128 };
 
@@ -59,11 +62,21 @@ enum HandshakeType {
   handshake_type_finished = 20,
   handshake_type_change_cipher_spec = 233,
 };
+enum ContentType {
+  content_type_change_cipher_spec = 20,
+  content_type_alert,
+  content_type_handshake,
+  content_type_application_data
+};
 
 struct cipher_suite_info {
   uint16_t selected_cipher_suite;
   GChecksumType hmac_algo;
   gsize hmac_len;
+  gsize key_size;
+  gsize iv_size;
+
+  gsize salt_len;
 };
 
 struct RTCDtlsTransport {
@@ -72,7 +85,6 @@ struct RTCDtlsTransport {
   struct CandidataPair *pair;
   struct DtlsParsedPacket *last_dtl_packet;
   JsonObject *dtls_flights;
-  struct cipher_suite_info *cipher_suite;
   char *fingerprint;
   uint16_t current_seq_no;
   uint16_t current_flight_no;
@@ -86,8 +98,10 @@ struct RTCDtlsTransport {
   X509 *server_certificate;
   X509 *client_certificate;
   struct encryption_keys *encryption_keys;
-  union symmetric_encrypt symitric_encrypt_ctx;
-
+  struct cipher_suite_info *dtls_cipher_suite;
+  struct cipher_suite_info *srtp_cipher_suite;
+  union symmetric_encrypt dtls_symitric_encrypt;
+  union symmetric_encrypt srtp_symitric_encrypt;
   struct ALLDtlsMessages *all_previous_handshake_msgs;
   EVP_PKEY *pub_key;
   EVP_PKEY *my_private_key;
@@ -169,12 +183,14 @@ union ParsedHandshakePayload {
 struct DtlsParsedPacket {
   bool isfragmented;
   bool islastfragment;
+  bool isencrypted;
   uint8_t handshake_type;
   struct DtlsHeader *dtls_header;
   struct HandshakeHeader *handshake_header;
   guchar *handshake_payload;
   guchar *all_fragmented_payload;
   union ParsedHandshakePayload parsed_handshake_payload;
+  guchar *payload;
   struct DtlsParsedPacket *next_record;
 };
 
@@ -195,6 +211,12 @@ struct ALLDtlsMessages {
   struct HandshakeHeader *handshake_header;
   uint32_t payload_len;
   guchar *payload;
+};
+struct __attribute__((packed)) llTVL {
+  uint16_t type;
+  uint16_t len;
+  guchar *value;
+  struct llTVL *next_tvl;
 };
 
 struct RTCDtlsTransport *create_dtls_transport();
@@ -221,14 +243,14 @@ uint16_t make_extentention(struct dtls_ext **ext, uint16_t extention_type,
 void on_dtls_packet(struct NetworkPacket *dtls_packet,
                     struct RTCPeerConnection *peer);
 void handle_server_hello(struct RTCDtlsTransport *transport,
-                         struct DtlsServerHello *hello);
+                         struct DtlsServerHello *hello, struct llTVL *tvl);
 void handle_certificate(struct RTCDtlsTransport *transport,
                         struct Certificate *certificate);
 void handle_certificate_request(struct RTCDtlsTransport *transport,
                                 struct CertificateRequest *certificate_request);
 
 struct DtlsServerHello *parse_server_hello(guchar *handshake_payload,
-                                           uint32_t length);
+                                           uint32_t length, struct llTVL **tvl);
 
 uint32_t get_client_certificate(guchar **certificate,
                                 struct CertificateRequest *certificate_request);

@@ -201,8 +201,8 @@ struct TVL *add_stun_attribute(struct Stun *stun, uint16_t type, char *value,
   int total_attribute_size = sizeof(struct TVL) + len + padding_bytes;
 
   struct TVL *tvl_attribute = calloc(1, total_attribute_size);
-  tvl_attribute->att_type = htons(type);
-  tvl_attribute->att_len = htons(len);
+  tvl_attribute->type = htons(type);
+  tvl_attribute->len = htons(len);
 
   memcpy(tvl_attribute->value, value, len);
 

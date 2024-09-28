@@ -390,11 +390,11 @@ bool init_aes(struct aes_ctx **encryption_ctx,
 
   server_aes_ctx->recordIV = calloc(1, server_aes_ctx->iv_size);
 
-  struct aes_ctx *server_server_aes_ctx = malloc(sizeof(struct aes_ctx));
-  server_server_aes_ctx->client = client_aes_ctx;
-  server_server_aes_ctx->server = server_aes_ctx;
+  struct aes_ctx *client_server_aes_ctx = malloc(sizeof(struct aes_ctx));
+  client_server_aes_ctx->client = client_aes_ctx;
+  client_server_aes_ctx->server = server_aes_ctx;
 
-  *encryption_ctx = server_server_aes_ctx;
+  *encryption_ctx = client_server_aes_ctx;
 
   return true;
 }

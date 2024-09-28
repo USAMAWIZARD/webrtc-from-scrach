@@ -1,6 +1,7 @@
 #include "network.h"
 #include "../DTLS/dtls.h"
 #include "../STUN/stun.h"
+#include "../Utils/utils.h"
 #include <arpa/inet.h>
 #include <assert.h>
 #include <bits/pthreadtypes.h>
@@ -212,17 +213,39 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
     network_packet->payload.dtls_parsed = dtls_packet;
 
     uint32_t remaining_bytes = bytes;
+
+    uint16_t dtls_header_size = sizeof(struct DtlsHeader);
     while (remaining_bytes > 0) {
-      uint16_t dtls_header_size = sizeof(struct DtlsHeader);
+
       if (remaining_bytes < dtls_header_size) {
         return NULL;
       }
       struct DtlsHeader *dtls_header = malloc(dtls_header_size);
 
-      dtls_header = (struct DtlsHeader *)(packet);
+      memcpy(dtls_header, packet, dtls_header_size);
+
       remaining_bytes = remaining_bytes - dtls_header_size;
       packet = packet + dtls_header_size;
       dtls_packet->dtls_header = dtls_header;
+      uint16_t isencrypted = ntohs(dtls_header->epoch);
+
+      if (isencrypted)
+        dtls_packet->isencrypted = true;
+
+      if (isencrypted || dtls_header->type != 22) {
+
+        uint16_t header_paylod_size = ntohs(dtls_header->length);
+
+        if (remaining_bytes < header_paylod_size) {
+          return NULL;
+        }
+        remaining_bytes = remaining_bytes - header_paylod_size;
+        dtls_packet->payload = malloc(header_paylod_size);
+        memcpy(dtls_packet->payload, packet, header_paylod_size);
+        packet = packet + header_paylod_size;
+
+        goto next_record;
+      }
 
       struct HandshakeHeader *handshake_header =
           malloc(sizeof(struct HandshakeHeader));
@@ -243,7 +266,6 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
           ntohl((uint32_t)handshake_header->fragment_offset) >> 8;
 
       if (fragment_len != length) {
-        printf("fraggggggggggggggggggggggggg\n");
         dtls_packet->isfragmented = true;
         uint16_t total_recvied_len = fragment_offset + fragment_len;
         if (total_recvied_len == length)
@@ -251,7 +273,6 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
         else
           dtls_packet->islastfragment = false;
       } else {
-        printf("noooooooooooooooooooooooooooooooo\n");
         dtls_packet->isfragmented = false;
         dtls_packet->islastfragment = false;
       }
@@ -271,6 +292,7 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
         packet = packet + fragment_len;
         remaining_bytes = remaining_bytes - fragment_len;
       }
+    next_record:
 
       if (remaining_bytes >= dtls_header_size) {
         dtls_packet->next_record = calloc(1, sizeof(struct DtlsParsedPacket));
@@ -280,6 +302,7 @@ struct NetworkPacket *get_parsed_packet(guchar *packet, uint32_t bytes) {
         return network_packet;
       }
     }
+
     return NULL;
   }
 

@@ -85,8 +85,8 @@ struct __attribute__((packed)) StunPayload {
   uint32_t x_ip;
 };
 struct __attribute__((packed)) TVL {
-  uint16_t att_type;
-  uint16_t att_len;
+  uint16_t type;
+  uint16_t len;
   char value[];
 };
 struct stun_binding {

@@ -1,5 +1,6 @@
 #include "dtls.h"
 #include "../Network/network.h"
+#include "../SRTP/srtp.h"
 #include "../STUN/stun.h"
 #include "../Utils/utils.h"
 #include "../WebRTC/webrtc.h"
@@ -101,8 +102,6 @@ struct RTCDtlsTransport *create_dtls_transport() {
 
   dtls_transport->dtls_flights = json_object_new();
   dtls_transport->encryption_keys = malloc(sizeof(struct encryption_keys));
-  // dtls_transport->symitric_encrypt_ctx =
-  //     malloc(sizeof(union symmetric_encrypt));
 
   dtls_transport->state = DTLS_CONNECTION_STATE_NEW;
   dtls_transport->fingerprint =
@@ -290,7 +289,7 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
                                   dtls_payload_fragment, fragment_mtu_len,
                                   is_fragmented);
 
-    struct iovec dtls_packet[4];
+    struct iovec dtls_packet[5];
 
     uint8_t len =
         make_dtls_packet(dtls_transport, &dtls_packet[0], dtls_header,
@@ -349,7 +348,7 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
   ptr = ptr + payload_len;
 
   if (encrypt_packet) {
-    struct aes_ctx *encryption_ctx = transport->symitric_encrypt_ctx.aes;
+    struct aes_ctx *encryption_ctx = transport->dtls_symitric_encrypt.aes;
     struct AesEnryptionCtx *client_Ectx = encryption_ctx->client;
 
     iov[iov_len].iov_base = client_Ectx->recordIV;
@@ -365,8 +364,8 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
 
     // calculate mac of the packet
 
-    gsize hmac_len = transport->cipher_suite->hmac_len;
-    GHmac *hmac = g_hmac_new(transport->cipher_suite->hmac_algo,
+    gsize hmac_len = transport->dtls_cipher_suite->hmac_len;
+    GHmac *hmac = g_hmac_new(transport->dtls_cipher_suite->hmac_algo,
                              client_Ectx->mac_key, client_Ectx->mac_key_size);
     g_hmac_update(hmac, (guchar *)&dtls_header->epoch,
                   8); // copies epoch and seq number
@@ -464,7 +463,23 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
   struct DtlsParsedPacket *dtls_packet = netowrk_packet->payload.dtls_parsed;
 
   printf("packet type : %d\n", dtls_packet->dtls_header->type);
+
   while (dtls_packet != NULL) {
+
+    if (dtls_packet->isencrypted) {
+      printf("\n -----------------------"
+             "encrypted dtls packet----------------------- \n");
+
+      dtls_packet = dtls_packet->next_record;
+      continue;
+    }
+    switch (dtls_packet->dtls_header->type) {
+    case content_type_change_cipher_spec:
+      printf("\n -----------------------"
+             "change cipher spec ---------------------------- \n");
+      dtls_packet = dtls_packet->next_record;
+      continue;
+    }
 
     uint32_t total_fragment_len =
         ntohl((uint32_t)dtls_packet->handshake_header->length) >> 8;
@@ -494,8 +509,6 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
             (struct DtlsParsedPacket *)(json_object_get_int_member(
                 flight, handshake_type_str));
 
-        // printf("ptr2  %p  %d\n", last_similar_packet,
-        //        last_similar_packet->handshake_type);
       } else {
         json_object_set_int_member(flight, handshake_type_str,
                                    (guint64)dtls_packet);
@@ -503,8 +516,6 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
         memcpy(dtls_packet->all_fragmented_payload,
                dtls_packet->handshake_payload, fragment_length);
 
-        //        printf("ptr1 %d %p\n", GPOINTER_TO_INT(dtls_packet),
-        //        dtls_packet);
         return;
       }
       if (last_similar_packet && last_similar_packet->isfragmented) {
@@ -534,18 +545,18 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
     } else {
       printf("non fragmented \n");
     }
-
     switch (dtls_packet->handshake_type) {
     case handshake_type_server_hello:
       printf("server hello \n");
       uint16_t dtls_hello_size = fragment_length;
 
+      struct llTVL *tvl;
       struct DtlsServerHello *server_hello =
-          parse_server_hello(handshake_payload, total_fragment_len);
+          parse_server_hello(handshake_payload, total_fragment_len, &tvl);
 
       dtls_packet->parsed_handshake_payload.hello = server_hello;
 
-      handle_server_hello(peer->dtls_transport, server_hello);
+      handle_server_hello(peer->dtls_transport, server_hello, tvl);
       break;
 
     case handshake_type_certificate:
@@ -660,44 +671,75 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       printf("master %s\n ",
              BN_bn2hex(peer->dtls_transport->encryption_keys->master_secret));
       printf("client heloow %s\n ", BN_bn2hex(peer->dtls_transport->my_random));
-      exit(0);
 
-      // client_finshed();
       break;
-    case handshake_type_change_cipher_spec:
     case handshake_type_finished:
+      printf("\n -----------------------dtls connection "
+             "sucssessfull---------------------------- \n");
     default:
       break;
     }
+
     dtls_packet = dtls_packet->next_record;
   }
-  printf("testinginignign \n");
 }
-
-void handle_server_hello(struct RTCDtlsTransport *transport,
-                         struct DtlsServerHello *hello) {
-  transport->selected_cipher_suite = ntohs(hello->cipher_suite);
-  transport->current_flight_no = 1;
-  transport->epoch = 0;
+bool set_cipher_suite_info(struct RTCDtlsTransport *transport,
+                           uint16_t selected_cipher_suite) {
   struct cipher_suite_info *cipher_info =
-      malloc(sizeof(struct cipher_suite_info));
+      calloc(1, sizeof(struct cipher_suite_info));
 
-  switch (transport->selected_cipher_suite) {
+  cipher_info->selected_cipher_suite = selected_cipher_suite;
+
+  switch (cipher_info->selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
-    cipher_info->selected_cipher_suite = transport->selected_cipher_suite;
     cipher_info->hmac_algo = G_CHECKSUM_SHA1;
     cipher_info->hmac_len = g_checksum_type_get_length(cipher_info->hmac_algo);
-    break;
+    cipher_info->key_size = 16;
+    cipher_info->iv_size = 16;
+    transport->dtls_cipher_suite = cipher_info;
 
+    break;
+  case SRTP_AES128_CM_HMAC_SHA1_80:
+    cipher_info->hmac_algo = G_CHECKSUM_SHA1;
+    cipher_info->hmac_len = g_checksum_type_get_length(cipher_info->hmac_algo);
+    cipher_info->key_size = 16;
+    cipher_info->salt_len = 14;
+    transport->srtp_cipher_suite = cipher_info;
+
+    break;
   default:
     printf("cipher sute not supported %x \n", transport->selected_cipher_suite);
     exit(0);
   }
-  transport->cipher_suite = cipher_info;
+  return true;
+}
+void handle_server_hello(struct RTCDtlsTransport *transport,
+                         struct DtlsServerHello *hello, struct llTVL *lltvl) {
+  transport->current_flight_no = 1;
+  transport->epoch = 0;
+
+  transport->selected_cipher_suite = ntohs(hello->cipher_suite);
+  set_cipher_suite_info(transport, transport->selected_cipher_suite);
 
   BIGNUM *r2 = BN_new();
   BN_bin2bn(&hello->random[0], 32, r2);
   transport->peer_random = r2;
+
+  do {
+    printf("type %x \n", lltvl->type);
+    switch (lltvl->type) {
+    case SRTP_EXT:
+      struct srtp_ext ext = parse_srtp_ext(lltvl->value, lltvl->len);
+      printf("%x\n", ext.encryption_profile);
+      set_cipher_suite_info(transport, htons(ext.encryption_profile));
+      break;
+    case 0:
+      break;
+    default:
+      break;
+    }
+    lltvl = lltvl->next_tvl;
+  } while (lltvl != NULL);
 }
 void handle_certificate(struct RTCDtlsTransport *transport,
                         struct Certificate *certificate) {
@@ -724,8 +766,10 @@ void handle_certificate_request(
     struct CertificateRequest *certificate_request) {}
 
 void send_alert() {}
+void parse_dtls_alert() {}
 struct DtlsServerHello *parse_server_hello(guchar *handshake_payload,
-                                           uint32_t length) {
+                                           uint32_t length,
+                                           struct llTVL **pp_tlv) {
   if (length < sizeof(struct DtlsServerHello))
     return NULL;
 
@@ -765,7 +809,34 @@ struct DtlsServerHello *parse_server_hello(guchar *handshake_payload,
     return NULL;
 
   server_hello->extentions = malloc(server_hello->extention_len);
+  ptr += 2;
   memcpy(server_hello->extentions, ptr, server_hello->extention_len);
+
+  guchar *extentions = (guchar *)server_hello->extentions;
+
+  struct llTVL *tvl = malloc(sizeof(struct llTVL));
+  *pp_tlv = tvl;
+
+  for (int i = 0; i < server_hello->extention_len;) {
+    uint16_t type = ntohs(*((uint16_t *)extentions));
+    extentions = extentions + 2;
+    uint16_t len = ntohs(*(uint16_t *)extentions);
+
+    if ((extentions + len - handshake_payload) < 0)
+      return NULL;
+
+    extentions = extentions + 2;
+
+    tvl->value = malloc(len);
+    tvl->type = type;
+    tvl->len = len;
+    tvl->next_tvl = calloc(1, sizeof(struct llTVL));
+    memcpy(tvl->value, extentions, len);
+
+    tvl = tvl->next_tvl;
+
+    i += (len + 4);
+  }
 
   return server_hello;
 }

@@ -3,6 +3,8 @@
 #include "../../DTLS/dtls.h"
 #include "../../Utils/utils.h"
 #include "glibconfig.h"
+#include <stdarg.h>
+
 #include <glib.h>
 #include <math.h>
 #include <openssl/bn.h>
@@ -57,7 +59,6 @@ guchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
     GHmac *hmac = g_hmac_new(G_CHECKSUM_SHA256, secret_str, secret_size);
     g_hmac_update(hmac, a_concat_seed, a_concat_seed_len);
     g_hmac_get_digest(hmac, ALL_hmac + ((i - 1) * checksum_len), &checksum_len);
-    print_hex(ALL_hmac, checksum_len * 2);
     g_hmac_unref(hmac);
   }
 
@@ -66,10 +67,58 @@ guchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
   return ALL_hmac;
 }
 
-bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block) {
+bool copy_key_block(guchar *key_block, ...) {
+
+  va_list arg_list;
+  va_start(arg_list, key_block);
+
+  BIGNUM **data_ptr;
+
+  while ((data_ptr = va_arg(arg_list, BIGNUM **)) != NULL) {
+
+    int size = va_arg(arg_list, int);
+    BN_bin2bn(key_block, size, *data_ptr);
+
+    key_block += size;
+  }
+  va_end(arg_list);
+  return true;
+}
+
+struct encryption_keys *
+get_srtp_enryption_keys(struct RTCDtlsTransport *transport, guchar *key_block) {
+
+  uint16_t selected_cipher_suite =
+      transport->srtp_cipher_suite->selected_cipher_suite;
+  struct encryption_keys *encryption_keys = transport->encryption_keys;
+  struct cipher_suite_info *cipher_info = transport->srtp_cipher_suite;
+
+  g_assert(encryption_keys != NULL && cipher_info != NULL);
+
+  encryption_keys->client_write_SRTP_key = BN_new();
+  encryption_keys->server_write_SRTP_key = BN_new();
+
+  encryption_keys->client_write_SRTP_salt = BN_new();
+  encryption_keys->server_write_SRTP_salt = BN_new();
+
+  gsize srtp_key_size = cipher_info->key_size,
+        salt_size = cipher_info->salt_len, mac_size = cipher_info->hmac_len;
+
+  copy_key_block(key_block, &encryption_keys->client_write_SRTP_key,
+                 srtp_key_size, &encryption_keys->server_write_SRTP_key,
+                 srtp_key_size, &encryption_keys->client_write_SRTP_salt,
+                 salt_size, &encryption_keys->server_write_SRTP_salt, salt_size,
+                 NULL);
+
+  return encryption_keys;
+}
+struct encryption_keys *
+get_dtls_encryption_keys(struct RTCDtlsTransport *transport,
+                         guchar *key_block) {
   uint16_t selected_cipher_suite = transport->selected_cipher_suite;
   struct encryption_keys *encryption_keys = transport->encryption_keys;
-  // ideallly get it from a hash map all the len of the fields
+
+  struct cipher_suite_info *cipher_info = transport->dtls_cipher_suite;
 
   encryption_keys->client_write_mac_key = BN_new();
   encryption_keys->server_write_mac_key = BN_new();
@@ -80,64 +129,40 @@ bool init_enryption_ctx(struct RTCDtlsTransport *transport, guchar *key_block) {
   encryption_keys->client_write_IV = BN_new();
   encryption_keys->server_write_IV = BN_new();
 
-  int key_size, iv_size, hash_size;
-
-  if (!get_cipher_suite_info(selected_cipher_suite, &key_size, &iv_size,
-                             &hash_size)) {
-    return false;
-  }
+  gsize key_size = cipher_info->key_size, iv_size = cipher_info->iv_size,
+        hash_size = cipher_info->hmac_len;
 
   printf("key expanstion block\n");
-  print_hex(key_block, ((key_size * 2) + (iv_size * 2) + (20 * 2)));
-
-  BN_bin2bn(key_block, hash_size, encryption_keys->client_write_mac_key);
-  key_block += hash_size;
-
-  BN_bin2bn(key_block, hash_size, encryption_keys->server_write_mac_key);
-  key_block += hash_size;
-
-  BN_bin2bn(key_block, key_size, encryption_keys->client_write_key);
-  key_block += key_size;
-
-  BN_bin2bn(key_block, key_size, encryption_keys->server_write_key);
-  key_block += key_size;
-
-  BN_bin2bn(key_block, iv_size, encryption_keys->client_write_IV);
-  key_block += iv_size;
-
-  BN_bin2bn(key_block, iv_size, encryption_keys->server_write_IV);
+  copy_key_block(key_block, &encryption_keys->client_write_mac_key, hash_size,
+                 &encryption_keys->server_write_mac_key, hash_size,
+                 &encryption_keys->client_write_key, hash_size,
+                 &encryption_keys->server_write_key, hash_size,
+                 &encryption_keys->client_write_IV, iv_size,
+                 &encryption_keys->server_write_IV, iv_size, NULL);
 
   encryption_keys->key_size = key_size;
   encryption_keys->mac_key_size = hash_size;
+  encryption_keys->iv_size = iv_size;
+
+  return encryption_keys;
+}
+bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
+                        struct encryption_keys *encryption_keys,
+                        uint16_t selected_cipher_suite) {
 
   switch (selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
-    init_aes(&transport->symitric_encrypt_ctx.aes, encryption_keys);
-  default:
+    init_aes(&symitric_encrypt->aes, encryption_keys);
+    break;
+  case SRTP_AES128_CM_HMAC_SHA1_80:
 
     break;
-  }
-
-  return true;
-}
-bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
-                           int *hash_size) {
-  switch (cs) {
-  case TLS_RSA_WITH_AES_128_CBC_SHA:
-    *key_size = 16;  // 128 bits
-    *iv_size = 16;   // 128 bits
-    *hash_size = 20; // SHA-1, 160 bits
-    return true;
-
   default:
-    *key_size = 0;
-    *iv_size = 0;
-    *hash_size = 0;
-    printf("Unknown cipher suite\n");
+    printf("no  such cipher sute supported \n");
     exit(0);
     break;
   }
-  return false;
+  return true;
 }
 
 bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
@@ -150,8 +175,25 @@ bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
   printf("tls prf key blcok for key expnsion ");
   print_hex(key_block, 128);
 
-  if (!init_enryption_ctx(transport, key_block))
-    return false;
+  struct encryption_keys *encryption_keys =
+      get_dtls_encryption_keys(transport, key_block);
+
+  init_enryption_ctx(&transport->dtls_symitric_encrypt, encryption_keys,
+                     transport->selected_cipher_suite);
+
+  // check if srtp is required SRTP
+  //
+  key_block =
+      PRF(master_secret, "EXTRACTOR-dtls_srtp",
+          get_dtls_rand_appended(transport->my_random, transport->peer_random),
+          G_CHECKSUM_SHA256, 128);
+
+  printf("tls prf key block for key expnsion ");
+  print_hex(key_block, 128);
+  encryption_keys = get_srtp_enryption_keys(transport, key_block);
+
+  init_enryption_ctx(&transport->srtp_symitric_encrypt, encryption_keys,
+                     transport->srtp_cipher_suite->selected_cipher_suite);
 
   return true;
 }
