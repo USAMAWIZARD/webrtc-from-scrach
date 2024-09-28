@@ -19,6 +19,7 @@ enum cipher_suite;
 struct RTCDtlsTransport;
 struct encryption_keys;
 
+enum mode { CBC, CM };
 struct AesEnryptionCtx {
   uint8_t *initial_key;
   uint8_t *mac_key;
@@ -26,6 +27,7 @@ struct AesEnryptionCtx {
   uint16_t iv_size;
   uint16_t key_size;
   uint8_t row_size;
+  enum mode mode;
 
   uint8_t key_size_bytes;
   uint8_t no_rounds;
@@ -88,7 +90,7 @@ bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
                         struct encryption_keys *encryption_keys,
                         uint16_t selected_cipher_suite);
 bool init_aes(struct aes_ctx **encryption_ctx,
-              struct encryption_keys *encryption_keys);
+              struct encryption_keys *encryption_keys, enum mode mode);
 
 bool aes_expand_key(struct AesEnryptionCtx *ctx);
 

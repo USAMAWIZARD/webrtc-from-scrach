@@ -152,7 +152,7 @@ bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
 
   switch (selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
-    init_aes(&symitric_encrypt->aes, encryption_keys);
+    init_aes(&symitric_encrypt->aes, encryption_keys, CBC);
     break;
   case SRTP_AES128_CM_HMAC_SHA1_80:
 
@@ -172,8 +172,6 @@ bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
       PRF(master_secret, "key expansion",
           get_dtls_rand_appended(transport->peer_random, transport->my_random),
           G_CHECKSUM_SHA256, 128);
-  printf("tls prf key blcok for key expnsion ");
-  print_hex(key_block, 128);
 
   struct encryption_keys *encryption_keys =
       get_dtls_encryption_keys(transport, key_block);
@@ -182,14 +180,12 @@ bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
                      transport->selected_cipher_suite);
 
   // check if srtp is required SRTP
-  //
+
   key_block =
       PRF(master_secret, "EXTRACTOR-dtls_srtp",
           get_dtls_rand_appended(transport->my_random, transport->peer_random),
           G_CHECKSUM_SHA256, 128);
 
-  printf("tls prf key block for key expnsion ");
-  print_hex(key_block, 128);
   encryption_keys = get_srtp_enryption_keys(transport, key_block);
 
   init_enryption_ctx(&transport->srtp_symitric_encrypt, encryption_keys,

@@ -4,6 +4,7 @@
 #include <glib.h>
 #include <math.h>
 #include <openssl/bn.h>
+#include <openssl/types.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -255,17 +256,36 @@ void add_round_key(uint8_t (*roundkey)[4], uint8_t (*block)[4]) {
 void add_vector(uint8_t (*block)[4], uint8_t (*iv)[4]) {
   add_round_key(iv, block);
 }
-void add_aes_padding(uint8_t *block, uint16_t data_len, uint8_t padding_size) {
+void add_aes_padding(uint8_t *block, uint16_t data_len, uint8_t padding_size,
+                     enum mode mode) {
   block = block + data_len;
 
   for (int i = 0; i <= padding_size; i++) {
-    block[i] = padding_size - 1;
+    if (mode == CBC)
+      block[i] = padding_size - 1;
+    else if (mode == CM)
+      block[i] = 0;
+  }
+}
+
+void aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4]) {
+
+  add_round_key(ctx->roundkeys[0], block);
+
+  for (int i = 1; i <= ctx->no_rounds; i++) {
+    printf("round num :%d", i);
+    sub_bytes(block);
+    shift_rows(block);
+
+    if (ctx->no_rounds != i)
+      mix_columns(block);
+
+    add_round_key(ctx->roundkeys[i], block);
   }
 }
 uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
                      uint16_t block_encrypt_offset, uint32_t total_packet_len) {
 
-  bool is_cbc = true;
   printf("string encryption prooces\n");
 
   uint16_t block_len = total_packet_len - block_encrypt_offset;
@@ -280,35 +300,38 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
   printf("%d %d %d %d  %d\n", data_encrytion_itration, padding_size,
          total_packet_len, block_len, block_encrypt_offset);
 
-  add_aes_padding(block, block_len, padding_size);
+  add_aes_padding(block, block_len, padding_size, ctx->mode);
+
   print_hex(block, to_encypt_len);
-  //  exit(0);
 
   memcpy(ctx->recordIV, ctx->IV, ctx->iv_size);
 
   ctx->recordIV = ctx->IV;
   transpose_matrix(ctx->IV);
 
+  uint8_t *counter;
+  if (ctx->mode == CM) {
+    counter = malloc(16);
+    memcpy(counter, ctx->IV, 16);
+  }
+
   for (int j = 0; j < data_encrytion_itration; j++) {
     transpose_matrix(block);
 
-    if (is_cbc)
+    if (ctx->mode == CBC) {
       add_vector(block, ctx->IV);
-    add_round_key(ctx->roundkeys[0], block);
-
-    for (int i = 1; i <= ctx->no_rounds; i++) {
-      printf("round num :%d", i);
-      sub_bytes(block);
-      shift_rows(block);
-
-      if (ctx->no_rounds != i)
-        mix_columns(block);
-
-      add_round_key(ctx->roundkeys[i], block);
+      aes(ctx, block);
+      ctx->IV = block;
     }
 
-    if (is_cbc)
-      ctx->IV = block;
+    if (ctx->mode == CM) {
+      aes(ctx, ctx->IV);
+
+      add_vector(block, ctx->IV);
+      increment_binary_number(counter, 16);
+      memcpy(ctx->IV, counter, 16);
+      // exit(0);
+    }
 
     block = block + 4;
   }
@@ -325,7 +348,7 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
 }
 
 bool init_aes(struct aes_ctx **encryption_ctx,
-              struct encryption_keys *encryption_keys) {
+              struct encryption_keys *encryption_keys, enum mode mode) {
 
   struct AesEnryptionCtx *client_aes_ctx =
       calloc(1, sizeof(struct AesEnryptionCtx));
@@ -336,6 +359,7 @@ bool init_aes(struct aes_ctx **encryption_ctx,
     return false;
   }
 
+  client_aes_ctx->mode = mode;
   client_aes_ctx->initial_key = encryption_keys->client_write_key;
 
   client_aes_ctx->IV = encryption_keys->client_write_IV;
@@ -355,6 +379,7 @@ bool init_aes(struct aes_ctx **encryption_ctx,
 
   struct AesEnryptionCtx *server_aes_ctx =
       calloc(1, sizeof(struct AesEnryptionCtx));
+  server_aes_ctx->mode = mode;
   server_aes_ctx->key_size_bytes = encryption_keys->key_size;
 
   if (server_aes_ctx->key_size_bytes == 16) {

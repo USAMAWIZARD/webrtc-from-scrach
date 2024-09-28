@@ -97,3 +97,18 @@ void print_aes_matrix(uint8_t (*ptr)[4], uint8_t numrow) {
     printf("\n");
   }
 }
+void increment_binary_number(unsigned char *number, size_t length) {
+  int carry = 1;
+
+  for (int i = length - 1; i >= 0; i--) {
+    unsigned int result = number[i] + carry;
+
+    if (result > 0xFF) {
+      number[i] = 0x00;
+    } else {
+      number[i] = (unsigned char)result;
+      carry = 0;
+      break;
+    }
+  }
+}
