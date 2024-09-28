@@ -336,16 +336,11 @@ bool init_aes(struct aes_ctx **encryption_ctx,
     return false;
   }
 
-  client_aes_ctx->initial_key =
-      malloc(BN_num_bytes(encryption_keys->client_write_key));
-  BN_bn2bin(encryption_keys->client_write_key, client_aes_ctx->initial_key);
+  client_aes_ctx->initial_key = encryption_keys->client_write_key;
 
-  client_aes_ctx->IV = malloc(BN_num_bytes(encryption_keys->client_write_IV));
-  BN_bn2bin(encryption_keys->client_write_IV, client_aes_ctx->IV);
+  client_aes_ctx->IV = encryption_keys->client_write_IV;
 
-  client_aes_ctx->mac_key =
-      malloc(BN_num_bytes(encryption_keys->client_write_mac_key));
-  BN_bn2bin(encryption_keys->client_write_mac_key, client_aes_ctx->mac_key);
+  client_aes_ctx->mac_key = encryption_keys->client_write_mac_key;
 
   client_aes_ctx->row_size =
       (uint8_t)((float)client_aes_ctx->key_size_bytes / 4.0);
@@ -368,16 +363,11 @@ bool init_aes(struct aes_ctx **encryption_ctx,
     return false;
   }
 
-  server_aes_ctx->initial_key =
-      malloc(BN_num_bytes(encryption_keys->server_write_key));
-  BN_bn2bin(encryption_keys->server_write_key, server_aes_ctx->initial_key);
+  server_aes_ctx->initial_key = encryption_keys->server_write_key;
 
-  server_aes_ctx->IV = malloc(BN_num_bytes(encryption_keys->server_write_IV));
-  BN_bn2bin(encryption_keys->server_write_IV, server_aes_ctx->IV);
+  server_aes_ctx->IV = encryption_keys->server_write_IV;
 
-  server_aes_ctx->mac_key =
-      malloc(BN_num_bytes(encryption_keys->server_write_mac_key));
-  BN_bn2bin(encryption_keys->server_write_mac_key, server_aes_ctx->mac_key);
+  server_aes_ctx->mac_key = encryption_keys->server_write_mac_key;
 
   server_aes_ctx->row_size =
       (uint8_t)((float)server_aes_ctx->key_size_bytes / 4.0);

@@ -49,18 +49,18 @@ struct encryption_keys {
   uint16_t key_size;
   uint16_t iv_size;
   uint16_t mac_key_size;
-  BIGNUM *master_secret;
-  BIGNUM *my_private_key;
-  BIGNUM *client_write_mac_key;
-  BIGNUM *server_write_mac_key;
-  BIGNUM *client_write_key;
-  BIGNUM *server_write_key;
-  BIGNUM *client_write_IV;
-  BIGNUM *server_write_IV;
-  BIGNUM *client_write_SRTP_key;
-  BIGNUM *server_write_SRTP_key;
-  BIGNUM *client_write_SRTP_salt;
-  BIGNUM *server_write_SRTP_salt;
+  guchar *master_secret;
+  guchar *my_private_key;
+  guchar *client_write_mac_key;
+  guchar *server_write_mac_key;
+  guchar *client_write_key;
+  guchar *server_write_key;
+  guchar *client_write_IV;
+  guchar *server_write_IV;
+  guchar *client_write_SRTP_key;
+  guchar *server_write_SRTP_key;
+  guchar *client_write_SRTP_salt;
+  guchar *server_write_SRTP_salt;
 };
 
 #define MASTER_SECRET_LEN 48.0

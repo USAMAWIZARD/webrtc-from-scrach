@@ -72,12 +72,12 @@ bool copy_key_block(guchar *key_block, ...) {
   va_list arg_list;
   va_start(arg_list, key_block);
 
-  BIGNUM **data_ptr;
+  guchar **data_ptr;
 
-  while ((data_ptr = va_arg(arg_list, BIGNUM **)) != NULL) {
+  while ((data_ptr = va_arg(arg_list, guchar **)) != NULL) {
 
     int size = va_arg(arg_list, int);
-    BN_bin2bn(key_block, size, *data_ptr);
+    memcpy(*data_ptr, key_block, size);
 
     key_block += size;
   }
@@ -95,11 +95,11 @@ get_srtp_enryption_keys(struct RTCDtlsTransport *transport, guchar *key_block) {
 
   g_assert(encryption_keys != NULL && cipher_info != NULL);
 
-  encryption_keys->client_write_SRTP_key = BN_new();
-  encryption_keys->server_write_SRTP_key = BN_new();
+  encryption_keys->client_write_SRTP_key = malloc(cipher_info->key_size);
+  encryption_keys->server_write_SRTP_key = malloc(cipher_info->key_size);
 
-  encryption_keys->client_write_SRTP_salt = BN_new();
-  encryption_keys->server_write_SRTP_salt = BN_new();
+  encryption_keys->client_write_SRTP_salt = malloc(cipher_info->salt_len);
+  encryption_keys->server_write_SRTP_salt = malloc(cipher_info->salt_len);
 
   gsize srtp_key_size = cipher_info->key_size,
         salt_size = cipher_info->salt_len, mac_size = cipher_info->hmac_len;
@@ -120,14 +120,14 @@ get_dtls_encryption_keys(struct RTCDtlsTransport *transport,
 
   struct cipher_suite_info *cipher_info = transport->dtls_cipher_suite;
 
-  encryption_keys->client_write_mac_key = BN_new();
-  encryption_keys->server_write_mac_key = BN_new();
+  encryption_keys->client_write_mac_key = malloc(cipher_info->hmac_len);
+  encryption_keys->server_write_mac_key = malloc(cipher_info->hmac_len);
 
-  encryption_keys->client_write_key = BN_new();
-  encryption_keys->server_write_key = BN_new();
+  encryption_keys->client_write_key = malloc(cipher_info->key_size);
+  encryption_keys->server_write_key = malloc(cipher_info->key_size);
 
-  encryption_keys->client_write_IV = BN_new();
-  encryption_keys->server_write_IV = BN_new();
+  encryption_keys->client_write_IV = malloc(cipher_info->iv_size);
+  encryption_keys->server_write_IV = malloc(cipher_info->iv_size);
 
   gsize key_size = cipher_info->key_size, iv_size = cipher_info->iv_size,
         hash_size = cipher_info->hmac_len;
