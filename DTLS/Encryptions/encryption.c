@@ -1,14 +1,14 @@
 
 #include "./encryption.h"
 #include "../../DTLS/dtls.h"
+#include "../../SRTP/srtp.h"
 #include "../../Utils/utils.h"
 #include "glibconfig.h"
-#include <stdarg.h>
-
 #include <glib.h>
 #include <math.h>
 #include <openssl/bn.h>
 #include <openssl/types.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -95,20 +95,22 @@ get_srtp_enryption_keys(struct RTCDtlsTransport *transport, guchar *key_block) {
 
   g_assert(encryption_keys != NULL && cipher_info != NULL);
 
-  encryption_keys->client_write_SRTP_key = malloc(cipher_info->key_size);
-  encryption_keys->server_write_SRTP_key = malloc(cipher_info->key_size);
+  encryption_keys->client_write_key = malloc(cipher_info->key_size);
+  encryption_keys->server_write_key = malloc(cipher_info->key_size);
 
   encryption_keys->client_write_SRTP_salt = malloc(cipher_info->salt_len);
   encryption_keys->server_write_SRTP_salt = malloc(cipher_info->salt_len);
 
+  encryption_keys->client_write_IV = malloc(cipher_info->iv_size);
+  encryption_keys->server_write_IV = malloc(cipher_info->iv_size);
+
   gsize srtp_key_size = cipher_info->key_size,
         salt_size = cipher_info->salt_len, mac_size = cipher_info->hmac_len;
 
-  copy_key_block(key_block, &encryption_keys->client_write_SRTP_key,
-                 srtp_key_size, &encryption_keys->server_write_SRTP_key,
-                 srtp_key_size, &encryption_keys->client_write_SRTP_salt,
-                 salt_size, &encryption_keys->server_write_SRTP_salt, salt_size,
-                 NULL);
+  copy_key_block(key_block, &encryption_keys->client_write_key, srtp_key_size,
+                 &encryption_keys->server_write_key, srtp_key_size,
+                 &encryption_keys->client_write_SRTP_salt, salt_size,
+                 &encryption_keys->server_write_SRTP_salt, salt_size, NULL);
 
   return encryption_keys;
 }

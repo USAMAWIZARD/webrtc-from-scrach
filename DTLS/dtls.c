@@ -704,6 +704,7 @@ bool set_cipher_suite_info(struct RTCDtlsTransport *transport,
     cipher_info->hmac_len = g_checksum_type_get_length(cipher_info->hmac_algo);
     cipher_info->key_size = 16;
     cipher_info->salt_len = 14;
+    cipher_info->iv_size = 16;
     transport->srtp_cipher_suite = cipher_info;
 
     break;

@@ -59,8 +59,6 @@ struct encryption_keys {
   guchar *server_write_key;
   guchar *client_write_IV;
   guchar *server_write_IV;
-  guchar *client_write_SRTP_key;
-  guchar *server_write_SRTP_key;
   guchar *client_write_SRTP_salt;
   guchar *server_write_SRTP_salt;
 };

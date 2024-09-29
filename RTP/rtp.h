@@ -24,7 +24,8 @@ struct RtpStream {
   uint8_t marker : 1;
   struct MediaStreamTrack *track;
 };
-struct RtpSession { struct RtpStream *streams[10];
+struct RtpSession {
+  struct RtpStream *streams[10];
   int totalStreams;
 };
 struct __attribute__((packed)) Rtp {

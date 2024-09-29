@@ -42,7 +42,7 @@ guchar *get_padded_message(guchar *message, uint16_t message_len,
   gchar *random_padding;
   uint16_t pad;
   uint16_t padding_len;
-  printf("key %d",key_size);
+  printf("key %d", key_size);
 
   if (hash_name == -1) {
     padding_len = key_size - message_len - 3;
