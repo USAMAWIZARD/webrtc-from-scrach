@@ -309,9 +309,8 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
   ctx->recordIV = ctx->IV;
   transpose_matrix(ctx->IV);
 
-  uint8_t *counter;
+  uint8_t counter[16];
   if (ctx->mode == CM) {
-    counter = malloc(16);
     memcpy(counter, ctx->IV, 16);
   }
 
@@ -347,69 +346,38 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
   return total_packet_len + padding_size;
 }
 
-bool init_aes(struct aes_ctx **encryption_ctx,
-              struct encryption_keys *encryption_keys, enum mode mode) {
+struct AesEnryptionCtx *init_aes(struct AesEnryptionCtx **encryption_ctx,
+                                 guchar *write_key, uint16_t write_key_size,
+                                 guchar *write_mac_key, uint16_t mac_key_size,
+                                 guchar *write_IV, enum mode mode) {
 
-  struct AesEnryptionCtx *client_aes_ctx =
+  struct AesEnryptionCtx *aes_encryption_ctx =
       calloc(1, sizeof(struct AesEnryptionCtx));
-  client_aes_ctx->key_size_bytes = encryption_keys->key_size;
-  if (client_aes_ctx->key_size_bytes == 16) {
-    client_aes_ctx->no_rounds = 10;
+  aes_encryption_ctx->key_size_bytes = write_key_size;
+  if (aes_encryption_ctx->key_size_bytes == 16) {
+    aes_encryption_ctx->no_rounds = 10;
   } else {
     return false;
   }
 
-  client_aes_ctx->mode = mode;
-  client_aes_ctx->initial_key = encryption_keys->client_write_key;
+  aes_encryption_ctx->mode = mode;
+  aes_encryption_ctx->initial_key = write_key;
 
-  client_aes_ctx->IV = encryption_keys->client_write_IV;
+  aes_encryption_ctx->IV = write_IV;
 
-  client_aes_ctx->mac_key = encryption_keys->client_write_mac_key;
+  aes_encryption_ctx->mac_key = write_mac_key;
 
-  client_aes_ctx->row_size =
-      (uint8_t)((float)client_aes_ctx->key_size_bytes / 4.0);
+  aes_encryption_ctx->row_size =
+      (uint8_t)((float)aes_encryption_ctx->key_size_bytes / 4.0);
 
-  client_aes_ctx->mac_key_size = encryption_keys->mac_key_size;
-  client_aes_ctx->iv_size = encryption_keys->iv_size;
-  client_aes_ctx->key_size = encryption_keys->key_size;
+  aes_encryption_ctx->mac_key_size = mac_key_size;
+  aes_encryption_ctx->iv_size = 16;
+  aes_encryption_ctx->key_size = write_key_size;
 
-  client_aes_ctx->recordIV = calloc(1, client_aes_ctx->iv_size);
+  aes_encryption_ctx->recordIV = calloc(1, aes_encryption_ctx->iv_size);
 
-  aes_expand_key(client_aes_ctx);
+  aes_expand_key(aes_encryption_ctx);
+  *encryption_ctx = aes_encryption_ctx;
 
-  struct AesEnryptionCtx *server_aes_ctx =
-      calloc(1, sizeof(struct AesEnryptionCtx));
-  server_aes_ctx->mode = mode;
-  server_aes_ctx->key_size_bytes = encryption_keys->key_size;
-
-  if (server_aes_ctx->key_size_bytes == 16) {
-    server_aes_ctx->no_rounds = 10;
-  } else {
-    return false;
-  }
-
-  server_aes_ctx->initial_key = encryption_keys->server_write_key;
-
-  server_aes_ctx->IV = encryption_keys->server_write_IV;
-
-  server_aes_ctx->mac_key = encryption_keys->server_write_mac_key;
-
-  server_aes_ctx->row_size =
-      (uint8_t)((float)server_aes_ctx->key_size_bytes / 4.0);
-
-  aes_expand_key(server_aes_ctx);
-
-  server_aes_ctx->mac_key_size = encryption_keys->mac_key_size;
-  server_aes_ctx->iv_size = encryption_keys->iv_size;
-  server_aes_ctx->key_size = encryption_keys->key_size;
-
-  server_aes_ctx->recordIV = calloc(1, server_aes_ctx->iv_size);
-
-  struct aes_ctx *client_server_aes_ctx = malloc(sizeof(struct aes_ctx));
-  client_server_aes_ctx->client = client_aes_ctx;
-  client_server_aes_ctx->server = server_aes_ctx;
-
-  *encryption_ctx = client_server_aes_ctx;
-
-  return true;
+  return aes_encryption_ctx;
 }

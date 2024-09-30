@@ -148,15 +148,39 @@ get_dtls_encryption_keys(struct RTCDtlsTransport *transport,
 
   return encryption_keys;
 }
+bool init_client_server_encryption_ctx(union symmetric_encrypt *encryption_ctx,
+                                       struct encryption_keys *encryption_keys,
+                                       enum encrypt_algo encrypt_algo) {
+
+  switch (encrypt_algo) {
+  case AES:
+    struct aes_ctx *client_server_aes_ctx = malloc(sizeof(struct aes_ctx));
+    init_aes(&client_server_aes_ctx->client, encryption_keys->client_write_key,
+             encryption_keys->key_size, encryption_keys->client_write_mac_key,
+             encryption_keys->mac_key_size, encryption_keys->client_write_IV,
+             CBC);
+
+    init_aes(&client_server_aes_ctx->server, encryption_keys->server_write_key,
+             encryption_keys->key_size, encryption_keys->server_write_mac_key,
+             encryption_keys->mac_key_size, encryption_keys->server_write_IV,
+             CBC);
+    encryption_ctx->aes = client_server_aes_ctx;
+    break;
+  }
+  return true;
+}
 bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
                         struct encryption_keys *encryption_keys,
                         uint16_t selected_cipher_suite) {
 
   switch (selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
-    init_aes(&symitric_encrypt->aes, encryption_keys, CBC);
+    init_client_server_encryption_ctx(symitric_encrypt, encryption_keys, AES);
+
     break;
   case SRTP_AES128_CM_HMAC_SHA1_80:
+    init_srtp(&symitric_encrypt->srtp,
+              encryption_keys); // srtp ctx containes an aes context
 
     break;
   default:

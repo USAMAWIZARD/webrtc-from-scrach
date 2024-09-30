@@ -44,9 +44,16 @@ struct aes_ctx {
   struct AesEnryptionCtx *server;
 };
 
+struct srtp_ctx {
+  struct SrtpEncryptionCtx *client;
+  struct SrtpEncryptionCtx *server;
+};
+
 union symmetric_encrypt {
   struct aes_ctx *aes;
+  struct srtp_ctx *srtp;
 };
+
 struct encryption_keys {
   uint16_t key_size;
   uint16_t iv_size;
@@ -62,6 +69,7 @@ struct encryption_keys {
   guchar *client_write_SRTP_salt;
   guchar *server_write_SRTP_salt;
 };
+enum encrypt_algo { AES };
 
 #define MASTER_SECRET_LEN 48.0
 
@@ -87,9 +95,11 @@ bool init_symitric_encryption(struct RTCDtlsTransport *transport);
 bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
                         struct encryption_keys *encryption_keys,
                         uint16_t selected_cipher_suite);
-bool init_aes(struct aes_ctx **encryption_ctx,
-              struct encryption_keys *encryption_keys, enum mode mode);
 
+struct AesEnryptionCtx *init_aes(struct AesEnryptionCtx **encryption_ctx,
+                                 guchar *write_key, uint16_t write_key_size,
+                                 guchar *write_mac_key, uint16_t mac_key_size,
+                                 guchar *write_IV, enum mode mode);
 bool aes_expand_key(struct AesEnryptionCtx *ctx);
 
 void sub_bytes(uint8_t (*block)[4]);
@@ -102,4 +112,7 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
                      uint16_t block_encrypt_offset, uint32_t data_len);
 void transpose_matrix(uint8_t (*round_key)[4]);
 
+bool init_client_server_encryption_ctx(
+    union symmetric_encrypt *client_server_aes_ctx,
+    struct encryption_keys *encryption_keys, enum encrypt_algo encrypt_algo);
 #endif // !_ENRYPTIONH_
