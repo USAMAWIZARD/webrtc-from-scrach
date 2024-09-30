@@ -18,8 +18,11 @@
 enum cipher_suite;
 struct RTCDtlsTransport;
 struct encryption_keys;
+struct cipher_suite_info;
 
 enum mode { CBC, CM };
+enum symitric_encrypt_algo { AES };
+
 struct AesEnryptionCtx {
   uint8_t *initial_key;
   uint8_t *mac_key;
@@ -69,7 +72,6 @@ struct encryption_keys {
   guchar *client_write_SRTP_salt;
   guchar *server_write_SRTP_salt;
 };
-enum encrypt_algo { AES };
 
 #define MASTER_SECRET_LEN 48.0
 
@@ -92,9 +94,10 @@ bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
                            int *hash_size);
 
 bool init_symitric_encryption(struct RTCDtlsTransport *transport);
+
 bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
                         struct encryption_keys *encryption_keys,
-                        uint16_t selected_cipher_suite);
+                        struct cipher_suite_info *cipher_info);
 
 struct AesEnryptionCtx *init_aes(struct AesEnryptionCtx **encryption_ctx,
                                  guchar *write_key, uint16_t write_key_size,
@@ -112,7 +115,7 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
                      uint16_t block_encrypt_offset, uint32_t data_len);
 void transpose_matrix(uint8_t (*round_key)[4]);
 
-bool init_client_server_encryption_ctx(
-    union symmetric_encrypt *client_server_aes_ctx,
-    struct encryption_keys *encryption_keys, enum encrypt_algo encrypt_algo);
+bool init_client_server_encryption_ctx(union symmetric_encrypt *encryption_ctx,
+                                       struct encryption_keys *encryption_keys,
+                                       struct cipher_suite_info *cipher_info);
 #endif // !_ENRYPTIONH_

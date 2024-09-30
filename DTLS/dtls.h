@@ -71,11 +71,12 @@ enum ContentType {
 
 struct cipher_suite_info {
   uint16_t selected_cipher_suite;
+  enum symitric_encrypt_algo symitric_algo;
+  enum mode mode;
   GChecksumType hmac_algo;
   gsize hmac_len;
   gsize key_size;
   gsize iv_size;
-
   gsize salt_len;
 };
 

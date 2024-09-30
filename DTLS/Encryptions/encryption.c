@@ -150,37 +150,45 @@ get_dtls_encryption_keys(struct RTCDtlsTransport *transport,
 }
 bool init_client_server_encryption_ctx(union symmetric_encrypt *encryption_ctx,
                                        struct encryption_keys *encryption_keys,
-                                       enum encrypt_algo encrypt_algo) {
+                                       struct cipher_suite_info *cipher_info) {
 
-  switch (encrypt_algo) {
+  switch (cipher_info->symitric_algo) {
   case AES:
     struct aes_ctx *client_server_aes_ctx = malloc(sizeof(struct aes_ctx));
     init_aes(&client_server_aes_ctx->client, encryption_keys->client_write_key,
              encryption_keys->key_size, encryption_keys->client_write_mac_key,
              encryption_keys->mac_key_size, encryption_keys->client_write_IV,
-             CBC);
+             cipher_info->mode);
 
     init_aes(&client_server_aes_ctx->server, encryption_keys->server_write_key,
              encryption_keys->key_size, encryption_keys->server_write_mac_key,
              encryption_keys->mac_key_size, encryption_keys->server_write_IV,
-             CBC);
+             cipher_info->mode);
+
     encryption_ctx->aes = client_server_aes_ctx;
     break;
   }
   return true;
 }
+
 bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
                         struct encryption_keys *encryption_keys,
-                        uint16_t selected_cipher_suite) {
+                        struct cipher_suite_info *cipher_info) {
 
-  switch (selected_cipher_suite) {
+  switch (cipher_info->selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
-    init_client_server_encryption_ctx(symitric_encrypt, encryption_keys, AES);
+    init_client_server_encryption_ctx(symitric_encrypt, encryption_keys,
+                                      cipher_info);
 
     break;
   case SRTP_AES128_CM_HMAC_SHA1_80:
     init_srtp(&symitric_encrypt->srtp,
               encryption_keys); // srtp ctx containes an aes context
+
+    union symmetric_encrypt srtp_aes;
+    init_client_server_encryption_ctx(&srtp_aes, encryption_keys, cipher_info);
+    symitric_encrypt->srtp->server->encrypt.aes = srtp_aes.aes->server;
+    symitric_encrypt->srtp->client->encrypt.aes = srtp_aes.aes->client;
 
     break;
   default:
@@ -203,7 +211,7 @@ bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
       get_dtls_encryption_keys(transport, key_block);
 
   init_enryption_ctx(&transport->dtls_symitric_encrypt, encryption_keys,
-                     transport->selected_cipher_suite);
+                     transport->dtls_cipher_suite);
 
   // check if srtp is required SRTP
 
@@ -215,7 +223,7 @@ bool init_symitric_encryption(struct RTCDtlsTransport *transport) {
   encryption_keys = get_srtp_enryption_keys(transport, key_block);
 
   init_enryption_ctx(&transport->srtp_symitric_encrypt, encryption_keys,
-                     transport->srtp_cipher_suite->selected_cipher_suite);
+                     transport->srtp_cipher_suite);
 
   return true;
 }
