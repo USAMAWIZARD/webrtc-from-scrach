@@ -21,7 +21,7 @@ struct srtp_ext parse_srtp_ext(guchar *value, uint16_t len) {
 
 guchar *compute_srtp_iv(guchar **pp_iv, guchar *salting_key,
                         uint32_t salting_key_len, guchar *ssrc,
-                        uint32_t packet_index) {
+                        uint64_t packet_index) {
   // IV = (k_s * 2 ^ 16) XOR(SSRC * 2 ^ 64) XOR(i * 2 ^ 16)
 
   BIGNUM *ks_pow = BN_new();
@@ -93,22 +93,27 @@ guchar *compute_srtp_iv(guchar **pp_iv, guchar *salting_key,
 }
 void init_srtp(struct srtp_ctx **pp_srtp_ctx,
                struct encryption_keys *encryption_keys) {
+
   struct srtp_ctx *srtp_ctx = malloc(sizeof(struct srtp_ctx));
   srtp_ctx->client = malloc(sizeof(struct SrtpEncryptionCtx));
   srtp_ctx->server = malloc(sizeof(struct SrtpEncryptionCtx));
 
   srtp_ctx->client->salt_key = encryption_keys->client_write_SRTP_salt;
   srtp_ctx->server->salt_key = encryption_keys->server_write_SRTP_salt;
+
+  *pp_srtp_ctx = srtp_ctx;
 }
 
-void encrypt_srtp(struct srtp_ctx *srtp_context, struct Rtp *rtp_packet,
-                  uint32_t payloadlen) {
+void encrypt_srtp(struct SrtpEncryptionCtx *srtp_context,
+                  struct Rtp *rtp_packet, uint32_t payloadlen) {
 
-  uint32_t packet_index = rtp_packet->seq_no;
+  srtp_context->index = (65536 * srtp_context->roc) + rtp_packet->seq_no;
 
-  // init_aes(&symitric_encrypt->aes, encryption_keys, CBC);
-  // compute_srtp_iv(srtp_ctx->sa, uint32_t salting_key_len, rtp_packet->ssrc,
-  //                 packet_index);
-  //
-  // encrypt_aes(srtp_context, rtp_packet->payload, 0, payloadlen);
+  guchar *iv;
+  uint32_t ssrc = rtp_packet->ssrc;
+  compute_srtp_iv(&iv, srtp_context->salt_key, 10, (guchar *)&ssrc,
+                  srtp_context->index);
+
+  srtp_context->encrypt.aes->IV = iv;
+  encrypt_aes(srtp_context->encrypt.aes, rtp_packet->payload, 0, payloadlen);
 }

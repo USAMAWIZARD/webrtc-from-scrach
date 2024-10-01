@@ -10,9 +10,8 @@ RTP Header
 |                           timestamp                         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |           synchronization source (SSRC) identifier          |
-+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-|            contributing source (CSRC) identifiers           |
-|                             ....                            |
++=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ | contributing source
+(CSRC) identifiers           | |                             .... |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 RTP payload header.
@@ -79,7 +78,6 @@ struct RtpStream *create_rtp_stream(char *ip, int port,
   newRtpStream->port = port;
   newRtpStream->callback_data = track->userdata;
   newRtpStream->rtp_packet = init_rtp_packet();
-  ;
   newRtpStream->socket_len = sizeof(struct sockaddr_in);
   newRtpStream->timestamp = rand();
   newRtpStream->socket_address =

@@ -173,11 +173,14 @@ gint main(gint argc, gchar **argv) {
   //   printf("file not found ");
   // }
   //
-  // struct RtpStream *rtpStream = create_rtp_stream(
-  //   "127.0.0.1", 5001, rtpSession, &user_defined_read_data, "./sample.h264");
-  // send_stun_bind(NULL,STUN_REQUEST_CLASS,NULL,5080);
-  // gather_ice_candidate(NULL);
-  //  start_rtp_session(rtpSession);
+  // struct MediaStreamTrack *video_track =
+  //     NEW_MediaTrack("video", "video_1", &user_defined_read_data, filePtr);
+  //
+  // struct RtpStream *rtpStream =
+  //     create_rtp_stream("127.0.0.1", 5001, rtpSession, video_track);
+  //
+  // start_rtp_session(rtpSession);
+  //
   websocket_connect("127.0.0.1", 3001);
 
   main_loop = g_main_loop_new(NULL, FALSE);

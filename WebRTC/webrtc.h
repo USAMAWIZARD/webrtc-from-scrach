@@ -49,7 +49,7 @@ struct RTCPeerConnection {
 struct MediaStreamTrack {
   char *kind;
   char *label;
-  bool *muted;
+  bool muted;
   void *get_data_callback;
   char *id;
   void *userdata;

@@ -1,5 +1,5 @@
-CC=gcc
-CFLAGS=-ggdb
+CC=ccache gcc
+CFLAGS=-ggdb -flto
 LIBS=-lavutil -lavcodec -lavformat -lgsasl -lz -lgmp -lm
 PKG_CONFIG=`pkg-config --cflags --libs libsoup-2.4 json-glib-1.0 openssl `
 

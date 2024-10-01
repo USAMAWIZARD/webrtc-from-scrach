@@ -160,9 +160,9 @@ guchar *generate_HMAC(const gchar *key, struct Stun *stun_message) {
 
   stun_message->msg_len = htons(presumed_len);
 
-  char *stun_hmac =
-      g_compute_hmac_for_data(G_CHECKSUM_SHA1, key, strlen(key), stun_message,
-                              actual_len + sizeof(struct Stun));
+  char *stun_hmac = g_compute_hmac_for_data(G_CHECKSUM_SHA1, (guchar *)key,
+                                            strlen(key), (guchar *)stun_message,
+                                            actual_len + sizeof(struct Stun));
 
   // printf("HMAC HASH ---%s\n", stun_hmac);
   // printf("HMAC KEY %s --\n", sasl);
@@ -185,8 +185,8 @@ uint32_t calculate_crc32(struct Stun *stun_message) {
   int presumed_len = ntohs(stun_message->msg_len) + 4 + 4;
 
   stun_message->msg_len = htons(presumed_len);
-  uint32_t stun_message_crc32 =
-      (crc32(crc, stun_message, actual_len + sizeof(struct Stun)));
+  uint32_t stun_message_crc32 = (crc32(crc, (const Bytef *)stun_message,
+                                       actual_len + sizeof(struct Stun)));
   // printf("\n crc32 %x ", stun_message_crc32);
   // print_hex(stun_message, actual_len + sizeof(struct Stun));
 

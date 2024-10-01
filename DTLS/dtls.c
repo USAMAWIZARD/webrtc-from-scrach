@@ -119,14 +119,14 @@ struct RTCDtlsTransport *create_dtls_transport() {
       hexstr_to_char_2(&my_public_key_bin, my_rsa_public_cert);
 
   EVP_PKEY *private_key;
-  private_key =
-      d2i_PrivateKey(EVP_PKEY_RSA, NULL, &my_private_cert_bin, cert_len);
+  private_key = d2i_PrivateKey(EVP_PKEY_RSA, NULL,
+                               (const guchar **)&my_private_cert_bin, cert_len);
   dtls_transport->my_private_key = private_key;
 
   X509 *cert;
   const guchar *public_certificate;
   uint32_t certificate_len =
-      hexstr_to_char_2(&public_certificate, my_rsa_public_cert);
+      hexstr_to_char_2((guchar **)&public_certificate, my_rsa_public_cert);
   cert = d2i_X509(NULL, (&public_certificate), certificate_len);
   EVP_PKEY *pub_key = X509_get_pubkey(cert);
   dtls_transport->my_public_key = pub_key;
@@ -138,7 +138,7 @@ struct RTCDtlsTransport *create_dtls_transport() {
   printf("my public modulus %s\n", BN_bn2hex(my_public_modulus));
 
   BIGNUM *r1 = BN_new();
-  BN_bin2bn(g_uuid_string_random(), 32, r1);
+  BN_bin2bn((guchar *)g_uuid_string_random(), 32, r1);
   dtls_transport->my_random = r1;
 
   dtls_transport->cookie = 1213;
@@ -181,15 +181,15 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer,
 
   struct dtls_ext *supported_signature_algorithms;
   ext_len = make_extentention(&supported_signature_algorithms, SIGN_ALGO_EXT,
-                              signature_algorithms,
+                              (guchar *)signature_algorithms,
                               sizeof(signature_algorithms), 0, 0);
   add_dtls_extention(&dtls_client_hello, supported_signature_algorithms,
                      ext_len);
   free(supported_signature_algorithms);
 
-  ext_len =
-      make_extentention(&srtp_extention, SRTP_EXT, srtp_supported_profiles,
-                        sizeof(srtp_supported_profiles), &mki_len, 1);
+  ext_len = make_extentention(&srtp_extention, SRTP_EXT,
+                              (guchar *)srtp_supported_profiles,
+                              sizeof(srtp_supported_profiles), &mki_len, 1);
   add_dtls_extention(&dtls_client_hello, srtp_extention, ext_len);
   free(srtp_extention);
 
@@ -471,6 +471,7 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
              "encrypted dtls packet----------------------- \n");
 
       dtls_packet = dtls_packet->next_record;
+
       continue;
     }
     switch (dtls_packet->dtls_header->type) {

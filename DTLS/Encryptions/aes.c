@@ -95,7 +95,7 @@ bool aes_expand_key(struct AesEnryptionCtx *ctx) {
   }
 
   for (int i = 0; i <= ctx->no_rounds; i++) { // one extran key
-    gchar *round_key = malloc(aes_key_len);
+    uint8_t(*round_key)[4] = malloc(aes_key_len);
     memcpy(round_key, &(expanded_keys[i * 4]), aes_key_len);
     transpose_matrix(round_key);
 
@@ -300,9 +300,9 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
   printf("%d %d %d %d  %d\n", data_encrytion_itration, padding_size,
          total_packet_len, block_len, block_encrypt_offset);
 
-  add_aes_padding(block, block_len, padding_size, ctx->mode);
+  add_aes_padding((uint8_t *)block, block_len, padding_size, ctx->mode);
 
-  print_hex(block, to_encypt_len);
+  print_hex((uint8_t *)block, to_encypt_len);
 
   memcpy(ctx->recordIV, ctx->IV, ctx->iv_size);
 
@@ -342,7 +342,7 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
     block = block + 4;
   }
 
-  get_random_string(&ctx->IV, ctx->iv_size, 1);
+  get_random_string((gchar **)&ctx->IV, ctx->iv_size, 1);
   return total_packet_len + padding_size;
 }
 

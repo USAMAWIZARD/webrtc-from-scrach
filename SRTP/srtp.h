@@ -14,6 +14,7 @@ struct SrtpEncryptionCtx {
   uint32_t roc;
   uint16_t mki;
   guchar *salt_key;
+  uint64_t index : 48;
   union {
     struct AesEnryptionCtx *aes;
   } encrypt;
@@ -22,6 +23,6 @@ struct SrtpEncryptionCtx {
 struct srtp_ext parse_srtp_ext(guchar *value, uint16_t len);
 guchar *compute_srtp_iv(guchar **pp_iv, guchar *salting_key,
                         uint32_t salting_key_len, guchar *ssrc,
-                        uint32_t packet_index);
+                        uint64_t packet_index);
 void init_srtp(struct srtp_ctx **pp_srtp_ctx,
                struct encryption_keys *encryption_keys);

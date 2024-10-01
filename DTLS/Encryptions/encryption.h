@@ -36,10 +36,10 @@ struct AesEnryptionCtx {
   uint8_t no_rounds;
 
   uint8_t input_text[4][4];
-  uint8_t *recordIV;
-  uint8_t *IV;
+  uint8_t (*recordIV)[4];
+  uint8_t (*IV)[4];
   uint8_t *prevoius_cipher;
-  gchar *roundkeys[14];
+  uint8_t (*roundkeys[14])[4];
 };
 
 struct aes_ctx {
@@ -58,10 +58,10 @@ union symmetric_encrypt {
 };
 
 struct encryption_keys {
+  BIGNUM *master_secret;
   uint16_t key_size;
   uint16_t iv_size;
   uint16_t mac_key_size;
-  guchar *master_secret;
   guchar *my_private_key;
   guchar *client_write_mac_key;
   guchar *server_write_mac_key;
@@ -113,6 +113,7 @@ void mix_columns(uint8_t (*matrix)[4]);
 
 uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
                      uint16_t block_encrypt_offset, uint32_t data_len);
+
 void transpose_matrix(uint8_t (*round_key)[4]);
 
 bool init_client_server_encryption_ctx(union symmetric_encrypt *encryption_ctx,
