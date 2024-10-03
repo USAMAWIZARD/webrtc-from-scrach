@@ -46,6 +46,7 @@ void user_defined_read_data(char *file_name,
   if (avformat_open_input(&ctx, file_name, NULL, NULL)) {
     exit(0);
   }
+  printf("testing\n");
   avformat_find_stream_info(ctx, NULL);
 
   AVCodecParameters *codec_par = ctx->streams[0]->codecpar;
@@ -62,7 +63,7 @@ void user_defined_read_data(char *file_name,
     static int i = 1;
     rtpStream->timestamp += 3000;
     h264_parser_get_nal_unit(pkt->data, pkt->size, send_rtp_packet, rtpStream);
-    ;
+
     // if(i==4)
     // exit(0);
     //
@@ -166,15 +167,15 @@ void on_start(JsonObject *object) {
 gint main(gint argc, gchar **argv) {
 
   static GMainLoop *main_loop;
-  // struct RtpSession *rtpSession = create_rtp_session();
+  struct RtpSession *rtpSession = create_rtp_session();
   // char *loopback_ip = "127.0.0.1";
   // void *filePtr = fopen("./sample.h264", "rb");
   // if (filePtr == NULL) {
   //   printf("file not found ");
   // }
-  //
-  // struct MediaStreamTrack *video_track =
-  //     NEW_MediaTrack("video", "video_1", &user_defined_read_data, filePtr);
+
+  // struct MediaStreamTrack *video_track = NEW_MediaTrack(
+  //     "video", "video_1", &user_defined_read_data, "sample.h264");
   //
   // struct RtpStream *rtpStream =
   //     create_rtp_stream("127.0.0.1", 5001, rtpSession, video_track);

@@ -11,6 +11,7 @@
 #include <string.h>
 #include <sys/types.h>
 
+#define AES_BLOCK_SIZE 16
 uint8_t s_box[16][16] = {
     {0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
      0xfe, 0xd7, 0xab, 0x76},
@@ -56,7 +57,7 @@ uint8_t aes_galois_fild[4][4] = {{0x02, 0x03, 0x01, 0x01},
 
 uint32_t g_function(uint32_t word, uint16_t round_num);
 bool aes_expand_key(struct AesEnryptionCtx *ctx) {
-  uint16_t aes_key_len = ctx->key_size_bytes;
+  uint16_t aes_key_len = ctx->key_size;
   guchar *key = ctx->initial_key;
 
   //
@@ -75,6 +76,7 @@ bool aes_expand_key(struct AesEnryptionCtx *ctx) {
   // key expansion
 
   uint16_t expand_key_len = (aes_key_len * ctx->no_rounds) + aes_key_len;
+
   uint32_t expanded_keys[expand_key_len];
 
   memcpy(expanded_keys, key, aes_key_len);
@@ -105,11 +107,12 @@ bool aes_expand_key(struct AesEnryptionCtx *ctx) {
   }
 
   print_hex(expanded_keys, expand_key_len);
+
   return true;
 }
 
 void transpose_matrix(uint8_t (*round_key)[4]) {
-  gchar temp;
+  uint8_t temp;
   for (int i = 0; i < 4; i++) {
     for (int j = i + 1; j < 4; j++) {
       temp = round_key[i][j];
@@ -260,7 +263,7 @@ void add_aes_padding(uint8_t *block, uint16_t data_len, uint8_t padding_size,
                      enum mode mode) {
   block = block + data_len;
 
-  for (int i = 0; i <= padding_size; i++) {
+  for (int i = 0; i < padding_size; i++) {
     if (mode == CBC)
       block[i] = padding_size - 1;
     else if (mode == CM)
@@ -283,26 +286,24 @@ void aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4]) {
     add_round_key(ctx->roundkeys[i], block);
   }
 }
-uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
+uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
                      uint16_t block_encrypt_offset, uint32_t total_packet_len) {
 
   printf("string encryption prooces\n");
 
   uint16_t block_len = total_packet_len - block_encrypt_offset;
-  uint8_t padding_size = 16 - (block_len % 16);
+  uint8_t padding_size = AES_BLOCK_SIZE - (block_len % AES_BLOCK_SIZE);
+
+  if (ctx->mode == CM && padding_size == AES_BLOCK_SIZE) {
+    padding_size = 0;
+  }
+
   uint16_t to_encypt_len = block_len + padding_size;
 
-  uint8_t(*block)[4] = block_data;
-
-  block = (*block_data) + block_encrypt_offset;
-
-  uint32_t data_encrytion_itration = (to_encypt_len) / 16;
-  printf("%d %d %d %d  %d\n", data_encrytion_itration, padding_size,
-         total_packet_len, block_len, block_encrypt_offset);
+  uint8_t(*block)[4] = (block_data) + block_encrypt_offset;
+  uint32_t data_encrytion_itration = (to_encypt_len) / AES_BLOCK_SIZE;
 
   add_aes_padding((uint8_t *)block, block_len, padding_size, ctx->mode);
-
-  print_hex((uint8_t *)block, to_encypt_len);
 
   memcpy(ctx->recordIV, ctx->IV, ctx->iv_size);
 
@@ -311,31 +312,32 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
 
   uint8_t counter[16];
   if (ctx->mode == CM) {
-    memcpy(counter, ctx->IV, 16);
+    memcpy(counter, ctx->IV, AES_BLOCK_SIZE);
   }
 
   for (int j = 0; j < data_encrytion_itration; j++) {
+
     transpose_matrix(block);
 
     if (ctx->mode == CBC) {
+
       add_vector(block, ctx->IV);
       aes(ctx, block);
       ctx->IV = block;
     }
 
     if (ctx->mode == CM) {
-      aes(ctx, ctx->IV);
-
       add_vector(block, ctx->IV);
+      aes(ctx, ctx->IV);
+      memcpy(block, ctx->IV, AES_BLOCK_SIZE);
       increment_binary_number(counter, 16);
       memcpy(ctx->IV, counter, 16);
-      // exit(0);
     }
 
     block = block + 4;
   }
 
-  block = (*block_data) + block_encrypt_offset;
+  block = (block_data) + block_encrypt_offset;
 
   for (int i = 0; i < data_encrytion_itration; i++) {
     transpose_matrix(block);
@@ -353,10 +355,12 @@ struct AesEnryptionCtx *init_aes(struct AesEnryptionCtx **encryption_ctx,
 
   struct AesEnryptionCtx *aes_encryption_ctx =
       calloc(1, sizeof(struct AesEnryptionCtx));
-  aes_encryption_ctx->key_size_bytes = write_key_size;
-  if (aes_encryption_ctx->key_size_bytes == 16) {
+  aes_encryption_ctx->key_size = write_key_size;
+
+  if (aes_encryption_ctx->key_size == AES_BLOCK_SIZE) {
     aes_encryption_ctx->no_rounds = 10;
   } else {
+    printf("key size not equels %d", aes_encryption_ctx->key_size);
     return false;
   }
 
@@ -368,10 +372,10 @@ struct AesEnryptionCtx *init_aes(struct AesEnryptionCtx **encryption_ctx,
   aes_encryption_ctx->mac_key = write_mac_key;
 
   aes_encryption_ctx->row_size =
-      (uint8_t)((float)aes_encryption_ctx->key_size_bytes / 4.0);
+      (uint8_t)((float)aes_encryption_ctx->key_size / 4.0);
 
   aes_encryption_ctx->mac_key_size = mac_key_size;
-  aes_encryption_ctx->iv_size = 16;
+  aes_encryption_ctx->iv_size = AES_BLOCK_SIZE;
   aes_encryption_ctx->key_size = write_key_size;
 
   aes_encryption_ctx->recordIV = calloc(1, aes_encryption_ctx->iv_size);

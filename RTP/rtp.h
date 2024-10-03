@@ -10,20 +10,23 @@ struct RtpStream {
                               void (*parsed_data_callback)(struct RtpStream *,
                                                            char *, int),
                               struct RtpStream *);
+  struct Rtp *rtp_packet;
   void *callback_data;
   int port;
   char *ip;
   char *streamState;
   struct sockaddr_in *socket_address;
   int sockdesc;
-  struct Rtp *rtp_packet;
   int socket_len;
-  int payload_type;
+  uint8_t payload_type : 7;
   int clock_rate;
+  uint16_t seq_no;
+  uint32_t ssrc;
   uint32_t timestamp;
   uint8_t marker : 1;
   struct MediaStreamTrack *track;
 };
+
 struct RtpSession {
   struct RtpStream *streams[10];
   int totalStreams;
@@ -56,12 +59,13 @@ struct __attribute__((packed)) Rtp {
   unsigned int timestamp : 32;
   unsigned int ssrc : 32;
   unsigned int csrc : 32;
-  char *payload[];
+  char payload[];
 };
 struct RtpSession *create_rtp_session();
 struct RtpStream *create_rtp_stream(char *ip, int port,
                                     struct RtpSession *rtp_session,
-                                    struct MediaStreamTrack *track);
+                                    struct MediaStreamTrack *track,
+                                    uint32_t ssrc, uint8_t payload_type);
 bool start_rtp_session(struct RtpSession *rtpSession);
 bool start_rtp_stream(struct RtpStream *rtpStream);
 int get_udp_sock_desc();

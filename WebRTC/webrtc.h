@@ -51,8 +51,9 @@ struct MediaStreamTrack {
   char *label;
   bool muted;
   void *get_data_callback;
-  char *id;
   void *userdata;
+  char *id;
+  char *file_name;
   struct MediaStreamTrack *next_track;
   struct RtpStream *rtp_stream;
 };

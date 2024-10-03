@@ -112,6 +112,10 @@ get_srtp_enryption_keys(struct RTCDtlsTransport *transport, guchar *key_block) {
                  &encryption_keys->client_write_SRTP_salt, salt_size,
                  &encryption_keys->server_write_SRTP_salt, salt_size, NULL);
 
+  encryption_keys->salt_size = salt_size;
+  encryption_keys->key_size = srtp_key_size;
+  encryption_keys->mac_key_size = mac_size;
+
   return encryption_keys;
 }
 struct encryption_keys *
@@ -187,8 +191,8 @@ bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
 
     union symmetric_encrypt srtp_aes;
     init_client_server_encryption_ctx(&srtp_aes, encryption_keys, cipher_info);
-    symitric_encrypt->srtp->server->encrypt.aes = srtp_aes.aes->server;
-    symitric_encrypt->srtp->client->encrypt.aes = srtp_aes.aes->client;
+    symitric_encrypt->srtp->server->aes = srtp_aes.aes->server;
+    symitric_encrypt->srtp->client->aes = srtp_aes.aes->client;
 
     break;
   default:

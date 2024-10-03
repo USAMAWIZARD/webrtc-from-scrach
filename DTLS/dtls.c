@@ -384,7 +384,7 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
     print_hex(packet, Hheader_payload_len + hmac_len);
 
     uint32_t enrypted_len =
-        encrypt_aes(client_Ectx, &packet, 0, Hheader_payload_len + hmac_len);
+        encrypt_aes(client_Ectx, packet, 0, Hheader_payload_len + hmac_len);
     print_hex(packet, enrypted_len);
 
     dtls_header->length = htons(enrypted_len + 16); // IV len

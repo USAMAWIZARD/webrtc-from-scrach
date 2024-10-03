@@ -32,7 +32,6 @@ struct AesEnryptionCtx {
   uint8_t row_size;
   enum mode mode;
 
-  uint8_t key_size_bytes;
   uint8_t no_rounds;
 
   uint8_t input_text[4][4];
@@ -56,12 +55,23 @@ union symmetric_encrypt {
   struct aes_ctx *aes;
   struct srtp_ctx *srtp;
 };
+struct cipher_suite_info {
+  uint16_t selected_cipher_suite;
+  enum symitric_encrypt_algo symitric_algo;
+  enum mode mode;
+  GChecksumType hmac_algo;
+  gsize hmac_len;
+  gsize key_size;
+  gsize iv_size;
+  gsize salt_len;
+};
 
 struct encryption_keys {
   BIGNUM *master_secret;
   uint16_t key_size;
   uint16_t iv_size;
   uint16_t mac_key_size;
+  uint16_t salt_size;
   guchar *my_private_key;
   guchar *client_write_mac_key;
   guchar *server_write_mac_key;
@@ -111,7 +121,7 @@ void shift_rows(uint8_t (*block)[4]);
 
 void mix_columns(uint8_t (*matrix)[4]);
 
-uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t **block_data,
+uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
                      uint16_t block_encrypt_offset, uint32_t data_len);
 
 void transpose_matrix(uint8_t (*round_key)[4]);

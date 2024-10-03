@@ -29,6 +29,7 @@ RTP payload header.
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
 #include "../Network/network.h"
+#include "../SRTP/srtp.h"
 #include "../WebRTC/webrtc.h"
 #include "rtp.h"
 #include <errno.h>
@@ -47,29 +48,27 @@ void getdata(void *data);
 void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
                      int payload_size);
 
-struct Rtp *init_rtp_packet() {
+struct Rtp *init_rtp_packet(struct RtpStream *rtpStream) {
   struct Rtp *rtp_packet_packet;
   rtp_packet_packet = (struct Rtp *)malloc(sizeof(*rtp_packet_packet) + 50000);
   rtp_packet_packet->v = 2;
-  rtp_packet_packet->pt = 96;
+  rtp_packet_packet->pt = rtpStream->payload_type;
   rtp_packet_packet->ext = 0;
-  rtp_packet_packet->marker = 0;
+  rtp_packet_packet->marker = rtpStream->marker;
   rtp_packet_packet->padding = 0;
-  rtp_packet_packet->seq_no = 0; // htons(rand());
+  rtp_packet_packet->seq_no = htons(rtpStream->seq_no); // htons(rand());
   rtp_packet_packet->csrc_count = 1;
-  rtp_packet_packet->ssrc = 12343;
+  rtp_packet_packet->ssrc = htons(rtpStream->ssrc);
   rtp_packet_packet->csrc = 1;
   rtp_packet_packet->timestamp = 0;
-
-  //  strcpy(rtp_packet_packet->NAL,"faasdfasdfasdfasdfasdfasdfafdasdf");
-  //  memset(rtp_packet_packet,0,sizeof(*rtp_packet_packet)+34);
 
   return rtp_packet_packet;
 }
 
 struct RtpStream *create_rtp_stream(char *ip, int port,
                                     struct RtpSession *rtp_session,
-                                    struct MediaStreamTrack *track) {
+                                    struct MediaStreamTrack *track,
+                                    uint32_t ssrc, uint8_t payload_type) {
 
   struct RtpStream *newRtpStream;
   newRtpStream = malloc(sizeof(struct RtpStream));
@@ -77,12 +76,15 @@ struct RtpStream *create_rtp_stream(char *ip, int port,
   newRtpStream->ip = ip;
   newRtpStream->port = port;
   newRtpStream->callback_data = track->userdata;
-  newRtpStream->rtp_packet = init_rtp_packet();
   newRtpStream->socket_len = sizeof(struct sockaddr_in);
   newRtpStream->timestamp = rand();
   newRtpStream->socket_address =
       get_network_socket(newRtpStream->ip, newRtpStream->port);
   newRtpStream->sockdesc = get_udp_sock_desc();
+  newRtpStream->seq_no = rand();
+  newRtpStream->ssrc = ssrc;
+
+  newRtpStream->rtp_packet = init_rtp_packet(newRtpStream);
 
   rtp_session->streams[++rtp_session->totalStreams] = newRtpStream;
   return newRtpStream;
@@ -98,16 +100,16 @@ bool start_rtp_stream(struct RtpStream *rtpStream) {
 void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
                      int payload_size) {
   int socket_len = rtpStream->socket_len;
-  rtpStream->rtp_packet->seq_no = ntohs(rtpStream->rtp_packet->seq_no);
-  rtpStream->rtp_packet->seq_no++;
-  rtpStream->rtp_packet->seq_no = htons(rtpStream->rtp_packet->seq_no);
+
+  rtpStream->rtp_packet->seq_no = htons(rtpStream->seq_no++);
   rtpStream->rtp_packet->timestamp = htonl(rtpStream->timestamp);
+
   memcpy(rtpStream->rtp_packet->payload, payload, payload_size);
+
   int bytes =
       sendto(rtpStream->sockdesc, rtpStream->rtp_packet,
              sizeof(*rtpStream->rtp_packet) + payload_size, 0,
              (struct sockaddr *)(rtpStream->socket_address), socket_len);
-  // printf("%d\n",rtpStream->rtp_packet->marker);
   usleep(15000);
   if (bytes == -1) {
     printf("\n failed to send the data %s  %d  socket_len %d desc %d\n",
