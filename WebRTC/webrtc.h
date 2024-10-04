@@ -54,13 +54,12 @@ struct MediaStreamTrack {
   void *userdata;
   char *id;
   char *file_name;
+  char *msid;
   struct MediaStreamTrack *next_track;
   struct RtpStream *rtp_stream;
 };
 
 struct Transport {
-  struct RtpStream *rtp_stream;
-  struct RtpStream *rtcp_stream;
   struct MediaStreamTrack *track;
   char *state;
 };

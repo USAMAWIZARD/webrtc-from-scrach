@@ -1,5 +1,6 @@
 #include "dtls.h"
 #include "../Network/network.h"
+#include "../RTP/rtp.h"
 #include "../SRTP/srtp.h"
 #include "../STUN/stun.h"
 #include "../Utils/utils.h"
@@ -108,7 +109,6 @@ struct RTCDtlsTransport *create_dtls_transport() {
       "3C:4A:AA:DA:3A:F5:7F:B1:60:B2:1A:BB:59:20:22:DB:FC:44:FB:71:BB:88:"
       "6D:E5:";
   dtls_transport->mode = DTLS_ACTIVE;
-  dtls_transport->pair = NULL;
 
   guchar *my_private_cert_bin;
   uint16_t cert_len =
@@ -146,8 +146,7 @@ struct RTCDtlsTransport *create_dtls_transport() {
   return dtls_transport;
 }
 
-void send_dtls_client_hello(struct RTCPeerConnection *peer,
-                            struct CandidataPair *pair, bool with_cookie) {
+void send_dtls_client_hello(struct RTCPeerConnection *peer, bool with_cookie) {
 
   struct DtlsClientHello *dtls_client_hello =
       malloc(sizeof(struct DtlsClientHello));
@@ -415,14 +414,14 @@ uint16_t add_dtls_extention(struct DtlsClientHello **dtls_hello,
 
   return new_len;
 }
-void start_dtls_negosiation(struct RTCPeerConnection *peer,
-                            struct CandidataPair *pair) {
+void start_dtls_negosiation(struct RTCPeerConnection *peer) {
   if (peer == NULL || peer->dtls_transport->pair == NULL) {
     return;
   }
+  struct CandidataPair *pair = peer->dtls_transport->pair;
   printf("starting DTLS Negosiation on pair %s %d %s %d \n", pair->p0->address,
          pair->p0->port, pair->p1->address, pair->p1->port);
-  send_dtls_client_hello(peer, pair, false);
+  send_dtls_client_hello(peer, false);
 }
 
 bool check_if_dtls(uint8_t first_byte) {
@@ -471,6 +470,16 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
              "encrypted dtls packet----------------------- \n");
 
       dtls_packet = dtls_packet->next_record;
+      // decrept the packet and check if its a finished messaga also verify the
+      // hash of the message
+
+      init_rtp_stream(
+          peer->transceiver->sender->track->rtp_stream,
+          peer->dtls_transport->pair,
+          peer->dtls_transport->srtp_symitric_encrypt.srtp
+              ->client); // change here set it to selected pair in ice not dtls
+
+      start_rtp_stream(peer->transceiver->sender->track->rtp_stream);
 
       continue;
     }

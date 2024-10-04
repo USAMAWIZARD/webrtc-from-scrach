@@ -1,5 +1,5 @@
+#pragma once
 #include "../DTLS/Encryptions/encryption.h"
-#include "../RTP/rtp.h"
 #include <glib.h>
 #include <openssl/bn.h>
 #include <openssl/types.h>
@@ -7,6 +7,8 @@
 
 #define lable_k_e 0x00
 #define lable_k_s 0x02
+
+struct Rtp;
 
 union symmetric_encrypt;
 

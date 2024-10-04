@@ -159,7 +159,7 @@ void init_srtp(struct srtp_ctx **pp_srtp_ctx,
   srtp_ctx->server->master_salt_key = encryption_keys->server_write_SRTP_salt;
 
   srtp_ctx->client->master_write_key = encryption_keys->client_write_key;
-  srtp_ctx->client->master_write_key = encryption_keys->client_write_key;
+  srtp_ctx->server->master_write_key = encryption_keys->server_write_key;
 
   srtp_ctx->client->salt_key_len = encryption_keys->salt_size;
   srtp_ctx->server->salt_key_len = encryption_keys->salt_size;
@@ -176,10 +176,10 @@ void init_srtp(struct srtp_ctx **pp_srtp_ctx,
 void encrypt_srtp(struct SrtpEncryptionCtx *srtp_context,
                   struct Rtp *rtp_packet, uint32_t payloadlen) {
 
-  srtp_context->index = (65536 * srtp_context->roc) + rtp_packet->seq_no;
+  srtp_context->index = (65536 * srtp_context->roc) + ntohs(rtp_packet->seq_no);
 
   guchar *iv;
-  uint32_t ssrc = rtp_packet->ssrc;
+  uint32_t ssrc = ntohl(rtp_packet->ssrc);
   compute_srtp_iv(&iv, srtp_context->k_s, srtp_context->salt_key_len,
                   (guchar *)&ssrc, srtp_context->index);
   srtp_context->aes->IV = iv;

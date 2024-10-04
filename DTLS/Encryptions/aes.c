@@ -83,7 +83,7 @@ bool aes_expand_key(struct AesEnryptionCtx *ctx) {
 
   uint8_t num_row = ctx->row_size;
 
-  printf("aes key len %d expand key up to %d \n", aes_key_len, expand_key_len);
+  g_debug("aes key len %d expand key up to %d \n", aes_key_len, expand_key_len);
 
   for (int i = num_row; i <= expand_key_len; i++) {
     uint16_t round_num = (((int)floor(i / 4)) - 1);
@@ -101,7 +101,7 @@ bool aes_expand_key(struct AesEnryptionCtx *ctx) {
     memcpy(round_key, &(expanded_keys[i * 4]), aes_key_len);
     transpose_matrix(round_key);
 
-    printf("\nround %d key ", i);
+    g_debug("\nround %d key ", i);
     print_aes_matrix(round_key, 4);
     ctx->roundkeys[i] = round_key;
   }
@@ -157,7 +157,7 @@ uint32_t g_function(uint32_t word, uint16_t round_num) {
 }
 
 void sub_bytes(uint8_t (*block)[4]) {
-  printf("before sub byte\n");
+  g_debug("before sub byte\n");
   print_aes_matrix(block, 4);
 
   for (int i = 0; i < 4; i++) {
@@ -170,7 +170,7 @@ void sub_bytes(uint8_t (*block)[4]) {
       block[i][j] = s_box[upper4bit][lower4bit];
     }
   }
-  printf("after sub byte\n");
+  g_debug("after sub byte\n");
   print_aes_matrix(block, 4);
 }
 
@@ -192,7 +192,7 @@ uint8_t gf_mult(uint8_t a, uint8_t b) {
 }
 void shift_rows(uint8_t (*block)[4]) {
 
-  printf("before shift row\n");
+  g_debug("before shift row\n");
   print_aes_matrix(block, 4);
   for (int i = 1; i < 4; i++) {
     uint32_t block32 = (*(uint32_t(*)[4])block)[i];
@@ -205,10 +205,10 @@ void shift_rows(uint8_t (*block)[4]) {
 
   print_aes_matrix(block, 4);
 
-  printf("after shift row\n");
+  g_debug("after shift row\n");
 }
 void mix_columns(uint8_t (*matrix)[4]) {
-  printf("befroe mix columns\n");
+  g_debug("befroe mix columns\n");
   uint8_t matrix_sum[4][4] = {0};
 
   print_aes_matrix(matrix, 4);
@@ -220,7 +220,7 @@ void mix_columns(uint8_t (*matrix)[4]) {
       for (int j = 0; j < 4; j++) {
         uint8_t mul = gf_mult(aes_galois_fild[k][j], matrix[j][i]);
         matrix_sum[k][i] = matrix_sum[k][i] ^ mul;
-        // printf(" %d %d  %d  %d    \[ %d \] \[ %d \] = %x   \[ %d \] "
+        // g_debug(" %d %d  %d  %d    \[ %d \] \[ %d \] = %x   \[ %d \] "
         //        "\[ %x \] = %x  sum = %x   %d %d\n",
         //        k, j, j, i, k, j, aes_galois_fild[k][j], j, i, matrix[j][i],
         //        matrix_sum[k][i], k, i);
@@ -233,17 +233,17 @@ void mix_columns(uint8_t (*matrix)[4]) {
     }
   }
 
-  printf("after mix columns\n");
+  g_debug("after mix columns\n");
   print_aes_matrix(matrix, 4);
 }
 void add_round_key(uint8_t (*roundkey)[4], uint8_t (*block)[4]) {
 
-  printf("add round key before: \n");
+  g_debug("add round key before: \n");
 
-  printf("round key:\n");
+  g_debug("round key:\n");
   print_aes_matrix(roundkey, 4);
 
-  printf("block :\n");
+  g_debug("block :\n");
   print_aes_matrix(block, 4);
 
   for (int i = 0; i < 4; i++) {
@@ -252,7 +252,7 @@ void add_round_key(uint8_t (*roundkey)[4], uint8_t (*block)[4]) {
     }
   }
 
-  printf("after round key :\n");
+  g_debug("after round key :\n");
   print_aes_matrix(block, 4);
 }
 
@@ -276,7 +276,7 @@ void aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4]) {
   add_round_key(ctx->roundkeys[0], block);
 
   for (int i = 1; i <= ctx->no_rounds; i++) {
-    printf("round num :%d", i);
+    g_debug("round num :%d", i);
     sub_bytes(block);
     shift_rows(block);
 
@@ -289,7 +289,7 @@ void aes(struct AesEnryptionCtx *ctx, uint8_t (*block)[4]) {
 uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
                      uint16_t block_encrypt_offset, uint32_t total_packet_len) {
 
-  printf("string encryption prooces\n");
+  g_debug("string encryption prooces\n");
 
   uint16_t block_len = total_packet_len - block_encrypt_offset;
   uint8_t padding_size = AES_BLOCK_SIZE - (block_len % AES_BLOCK_SIZE);
@@ -344,7 +344,8 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
     block = block + 4;
   }
 
-  get_random_string((gchar **)&ctx->IV, ctx->iv_size, 1);
+  if (ctx->mode == CBC)
+    get_random_string((gchar **)&ctx->IV, ctx->iv_size, 1);
   return total_packet_len + padding_size;
 }
 

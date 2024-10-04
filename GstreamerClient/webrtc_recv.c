@@ -1,4 +1,5 @@
 #include "glib-object.h"
+#include "glibconfig.h"
 #include "gst/gstbin.h"
 #include "gst/gstelement.h"
 #include "gst/gstpromise.h"
@@ -132,6 +133,7 @@ static void send_ice_candidate_message(GstElement *webrtcbin, guint mline_index,
 }
 static void handle_media_stream(GstPad *pad, GstElement *gst_pipe,
                                 gchar *convert_name, char *sink_name) {
+
   GstPad *qpad;
   GstElement *q, *conv, *resample, *sink, *toverlay;
   GstPadLinkReturn ret;
@@ -155,11 +157,12 @@ static void handle_media_stream(GstPad *pad, GstElement *gst_pipe,
     g_print("video stream");
     toverlay = gst_element_factory_make("timeoverlay", NULL);
     gst_bin_add_many(GST_BIN(gst_pipe), q, conv, toverlay, sink, NULL);
+    gst_element_link_many(q, conv, toverlay, sink, NULL);
+
     gst_element_sync_state_with_parent(q);
     gst_element_sync_state_with_parent(conv);
-    gst_element_sync_state_with_parent(sink);
     gst_element_sync_state_with_parent(toverlay);
-    gst_element_link_many(q, conv, toverlay, sink, NULL);
+    gst_element_sync_state_with_parent(sink);
   }
   qpad = gst_element_get_static_pad(q, "sink");
   ret = gst_pad_link(pad, qpad);
@@ -281,53 +284,53 @@ static void create_webrtc(const gchar *webrtcbin_id, gboolean send_offer) {
   g_object_set(G_OBJECT(webrtc), "stun-server", STUN_SERVER, NULL);
   gst_bin_add_many(GST_BIN(gst_pipe), webrtc, NULL);
 
-  video_q = gst_element_factory_make("queue", NULL);
-  gst_bin_add_many(GST_BIN(gst_pipe), video_q, NULL);
-  srcpad = gst_element_get_static_pad(video_q, "src");
-  g_assert_nonnull(srcpad);
-  sinkpad = gst_element_request_pad_simple(
-      webrtc, "sink_%u"); // linking video to webrtc element
-  g_assert_nonnull(sinkpad);
-  ret = gst_pad_link(srcpad, sinkpad);
-  g_assert_cmpint(ret, ==, GST_PAD_LINK_OK);
-  gst_object_unref(srcpad);
-  gst_object_unref(sinkpad);
-
-  tee = gst_bin_get_by_name(GST_BIN(gst_pipe), "video_tee");
-  g_assert_nonnull(tee);
-  srcpad = gst_element_request_pad_simple(
-      tee, "src_%u"); // linking video to webrtc element
-  g_assert_nonnull(srcpad);
-  sinkpad = gst_element_get_static_pad(video_q, "sink");
-  g_assert_nonnull(sinkpad);
-  ret = gst_pad_link(srcpad, sinkpad);
-  g_assert_cmpint(ret, ==, GST_PAD_LINK_OK);
-  gst_object_unref(srcpad);
-  gst_object_unref(sinkpad);
-
-  audio_q = gst_element_factory_make("queue", NULL);
-  gst_bin_add_many(GST_BIN(gst_pipe), audio_q, NULL);
-  srcpad = gst_element_get_static_pad(audio_q, "src");
-  g_assert_nonnull(srcpad);
-  sinkpad = gst_element_request_pad_simple(
-      webrtc, "sink_%u"); // linking audio to webrtc element
-  g_assert_nonnull(sinkpad);
-  ret = gst_pad_link(srcpad, sinkpad);
-  g_assert_cmpint(ret, ==, GST_PAD_LINK_OK);
-  gst_object_unref(srcpad);
-  gst_object_unref(sinkpad);
-
-  tee = gst_bin_get_by_name(GST_BIN(gst_pipe), "audio_tee");
-  g_assert_nonnull(tee);
-  srcpad = gst_element_request_pad_simple(
-      tee, "src_%u"); // linking audio to webrtc element
-  g_assert_nonnull(srcpad);
-  sinkpad = gst_element_get_static_pad(audio_q, "sink");
-  g_assert_nonnull(sinkpad);
-  ret = gst_pad_link(srcpad, sinkpad);
-  g_assert_cmpint(ret, ==, GST_PAD_LINK_OK);
-  gst_object_unref(srcpad);
-  gst_object_unref(sinkpad);
+  // video_q = gst_element_factory_make("queue", NULL);
+  // gst_bin_add_many(GST_BIN(gst_pipe), video_q, NULL);
+  // srcpad = gst_element_get_static_pad(video_q, "src");
+  // g_assert_nonnull(srcpad);
+  // sinkpad = gst_element_request_pad_simple(
+  //     webrtc, "sink_%u"); // linking video to webrtc element
+  // g_assert_nonnull(sinkpad);
+  // ret = gst_pad_link(srcpad, sinkpad);
+  // g_assert_cmpint(ret, ==, GST_PAD_LINK_OK);
+  // gst_object_unref(srcpad);
+  // gst_object_unref(sinkpad);
+  //
+  // tee = gst_bin_get_by_name(GST_BIN(gst_pipe), "video_tee");
+  // g_assert_nonnull(tee);
+  // srcpad = gst_element_request_pad_simple(
+  //     tee, "src_%u"); // linking video to webrtc element
+  // g_assert_nonnull(srcpad);
+  // sinkpad = gst_element_get_static_pad(video_q, "sink");
+  // g_assert_nonnull(sinkpad);
+  // ret = gst_pad_link(srcpad, sinkpad);
+  // g_assert_cmpint(ret, ==, GST_PAD_LINK_OK);
+  // gst_object_unref(srcpad);
+  // gst_object_unref(sinkpad);
+  //
+  // audio_q = gst_element_factory_make("queue", NULL);
+  // gst_bin_add_many(GST_BIN(gst_pipe), audio_q, NULL);
+  // srcpad = gst_element_get_static_pad(audio_q, "src");
+  // g_assert_nonnull(srcpad);
+  // sinkpad = gst_element_request_pad_simple(
+  //     webrtc, "sink_%u"); // linking audio to webrtc element
+  // g_assert_nonnull(sinkpad);
+  // ret = gst_pad_link(srcpad, sinkpad);
+  // g_assert_cmpint(ret, ==, GST_PAD_LINK_OK);
+  // gst_object_unref(srcpad);
+  // gst_object_unref(sinkpad);
+  //
+  // tee = gst_bin_get_by_name(GST_BIN(gst_pipe), "audio_tee");
+  // g_assert_nonnull(tee);
+  // srcpad = gst_element_request_pad_simple(
+  //     tee, "src_%u"); // linking audio to webrtc element
+  // g_assert_nonnull(srcpad);
+  // sinkpad = gst_element_get_static_pad(audio_q, "sink");
+  // g_assert_nonnull(sinkpad);
+  // ret = gst_pad_link(srcpad, sinkpad);
+  // g_assert_cmpint(ret, ==, GST_PAD_LINK_OK);
+  // gst_object_unref(srcpad);
+  // gst_object_unref(sinkpad);
 
   g_signal_connect(webrtc, "on-ice-candidate",
                    G_CALLBACK(send_ice_candidate_message),
@@ -337,14 +340,14 @@ static void create_webrtc(const gchar *webrtcbin_id, gboolean send_offer) {
                      G_CALLBACK(on_negotiation_needed), (gpointer)NULL);
   g_signal_connect(webrtc, "pad-added", G_CALLBACK(on_incoming_stream), NULL);
 
-  ret = gst_element_sync_state_with_parent(audio_q);
-  g_assert_true(ret);
-  ret = gst_element_sync_state_with_parent(video_q);
-  g_assert_true(ret);
+  // ret = gst_element_sync_state_with_parent(audio_q);
+  // g_assert_true(ret);
+  // ret = gst_element_sync_state_with_parent(video_q);
+  // g_assert_true(ret);
+
   ret = gst_element_sync_state_with_parent(webrtc);
   g_assert_true(ret);
 }
-
 void on_websocket_disconnected(SoupWebsocketConnection *conn) {
   g_print("WebSocket connection closed\n");
 }
@@ -356,7 +359,7 @@ void on_websocket_connected(SoupWebsocketConnection *conn) {
   JsonArray *array = json_array_new();
   gchar pipeline_str[1000];
 
-  if (g_strcmp0(filename, "") == 0) {
+  if (true) { // g_strcmp0(filename, "") == 0) {
     printf("test video sharing");
     gst_pipe = gst_parse_launch(
         " tee name=video_tee ! queue ! fakesink  sync=true  tee name=audio_tee "
@@ -365,7 +368,7 @@ void on_websocket_connected(SoupWebsocketConnection *conn) {
         "wave=red-noise " AUDIO_ENCODE " ! " RTP_CAPS_OPUS
         " !  queue ! audio_tee. ",
         NULL);
-  } else {
+  } else if (false) {
     printf("file  sharing");
     sprintf(pipeline_str,
             " tee name=video_tee ! queue ! fakesink  sync=true  tee "
@@ -375,6 +378,9 @@ void on_websocket_connected(SoupWebsocketConnection *conn) {
             " !  queue ! video_tee. demuxtee. ! decodebin " AUDIO_ENCODE
             " ! " RTP_CAPS_OPUS " !  queue ! audio_tee. ",
             filename);
+    gst_pipe = gst_parse_launch(pipeline_str, NULL);
+  } else {
+    sprintf(pipeline_str, "tee name=video_tee ! queue ! fakesink");
     gst_pipe = gst_parse_launch(pipeline_str, NULL);
   }
   gst_element_set_state(gst_pipe, GST_STATE_READY);

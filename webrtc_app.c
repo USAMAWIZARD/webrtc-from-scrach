@@ -1,10 +1,12 @@
 #include "./ICE/ice.h"
+#include "./Network/network.h"
 #include "./RTP/rtp.h"
 #include "./SDP/sdp.h"
 #include "./SignallingClient/signalling_client.h"
 // #include "./Utils/utils.h"
 #include "./WebRTC/webrtc.h"
 #include "./parser/h264_parser/h264_parser.h"
+#include "DTLS/Encryptions/encryption.h"
 #include "json-glib/json-glib.h"
 #include <glib.h>
 #include <libavcodec/avcodec.h>
@@ -144,7 +146,8 @@ void on_start(JsonObject *object) {
   peer->on_ice_candidate = &on_ice_candidate;
 
   struct MediaStreamTrack *video_track =
-      NEW_MediaTrack("video", "video NEW_MediaTrack", NULL, NULL);
+      NEW_MediaTrack("video", "video NEW_MediaTrack", &user_defined_read_data,
+                     "./sample.h264");
   add_track(peer, video_track);
 
   JsonObject *offer_message = json_object_new();
@@ -167,7 +170,7 @@ void on_start(JsonObject *object) {
 gint main(gint argc, gchar **argv) {
 
   static GMainLoop *main_loop;
-  struct RtpSession *rtpSession = create_rtp_session();
+  //  struct RtpSession *rtpSession = create_rtp_session();
   // char *loopback_ip = "127.0.0.1";
   // void *filePtr = fopen("./sample.h264", "rb");
   // if (filePtr == NULL) {
@@ -176,12 +179,15 @@ gint main(gint argc, gchar **argv) {
 
   // struct MediaStreamTrack *video_track = NEW_MediaTrack(
   //     "video", "video_1", &user_defined_read_data, "sample.h264");
-  //
-  // struct RtpStream *rtpStream =
-  //     create_rtp_stream("127.0.0.1", 5001, rtpSession, video_track);
-  //
-  // start_rtp_session(rtpSession);
-  //
+  // struct RtpStream *rtpStream = create_rtp_stream(NULL, video_track, 1244,
+  // 98); struct CandidataPair *pair = malloc(sizeof(struct CandidataPair));
+  // pair->p0 = malloc(sizeof(struct RTCIecCandidates));
+  // pair->p1 = malloc(sizeof(struct RTCIecCandidates));
+  // pair->p0->sock_desc = get_udp_sock_desc();
+  // pair->p1->src_socket = get_network_socket("127.0.0.1", 5001);
+  // init_rtp_stream(rtpStream, pair, NULL);
+  // start_rtp_stream(rtpStream);
+
   websocket_connect("127.0.0.1", 3001);
 
   main_loop = g_main_loop_new(NULL, FALSE);

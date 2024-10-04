@@ -66,10 +66,10 @@ char *h264_parser_get_nal_unit(char *au_buffer, int buffer_size,
 
         if (start_code_len == NAL_BUFFER_END) {
           rtpStream->rtp_packet->marker = 1;
-          //printf("1 -- %d\n", rtpStream->rtp_packet->marker);
+          // printf("1 -- %d\n", rtpStream->rtp_packet->marker);
         } else {
           rtpStream->rtp_packet->marker = 0;
-          //printf("0 -- %d\n", rtpStream->rtp_packet->marker);
+          // printf("0 -- %d\n", rtpStream->rtp_packet->marker);
         }
 
         int nal_size = ((start_code_2 - start_code_1) - start_code_len) + 1;
@@ -90,7 +90,7 @@ char *h264_parser_get_nal_unit(char *au_buffer, int buffer_size,
   //  printf("\n=---------------------------------------------------\n");
   //        for (int b = 0; b < buffer_size; b++)
   //          printf(" %x ", *(au_buffer + b));
-       
+
   return NULL;
 }
 

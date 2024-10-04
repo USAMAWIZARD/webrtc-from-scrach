@@ -271,7 +271,7 @@ void on_stun_packet(struct NetworkPacket *packet,
                    pair->p0->port, pair->p1->address, pair->p1->port);
             if (peer->dtls_transport->pair == NULL) {
               peer->dtls_transport->pair = pair;
-              start_dtls_negosiation(peer, pair);
+              start_dtls_negosiation(peer);
             }
             pair->state = ICE_PAIR_SUCCEEDED;
           }

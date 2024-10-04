@@ -1,3 +1,5 @@
+#pragma once
+#include "../SRTP/srtp.h"
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -12,11 +14,8 @@ struct RtpStream {
                               struct RtpStream *);
   struct Rtp *rtp_packet;
   void *callback_data;
-  int port;
-  char *ip;
+  struct CandidataPair *pair;
   char *streamState;
-  struct sockaddr_in *socket_address;
-  int sockdesc;
   int socket_len;
   uint8_t payload_type : 7;
   int clock_rate;
@@ -24,6 +23,7 @@ struct RtpStream {
   uint32_t ssrc;
   uint32_t timestamp;
   uint8_t marker : 1;
+  struct SrtpEncryptionCtx *srtp_encryption_ctx;
   struct MediaStreamTrack *track;
 };
 
@@ -62,10 +62,12 @@ struct __attribute__((packed)) Rtp {
   char payload[];
 };
 struct RtpSession *create_rtp_session();
-struct RtpStream *create_rtp_stream(char *ip, int port,
-                                    struct RtpSession *rtp_session,
+void init_rtp_stream(struct RtpStream *stream, struct CandidataPair *pair,
+                     struct SrtpEncryptionCtx *srtp_encryption_ctx);
+struct RtpStream *create_rtp_stream(struct RtpSession *rtp_session,
                                     struct MediaStreamTrack *track,
                                     uint32_t ssrc, uint8_t payload_type);
+
 bool start_rtp_session(struct RtpSession *rtpSession);
 bool start_rtp_stream(struct RtpStream *rtpStream);
 int get_udp_sock_desc();

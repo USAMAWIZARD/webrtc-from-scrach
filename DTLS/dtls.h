@@ -210,11 +210,9 @@ struct __attribute__((packed)) llTVL {
 };
 
 struct RTCDtlsTransport *create_dtls_transport();
-void start_dtls_negosiation(struct RTCPeerConnection *peer,
-                            struct CandidataPair *pair);
+void start_dtls_negosiation(struct RTCPeerConnection *peer);
 
-void send_dtls_client_hello(struct RTCPeerConnection *peer,
-                            struct CandidataPair *pair, bool with_cookie);
+void send_dtls_client_hello(struct RTCPeerConnection *peer, bool with_cookie);
 bool check_if_dtls(uint8_t);
 uint8_t make_dtls_packet(struct RTCDtlsTransport *transport,
                          struct iovec *dtls_packet,

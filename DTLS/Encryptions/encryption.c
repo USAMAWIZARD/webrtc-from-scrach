@@ -191,8 +191,8 @@ bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
 
     union symmetric_encrypt srtp_aes;
     init_client_server_encryption_ctx(&srtp_aes, encryption_keys, cipher_info);
-    symitric_encrypt->srtp->server->aes = srtp_aes.aes->server;
     symitric_encrypt->srtp->client->aes = srtp_aes.aes->client;
+    symitric_encrypt->srtp->server->aes = srtp_aes.aes->server;
 
     break;
   default:
