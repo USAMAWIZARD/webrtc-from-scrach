@@ -329,7 +329,7 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
   if (handshake != NULL)
     Hheader_payload_len += sizeof(struct HandshakeHeader);
 
-  guchar *packet = malloc(Hheader_payload_len + 64 +
+  guchar *packet = malloc(Hheader_payload_len + 64 + +400 +
                           16); //  length max hmac size max paddign size
   guchar *ptr = packet;
 
@@ -376,7 +376,6 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
     guchar *dtls_packet_mac = malloc(hmac_len);
     g_hmac_get_digest(hmac, dtls_packet_mac, &hmac_len);
     memcpy(ptr, dtls_packet_mac, hmac_len);
-    //
 
     printf("to encrypt \n");
     print_hex(packet, Hheader_payload_len + hmac_len);
@@ -471,6 +470,9 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       dtls_packet = dtls_packet->next_record;
       // decrept the packet and check if its a finished messaga also verify the
       // hash of the message
+      printf("%ld", peer->dtls_transport->srtp_symitric_encrypt.srtp->client
+                        ->cipher_suite_info->hmac_len);
+      exit(0);
       init_rtp_stream(
           peer->transceiver->sender->track->rtp_stream,
           peer->dtls_transport->pair,

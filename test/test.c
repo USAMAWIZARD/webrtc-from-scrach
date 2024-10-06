@@ -34,6 +34,8 @@ void aes_test() {
   struct encryption_keys encryption_key;
   struct cipher_suite_info *cipher_info =
       malloc(sizeof(struct cipher_suite_info));
+  cipher_info->symitric_algo = AES;
+  cipher_info->mode = CBC;
 
   encryption_key.client_write_key = key;
   encryption_key.client_write_IV = iv;
@@ -47,12 +49,9 @@ void aes_test() {
   encryption_key.server_write_key = iv;
   encryption_key.server_write_mac_key = iv;
 
-  struct cipher_suite_info cs;
-  cs.symitric_algo = AES;
-  cs.mode = CBC;
-
   union symmetric_encrypt symmetric_encrypt;
-  init_client_server_encryption_ctx(&symmetric_encrypt, &encryption_key, &cs);
+  init_client_server_encryption_ctx(&symmetric_encrypt, &encryption_key,
+                                    cipher_info);
 
   struct aes_ctx *ctx = symmetric_encrypt.aes;
   uint8_t *block_hex = "1400000c000500000000000c4366e450f4d5828d2e5341a6";
@@ -79,7 +78,7 @@ void aes_test() {
   /////
   printf("Test AES Mode : CM");
   hexstr_to_char_2(&ctx->client->IV, "cc681eaa679a4d70bd2e6a1099eb6a6d");
-  block_hex = "1400000c000500000000000c4366e450f4d5828d2e5341a6";
+  block_hex = "1400000c000500000000000c4366e450";
   ctx->client->mode = CM;
 
   len = hexstr_to_char_2(&block, block_hex);
@@ -92,8 +91,7 @@ void aes_test() {
 
   print_hex(encrypted_bloc, len);
 
-  hexstr_to_char_2(&bin_test_encrypted, "a3e1d5683d625a6319d08297fad57d867ed4f7"
-                                        "58f1573ad4529b972bd294c946");
+  hexstr_to_char_2(&bin_test_encrypted, "B7E1D5643D675A6319D0829BB9B399D6");
 
   assert(memcmp(encrypted_bloc, bin_test_encrypted, len) == 0);
   printf("encryption with AES CM TEST successfull ");
@@ -250,8 +248,8 @@ void test_srtp_encryption() {
 int main() {
 
   //  test_srtp_encryption();
-  test_srtp_key_derivation();
+  //  test_srtp_key_derivation();
   //   test_srtp_iv();
-  //   aes_test();
+  aes_test();
   //   prf_test();
 }

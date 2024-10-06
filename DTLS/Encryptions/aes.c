@@ -303,6 +303,8 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
 
   add_aes_padding((uint8_t *)block, block_len, padding_size, ctx->mode);
 
+  memcpy(ctx->recordIV, ctx->IV, ctx->iv_size);
+
   transpose_matrix(ctx->IV);
 
   uint8_t counter[16];
@@ -370,6 +372,7 @@ struct AesEnryptionCtx *init_aes(struct AesEnryptionCtx **encryption_ctx,
   aes_encryption_ctx->mac_key_size = mac_key_size;
   aes_encryption_ctx->iv_size = AES_BLOCK_SIZE;
   aes_encryption_ctx->key_size = write_key_size;
+  aes_encryption_ctx->recordIV = calloc(1, aes_encryption_ctx->iv_size);
 
   aes_expand_key(aes_encryption_ctx);
   *encryption_ctx = aes_encryption_ctx;
