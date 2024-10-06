@@ -3,9 +3,9 @@ CFLAGS=-ggdb -flto
 LIBS=-lavutil -lavcodec -lavformat -lgsasl -lz -lgmp -lm
 PKG_CONFIG=`pkg-config --cflags --libs libsoup-2.4 json-glib-1.0 openssl `
 
-EXCLUDE=-not -name "test.c"  -not -path "./test/*" 
+#EXCLUDE=-not -name "test.c"  -not -path "./test/*" 
 
-#EXCLUDE=-not -name "webrtc_app.c" -not -path "./SignallingClient/*" 
+EXCLUDE=-not -name "webrtc_app.c" -not -path "./SignallingClient/*" 
 
 
 SRC=$(shell find . $(EXCLUDE) -name "*.c" -not -path "./SignallingServer/*" -not -path "./GstreamerClient/*")

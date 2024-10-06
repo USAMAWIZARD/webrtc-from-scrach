@@ -3,7 +3,6 @@
 #include "../../DTLS/dtls.h"
 #include "../../SRTP/srtp.h"
 #include "../../Utils/utils.h"
-#include "glibconfig.h"
 #include <glib.h>
 #include <math.h>
 #include <openssl/bn.h>
@@ -92,29 +91,27 @@ get_srtp_enryption_keys(struct RTCDtlsTransport *transport, guchar *key_block) {
       transport->srtp_cipher_suite->selected_cipher_suite;
   struct encryption_keys *encryption_keys = transport->encryption_keys;
   struct cipher_suite_info *cipher_info = transport->srtp_cipher_suite;
+  encryption_keys->cipher_suite_info = cipher_info;
 
   g_assert(encryption_keys != NULL && cipher_info != NULL);
 
   encryption_keys->client_write_key = malloc(cipher_info->key_size);
   encryption_keys->server_write_key = malloc(cipher_info->key_size);
 
-  encryption_keys->client_write_SRTP_salt = malloc(cipher_info->salt_len);
-  encryption_keys->server_write_SRTP_salt = malloc(cipher_info->salt_len);
+  encryption_keys->client_write_SRTP_salt = malloc(cipher_info->salt_key_len);
+  encryption_keys->server_write_SRTP_salt = malloc(cipher_info->salt_key_len);
 
   encryption_keys->client_write_IV = malloc(cipher_info->iv_size);
   encryption_keys->server_write_IV = malloc(cipher_info->iv_size);
 
   gsize srtp_key_size = cipher_info->key_size,
-        salt_size = cipher_info->salt_len, mac_size = cipher_info->hmac_len;
+        salt_size = cipher_info->salt_key_len, mac_size = cipher_info->hmac_len,
+        mac_key_size = cipher_info->hmac_key_len;
 
   copy_key_block(key_block, &encryption_keys->client_write_key, srtp_key_size,
                  &encryption_keys->server_write_key, srtp_key_size,
                  &encryption_keys->client_write_SRTP_salt, salt_size,
                  &encryption_keys->server_write_SRTP_salt, salt_size, NULL);
-
-  encryption_keys->salt_size = salt_size;
-  encryption_keys->key_size = srtp_key_size;
-  encryption_keys->mac_key_size = mac_size;
 
   return encryption_keys;
 }
@@ -123,8 +120,8 @@ get_dtls_encryption_keys(struct RTCDtlsTransport *transport,
                          guchar *key_block) {
   uint16_t selected_cipher_suite = transport->selected_cipher_suite;
   struct encryption_keys *encryption_keys = transport->encryption_keys;
-
   struct cipher_suite_info *cipher_info = transport->dtls_cipher_suite;
+  encryption_keys->cipher_suite_info = cipher_info;
 
   encryption_keys->client_write_mac_key = malloc(cipher_info->hmac_len);
   encryption_keys->server_write_mac_key = malloc(cipher_info->hmac_len);
@@ -146,10 +143,6 @@ get_dtls_encryption_keys(struct RTCDtlsTransport *transport,
                  &encryption_keys->client_write_IV, iv_size,
                  &encryption_keys->server_write_IV, iv_size, NULL);
 
-  encryption_keys->key_size = key_size;
-  encryption_keys->mac_key_size = hash_size;
-  encryption_keys->iv_size = iv_size;
-
   return encryption_keys;
 }
 bool init_client_server_encryption_ctx(union symmetric_encrypt *encryption_ctx,
@@ -160,13 +153,13 @@ bool init_client_server_encryption_ctx(union symmetric_encrypt *encryption_ctx,
   case AES:
     struct aes_ctx *client_server_aes_ctx = malloc(sizeof(struct aes_ctx));
     init_aes(&client_server_aes_ctx->client, encryption_keys->client_write_key,
-             encryption_keys->key_size, encryption_keys->client_write_mac_key,
-             encryption_keys->mac_key_size, encryption_keys->client_write_IV,
+             cipher_info->key_size, encryption_keys->client_write_mac_key,
+             cipher_info->hmac_len, encryption_keys->client_write_IV,
              cipher_info->mode);
 
     init_aes(&client_server_aes_ctx->server, encryption_keys->server_write_key,
-             encryption_keys->key_size, encryption_keys->server_write_mac_key,
-             encryption_keys->mac_key_size, encryption_keys->server_write_IV,
+             cipher_info->key_size, encryption_keys->server_write_mac_key,
+             cipher_info->hmac_len, encryption_keys->server_write_IV,
              cipher_info->mode);
 
     encryption_ctx->aes = client_server_aes_ctx;

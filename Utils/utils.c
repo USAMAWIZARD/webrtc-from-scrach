@@ -58,7 +58,6 @@ void get_random_string(gchar **data_pointer, uint32_t length, uint8_t type) {
   close(f_random);
 }
 void print_hex(const unsigned char *data, size_t length) {
-  return;
   for (size_t i = 0; i < length; i++) {
     printf("%02x ", data[i]);
   }
@@ -89,7 +88,6 @@ guchar *hexstr_to_char(const char *hexstr) {
   return chrs;
 }
 void print_aes_matrix(uint8_t (*ptr)[4], uint8_t numrow) {
-  return;
   printf("\n\n");
 
   for (int i = 0; i < numrow; i++) {

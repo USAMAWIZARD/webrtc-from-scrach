@@ -45,7 +45,7 @@ RTP payload header.
 
 void getdata(void *data);
 void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
-                     int payload_size);
+                     uint32_t payload_size);
 
 struct Rtp *init_rtp_packet(struct RtpStream *rtpStream) {
   struct Rtp *rtp_packet_packet;
@@ -90,7 +90,7 @@ void init_rtp_stream(struct RtpStream *stream, struct CandidataPair *pair,
 }
 
 void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
-                     int payload_size) {
+                     uint32_t payload_size) {
   static uint16_t rtp_mtu_size = 1400;
 
   int socket_len = rtpStream->socket_len;
@@ -100,9 +100,11 @@ void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
 
   memcpy(rtpStream->rtp_packet->payload, payload, payload_size);
 
-  if (rtpStream->srtp_encryption_ctx)
+  if (rtpStream->srtp_encryption_ctx) {
+
     encrypt_srtp(rtpStream->srtp_encryption_ctx, rtpStream->rtp_packet,
-                 payload_size);
+                 &payload_size);
+  }
   int bytes =
       sendto(rtpStream->pair->p0->sock_desc, rtpStream->rtp_packet,
              sizeof(*rtpStream->rtp_packet) + payload_size, 0,

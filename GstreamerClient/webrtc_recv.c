@@ -1,6 +1,3 @@
-#include "glib-object.h"
-#include "glibconfig.h"
-#include "gst/gstbin.h"
 #include "gst/gstelement.h"
 #include "gst/gstpromise.h"
 #include <stdbool.h>

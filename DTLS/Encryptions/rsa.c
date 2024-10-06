@@ -1,7 +1,6 @@
 #include "../../Utils/utils.h"
 #include "../dtls.h"
 #include "./encryption.h"
-#include "glibconfig.h"
 #include <glib.h>
 #include <gmp.h>
 #include <math.h>

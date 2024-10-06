@@ -60,18 +60,16 @@ struct cipher_suite_info {
   enum symitric_encrypt_algo symitric_algo;
   enum mode mode;
   GChecksumType hmac_algo;
+  gsize hmac_key_len;
   gsize hmac_len;
   gsize key_size;
   gsize iv_size;
-  gsize salt_len;
+  gsize salt_key_len;
+  gsize tag_size;
 };
 
 struct encryption_keys {
   BIGNUM *master_secret;
-  uint16_t key_size;
-  uint16_t iv_size;
-  uint16_t mac_key_size;
-  uint16_t salt_size;
   guchar *my_private_key;
   guchar *client_write_mac_key;
   guchar *server_write_mac_key;
@@ -81,6 +79,7 @@ struct encryption_keys {
   guchar *server_write_IV;
   guchar *client_write_SRTP_salt;
   guchar *server_write_SRTP_salt;
+  struct cipher_suite_info *cipher_suite_info;
 };
 
 #define MASTER_SECRET_LEN 48.0

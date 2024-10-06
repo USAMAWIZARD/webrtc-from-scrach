@@ -6,7 +6,6 @@
 #include "../Utils/utils.h"
 #include "../WebRTC/webrtc.h"
 #include "./Encryptions/encryption.h"
-#include "glibconfig.h"
 #include "json-glib/json-glib.h"
 #include <bits/pthreadtypes.h>
 #include <bits/types/struct_iovec.h>
@@ -472,12 +471,11 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       dtls_packet = dtls_packet->next_record;
       // decrept the packet and check if its a finished messaga also verify the
       // hash of the message
-
       init_rtp_stream(
           peer->transceiver->sender->track->rtp_stream,
           peer->dtls_transport->pair,
           peer->dtls_transport->srtp_symitric_encrypt.srtp
-              ->client); // change here set it to selected pair in ice not dtls
+              ->client); // change here set it to selected pair in ice not
 
       start_rtp_stream(peer->transceiver->sender->track->rtp_stream);
 
@@ -488,6 +486,9 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       printf("\n -----------------------"
              "change cipher spec ---------------------------- \n");
       dtls_packet = dtls_packet->next_record;
+      continue;
+    case content_type_alert:
+      printf("allert ----\n");
       continue;
     }
 
@@ -704,6 +705,7 @@ bool set_cipher_suite_info(struct RTCDtlsTransport *transport,
   case TLS_RSA_WITH_AES_128_CBC_SHA:
     cipher_info->hmac_algo = G_CHECKSUM_SHA1;
     cipher_info->hmac_len = g_checksum_type_get_length(cipher_info->hmac_algo);
+    cipher_info->hmac_key_len = 20;
     cipher_info->key_size = 16;
     cipher_info->iv_size = 16;
     cipher_info->symitric_algo = AES;
@@ -713,9 +715,10 @@ bool set_cipher_suite_info(struct RTCDtlsTransport *transport,
     break;
   case SRTP_AES128_CM_HMAC_SHA1_80:
     cipher_info->hmac_algo = G_CHECKSUM_SHA1;
-    cipher_info->hmac_len = g_checksum_type_get_length(cipher_info->hmac_algo);
+    cipher_info->hmac_len = 10;
+    cipher_info->hmac_key_len = 20;
     cipher_info->key_size = 16;
-    cipher_info->salt_len = 14;
+    cipher_info->salt_key_len = 14;
     cipher_info->iv_size = 16;
     cipher_info->symitric_algo = AES;
     cipher_info->mode = CM;

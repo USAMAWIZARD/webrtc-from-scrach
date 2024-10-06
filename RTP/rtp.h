@@ -10,7 +10,7 @@
 struct RtpStream {
   void (*media_data_callback)(void *,
                               void (*parsed_data_callback)(struct RtpStream *,
-                                                           char *, int),
+                                                           char *, uint32_t),
                               struct RtpStream *);
   struct Rtp *rtp_packet;
   void *callback_data;
