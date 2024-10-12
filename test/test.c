@@ -4,6 +4,7 @@
 #include "../Utils/utils.h"
 #include <assert.h>
 #include <glib.h>
+#include <netinet/in.h>
 #include <openssl/bn.h>
 #include <openssl/types.h>
 #include <stdint.h>
@@ -131,14 +132,15 @@ void test_srtp_iv() {
   printf("testing srtp iv generateiton \n");
 
   guchar *iv;
-  uint32_t ssrc = 0x00000000;
-  gchar *salt_key = "f0f1f2f3f4f5f6f7f8f9fafbfcfd0000";
+  uint32_t ssrc = 0x1133231;
+  gchar *salt_key = "f0f1f2f3f4f5f6f7f8f9fafbfcfd";
   guchar *salt_key_bin;
   uint32_t key_len = hexstr_to_char_2(&salt_key_bin, salt_key);
 
   compute_srtp_iv(&iv, salt_key_bin, key_len, &ssrc, 0);
+  //  compute_srtp_iv(&iv, salt_key_bin, key_len, &ssrc, 0);
+
   print_hex(iv, 16);
-  compute_srtp_iv(&iv, salt_key_bin, key_len, &ssrc, 1);
 }
 
 void test_srtp_key_derivation() {
@@ -164,7 +166,6 @@ void test_srtp_key_derivation() {
   cipher_info->hmac_key_len = 20;
   cipher_info->hmac_len = 16;
 
-  srtp_encryption_ctx->index = (65536 * srtp_encryption_ctx->roc) + 0;
   srtp_key_derivation(srtp_encryption_ctx, cipher_info);
 
   guchar *expected;
@@ -174,15 +175,18 @@ void test_srtp_key_derivation() {
   free(expected);
 
   hexstr_to_char_2(&expected, "30CBBC08863D8C85D49DB34A9AE17AC6");
+  print_hex(srtp_encryption_ctx->k_s, 16);
   assert(memcmp(srtp_encryption_ctx->k_s, expected,
                 cipher_info->salt_key_len) == 0);
   free(expected);
 
-  hexstr_to_char_2(&expected, "CEBE321F6FF7716B6FD4AB49AF256A15");
+  hexstr_to_char_2(
+      &expected,
+      "CEBE321F6FF7716B6FD4AB49AF256A156D38BAA48F0A0ACF3C34E2359E6CDBCE");
 
   print_hex(srtp_encryption_ctx->k_a, cipher_info->hmac_key_len);
-  // assert(memcmp(srtp_encryption_ctx->k_a, expected,
-  //               cipher_info->hmac_key_len) == 0);
+  assert(memcmp(srtp_encryption_ctx->k_a, expected,
+                cipher_info->hmac_key_len) == 0);
   printf("derived k_a\n");
   print_hex(srtp_encryption_ctx->k_a,
             srtp_encryption_ctx->cipher_suite_info->hmac_key_len);
@@ -198,10 +202,7 @@ void test_srtp_encryption() {
       malloc(sizeof(struct cipher_suite_info));
   srtp_encryption_ctx->cipher_suite_info = cipher_info;
 
-  cipher_info->key_size = 16;
-  cipher_info->salt_key_len = 14;
-  cipher_info->hmac_key_len = 16;
-  cipher_info->hmac_len = 16;
+  cipher_info->hmac_len = 10;
   srtp_encryption_ctx->roc = 0;
 
   guchar *iv;
@@ -221,35 +222,34 @@ void test_srtp_encryption() {
   hexstr_to_char_2(&srtp_encryption_ctx->k_a,
                    "CEBE321F6FF7716B6FD4AB49AF256A15");
 
-  srtp_encryption_ctx->index = (65536 * 0) + seq_no;
-
   init_aes(&srtp_encryption_ctx->aes, srtp_encryption_ctx->k_e,
            cipher_info->key_size, NULL, 0, NULL, CM);
 
   struct Rtp *rtp = malloc(sizeof(struct Rtp) + 32);
 
-  guchar test[70] = {0};
-  memcpy(rtp->payload, test, 16);
+  uint32_t len = 24;
+  memset(rtp->payload, 0x11, len);
+  print_hex(rtp->payload, len);
+
   rtp->ssrc = ssrc;
   rtp->seq_no = seq_no;
 
-  uint32_t len = 32;
   encrypt_srtp(srtp_encryption_ctx, rtp, &len);
 
   guchar *expected;
-  hexstr_to_char_2(
-      &expected,
-      "E03EAD0935C95E80E166B16DD92B4EB4D23513162B02D0F72A43A2FE4A5F97AB");
+  hexstr_to_char_2(&expected, "E03EAD0935C95E80E166B16DD92B4EB4"
+                              "D23513162B02D0F72A43A2FE4A5F97AB");
   print_hex(rtp->payload, 32);
   assert(memcmp(expected, rtp->payload, 32) == 0);
   printf("srtp encryption successful \n");
 }
+void test_srtp_mac() {}
 
 int main() {
-
-  //  test_srtp_encryption();
-  //  test_srtp_key_derivation();
-  //   test_srtp_iv();
-  aes_test();
-  //   prf_test();
+  //  test_srtp_mac();
+  test_srtp_encryption();
+  // test_srtp_key_derivation();
+  // test_srtp_iv();
+  //      aes_test();
+  //       prf_test();
 }

@@ -3,10 +3,9 @@
 #include "./RTP/rtp.h"
 #include "./SDP/sdp.h"
 #include "./SignallingClient/signalling_client.h"
-// #include "./Utils/utils.h"
+#include "./Utils/utils.h"
 #include "./WebRTC/webrtc.h"
 #include "./parser/h264_parser/h264_parser.h"
-#include "DTLS/Encryptions/encryption.h"
 #include "json-glib/json-glib.h"
 #include <glib.h>
 #include <libavcodec/avcodec.h>

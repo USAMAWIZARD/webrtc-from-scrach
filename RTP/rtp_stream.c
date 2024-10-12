@@ -30,6 +30,7 @@ RTP payload header.
 */
 #include "../Network/network.h"
 #include "../SRTP/srtp.h"
+#include "../Utils/utils.h"
 #include "../WebRTC/webrtc.h"
 #include "rtp.h"
 #include <errno.h>
@@ -100,15 +101,27 @@ void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
 
   memcpy(rtpStream->rtp_packet->payload, payload, payload_size);
 
-  if (rtpStream->srtp_encryption_ctx) {
-
-    encrypt_srtp(rtpStream->srtp_encryption_ctx, rtpStream->rtp_packet,
-                 &payload_size);
+  if (true) { // padding in case of block cipher
+    // uint8_t padding_size = 16 - (payload_size % 16);
+    // if (padding_size != 16) {
+    //   rtpStream->rtp_packet->padding = 1;
+    //   rtpStream->rtp_packet->payload[payload_size + padding_size - 1] =
+    //       padding_size;
+    //   payload_size += padding_size;
+    // } else
+    //   rtpStream->rtp_packet->padding = 0;
   }
+
+  if (rtpStream->srtp_encryption_ctx) {
+    // encrypt_srtp(rtpStream->srtp_encryption_ctx, rtpStream->rtp_packet,
+    //              &payload_size);
+  }
+
   int bytes =
       sendto(rtpStream->pair->p0->sock_desc, rtpStream->rtp_packet,
              sizeof(*rtpStream->rtp_packet) + payload_size, 0,
              (struct sockaddr *)(rtpStream->pair->p1->src_socket), socket_len);
+
   usleep(15000);
   if (bytes == -1) {
     printf("\n failed to send the data %s  %d  socket_len %d desc %d\n",

@@ -88,6 +88,7 @@ guchar *hexstr_to_char(const char *hexstr) {
   return chrs;
 }
 void print_aes_matrix(uint8_t (*ptr)[4], uint8_t numrow) {
+  return;
   printf("\n\n");
 
   for (int i = 0; i < numrow; i++) {
@@ -112,3 +113,4 @@ void increment_binary_number(unsigned char *number, size_t length) {
     }
   }
 }
+

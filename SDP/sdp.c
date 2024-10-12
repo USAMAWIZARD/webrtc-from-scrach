@@ -50,8 +50,8 @@ char *get_encoding_info(struct RTCRtpTransceivers *transceiver) {
       "42001f\n"
       "a=rtpmap:103 rtx/90000\n"
       "a=fmtp:103 apt=102\n"
-      "a=ssrc:1044859037 cname:Dp9Bc6LU+k7YLLrs\n"
-      "a=ssrc:1044859037 msid:- %s\n",
+      "a=ssrc:0 cname:Dp9Bc6LU+k7YLLrs\n"
+      "a=ssrc:0 msid:- %s\n",
       transceiver->sender->track->id);
   return encoding_info;
 }
@@ -104,8 +104,8 @@ JsonObject *get_test_ofer() {
               "42001f\n"
               "a=rtpmap:103 rtx/90000\n"
               "a=fmtp:103 apt=102\n"
-              "a=ssrc:1044859037 cname:Dp9Bc6LU+k7YLLrs\n"
-              "a=ssrc:1044859037 msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n";
+              "a=ssrc:0 cname:Dp9Bc6LU+k7YLLrs\n"
+              "a=ssrc:0 msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n";
 
   JsonObject *sdp_object = json_object_new();
 

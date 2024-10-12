@@ -305,7 +305,8 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
 
   memcpy(ctx->recordIV, ctx->IV, ctx->iv_size);
 
-  transpose_matrix(ctx->IV);
+  if (ctx->mode == CBC)
+    transpose_matrix(ctx->IV);
 
   uint8_t counter[16];
   for (int j = 0; j < data_encrytion_itration; j++) {
@@ -320,11 +321,10 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
 
     if (ctx->mode == CM) {
       memcpy(counter, ctx->IV, AES_BLOCK_SIZE);
+      transpose_matrix(counter);
       aes(ctx, counter);
       add_vector(block, counter);
-      // memcpy(block, counter, 16);
       increment_binary_number(ctx->IV, 16);
-      transpose_matrix(ctx->IV);
     }
 
     block = block + 4;

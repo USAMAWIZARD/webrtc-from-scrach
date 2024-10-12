@@ -472,7 +472,6 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
       // hash of the message
       printf("%ld", peer->dtls_transport->srtp_symitric_encrypt.srtp->client
                         ->cipher_suite_info->hmac_len);
-      exit(0);
       init_rtp_stream(
           peer->transceiver->sender->track->rtp_stream,
           peer->dtls_transport->pair,
@@ -1074,6 +1073,7 @@ bool do_certificate_verify(struct RTCDtlsTransport *transport) {
 
   return false;
 }
+void encrypt_dtls(guchar *block) {}
 
 bool do_client_finished(struct RTCDtlsTransport *transport) {
 

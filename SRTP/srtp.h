@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 #define lable_k_e 0x00
-#define lable_k_s 0x02
 #define lable_k_a 0x01
+#define lable_k_s 0x02
 
 struct Rtp;
 
