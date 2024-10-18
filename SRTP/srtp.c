@@ -21,102 +21,48 @@ struct srtp_ext parse_srtp_ext(guchar *value, uint16_t len) {
 
   return ext;
 }
-
-guchar *compute_srtp_iv(guchar **pp_iv, guchar *salting_key,
-                        uint32_t salting_key_len, guchar *ssrc,
-                        uint64_t packet_index) {
+void compute_srtp_iv(guchar *all_xored_iv, guchar *salting_key,
+                     uint32_t salting_key_len, guchar *ssrc,
+                     guchar *packet_index) {
   // IV = (k_s * 2 ^ 16) XOR(SSRC * 2 ^ 64) XOR(i * 2 ^ 16)
 
-  BIGNUM *ks_pow = BN_new();
-  BIGNUM *ssrc_pow = BN_new();
-  BIGNUM *seq_pow = BN_new();
+  memset(all_xored_iv + 14, 0, 2);
+  int pos = 16 - 2 - salting_key_len; // 16 shifted
+  memcpy(all_xored_iv - pos, salting_key, salting_key_len);
 
-  BIGNUM *ks_pow_bn = BN_new();
-  BIGNUM *ssrc_pow_bn = BN_new();
-  BIGNUM *seq_pow_bn = BN_new();
-
-  BIGNUM *d_num = BN_new();
-  BIGNUM *p_num = BN_new();
-  BIGNUM *r = BN_new();
-
-  BN_hex2bn(&p_num, "10"); // 16
-  BN_hex2bn(&d_num, "2");
-
-  BN_CTX *ctx = BN_CTX_new();
-  BN_exp(r, d_num, p_num, ctx);
-
-  BN_bin2bn(salting_key, salting_key_len, ks_pow);
-  BN_mul(ks_pow_bn, ks_pow, r, ctx);
-
-  BN_bin2bn((guchar *)&packet_index, 6, seq_pow);
-  BN_mul(seq_pow_bn, seq_pow, r, ctx);
-
-  BN_hex2bn(&p_num, "40"); // 64
-  BN_exp(r, d_num, p_num, ctx);
-
-  BN_bin2bn(ssrc, 4, ssrc_pow);
-  BN_mul(ssrc_pow_bn, ssrc_pow, r, ctx);
-
-  *pp_iv = calloc(1, 16);
-  guchar *all_xorded = *pp_iv;
-
-  uint16_t data_len = BN_num_bytes(ks_pow_bn);
-
-  guchar *data = malloc(data_len);
-  BN_bn2bin(ks_pow_bn, data);
-  data_len = (data_len < 16) ? data_len : 16;
-  memcpy(all_xorded, data, data_len);
-
-  free(data);
-
-  data_len = BN_num_bytes(ssrc_pow_bn);
-  data = malloc(data_len);
-  BN_bn2bin(ssrc_pow_bn, data);
-  data_len = (data_len < 16) ? data_len : 16;
-
-  for (int i = 16; i < data_len; i++) {
-    all_xorded[i] = all_xorded[i] ^ data[i];
+  pos = 16 - 8 - 4; // 64 shifted
+  for (int i = 3; i >= 0; i--) {
+    all_xored_iv[pos] = all_xored_iv[pos] ^ ssrc[i];
+    pos++;
   }
 
-  free(data);
-
-  data_len = BN_num_bytes(seq_pow_bn);
-  data = malloc(data_len);
-  BN_bn2bin(seq_pow_bn, data);
-  data_len = (data_len < 16) ? data_len : 16;
-  printf("%d\n", packet_index);
-  print_hex(data, data_len);
-
-  for (int i = 0; i < data_len; i++) {
-    all_xorded[i] = all_xorded[i] ^ data[i];
+  pos = 16 - 2 - 6; // 16 shifted
+  for (int i = 5; i >= 0; i--) {
+    all_xored_iv[pos] = all_xored_iv[pos] ^ packet_index[i];
+    pos++;
   }
-
-  free(data);
-
-  return all_xorded;
 }
+
 void calculate_x_and_to_encrypt(struct SrtpEncryptionCtx *srtp_encrption_ctx,
                                 guchar *x, guchar *toencrypt, uint8_t lable) {
-  uint64_t key_id = 0;
+  // uint64_t key_id = 0;
   memset(x, 0, 16);
   memset(toencrypt, 0, 16);
 
-  uint64_t r = 0;
-  if (srtp_encrption_ctx->kdr)
-    r = srtp_encrption_ctx->index / srtp_encrption_ctx->kdr;
-
-  memcpy(((guchar *)&key_id), (guchar *)&r, 48 / 8);
+  // uint64_t r = 0;
+  // if (srtp_encrption_ctx->kdr)
+  //   r = srtp_encrption_ctx->index / srtp_encrption_ctx->kdr;
+  //
+  // memcpy(((guchar *)&key_id), (guchar *)&r, 48 / 8);
 
   memcpy(x, srtp_encrption_ctx->master_salt_key,
          srtp_encrption_ctx->cipher_suite_info->salt_key_len);
 
   x[7] ^= lable;
 
-  for (int i = 0; i <= 6; i++)
-    x[i + 8] =
-        ((guchar *)&key_id)[i] ^ srtp_encrption_ctx->master_salt_key[i + 8];
-
-  print_hex(x, 16);
+  // for (int i = 0; i <= 6; i++)
+  //   x[i + 8] =
+  //       ((guchar *)&key_id)[i] ^ srtp_encrption_ctx->master_salt_key[i + 8];
 }
 
 struct AesEnryptionCtx *srtp_prf(struct SrtpEncryptionCtx *srtp_encrption_ctx,
@@ -189,14 +135,17 @@ void init_srtp(struct srtp_ctx **pp_srtp_ctx,
   srtp_ctx->client = calloc(1, sizeof(struct SrtpEncryptionCtx));
   srtp_ctx->server = calloc(1, sizeof(struct SrtpEncryptionCtx));
 
-  srtp_ctx->client->master_salt_key = encryption_keys->client_write_SRTP_salt;
-  srtp_ctx->server->master_salt_key = encryption_keys->server_write_SRTP_salt;
+  if (encryption_keys->client_write_key) {
+    srtp_ctx->client->master_salt_key = encryption_keys->client_write_SRTP_salt;
+    srtp_ctx->client->master_write_key = encryption_keys->client_write_key;
+    srtp_key_derivation(srtp_ctx->client, encryption_keys->cipher_suite_info);
+  }
 
-  srtp_ctx->client->master_write_key = encryption_keys->client_write_key;
-  srtp_ctx->server->master_write_key = encryption_keys->server_write_key;
-
-  srtp_key_derivation(srtp_ctx->client, encryption_keys->cipher_suite_info);
-  srtp_key_derivation(srtp_ctx->server, encryption_keys->cipher_suite_info);
+  if (encryption_keys->server_write_key) {
+    srtp_ctx->server->master_write_key = encryption_keys->server_write_key;
+    srtp_ctx->server->master_salt_key = encryption_keys->server_write_SRTP_salt;
+    srtp_key_derivation(srtp_ctx->server, encryption_keys->cipher_suite_info);
+  }
 
   *pp_srtp_ctx = srtp_ctx;
 }
@@ -204,45 +153,48 @@ void init_srtp(struct srtp_ctx **pp_srtp_ctx,
 void encrypt_srtp(struct SrtpEncryptionCtx *srtp_context,
                   struct Rtp *rtp_packet, uint32_t *payloadlen) {
 
-  srtp_context->index = (65536 * srtp_context->roc) + ntohs(rtp_packet->seq_no);
+  uint64_t index = (0) + ntohs(rtp_packet->seq_no);
 
-  guchar *iv;
+  guchar *iv = malloc(16);
   uint32_t ssrc = ntohl(rtp_packet->ssrc);
 
-  compute_srtp_iv(&iv, srtp_context->k_s,
+  compute_srtp_iv(iv, srtp_context->k_s,
                   srtp_context->cipher_suite_info->salt_key_len,
-                  (guchar *)&ssrc, srtp_context->index);
-  printf("iv for encyrption\n");
+                  (guchar *)&ssrc, (guchar *)&index);
+  g_debug("iv for encyrption\n");
   srtp_context->aes->IV = iv;
   print_hex(iv, 16);
-  printf("making key  \n");
-  print_hex(srtp_context->k_a, 20);
-  printf("encypt key  \n");
-  print_hex(srtp_context->aes->initial_key, 16);
-  printf("computed mqc\n");
+  g_debug("salt key  \n");
+  print_hex(srtp_context->k_s, 14);
+  g_debug("encypt key  \n");
+  print_hex(srtp_context->k_e, 16);
 
   gsize hmac_len = 20;
 
   guchar computed_mac[hmac_len];
 
-  uint32_t encrypt_aes_len =
-      encrypt_aes(srtp_context->aes, rtp_packet->payload, 0, *payloadlen);
+  g_debug("to ebncrypt\n");
+  print_hex(rtp_packet->payload, *payloadlen);
+
+  encrypt_aes(srtp_context->aes, rtp_packet->payload, 0, *payloadlen);
+
+  g_debug("encrypted\n");
+  print_hex(rtp_packet->payload, *payloadlen);
 
   GHmac *srtp_hmac = g_hmac_new(G_CHECKSUM_SHA1, srtp_context->k_a,
                                 srtp_context->cipher_suite_info->hmac_key_len);
   g_hmac_update(srtp_hmac, rtp_packet, sizeof(*rtp_packet));
-  g_hmac_update(srtp_hmac, rtp_packet->payload, encrypt_aes_len);
+  g_hmac_update(srtp_hmac, rtp_packet->payload, *payloadlen);
   g_hmac_update(srtp_hmac, &srtp_context->roc, 4);
   g_hmac_get_digest(srtp_hmac, computed_mac, &hmac_len);
-  print_hex(computed_mac, 20);
 
-  memcpy(rtp_packet->payload + encrypt_aes_len, computed_mac,
+  g_debug("computed mac\n");
+  print_hex(computed_mac, 10);
+
+  memcpy(rtp_packet->payload + (*payloadlen), computed_mac,
          srtp_context->cipher_suite_info->hmac_len);
 
-  *payloadlen = srtp_context->cipher_suite_info->hmac_len + encrypt_aes_len;
-
-  printf("ecnrytped \n");
-  print_hex(rtp_packet->payload, encrypt_aes_len);
+  *payloadlen = srtp_context->cipher_suite_info->hmac_len + (*payloadlen);
 
   g_hmac_unref(srtp_hmac);
 }

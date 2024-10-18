@@ -1,6 +1,6 @@
 CC=ccache gcc
 CFLAGS=-ggdb -flto
-LIBS=-lavutil -lavcodec -lavformat -lgsasl -lz -lgmp -lm
+LIBS=-lavutil -lavcodec -lavformat -lgsasl -lz -lgmp -lm  -lsrtp3
 PKG_CONFIG=`pkg-config --cflags --libs libsoup-2.4 json-glib-1.0 openssl `
 
 

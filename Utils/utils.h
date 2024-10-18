@@ -17,4 +17,5 @@ void print_hex(const unsigned char *data, size_t length);
 uint32_t hexstr_to_char_2(guchar **p_str, gchar *str);
 void print_aes_matrix(uint8_t (*ptr)[4], uint8_t numrow);
 
+bool copy_key_block(guchar *key_block, ...);
 void increment_binary_number(unsigned char *number, size_t length);

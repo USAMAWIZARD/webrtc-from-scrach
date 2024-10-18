@@ -101,7 +101,8 @@ bool aes_expand_key(struct AesEnryptionCtx *ctx) {
     memcpy(round_key, &(expanded_keys[i * 4]), aes_key_len);
     transpose_matrix(round_key);
 
-    g_debug("\nround %d key ", i);
+    if (ctx->mode == CM)
+      printf("\nround %d key ", i);
     print_aes_matrix(round_key, 4);
     ctx->roundkeys[i] = round_key;
   }
@@ -264,8 +265,10 @@ void add_aes_padding(uint8_t *block, uint16_t data_len, uint8_t padding_size,
   for (int i = 0; i < padding_size; i++) {
     if (mode == CBC)
       block[i] = padding_size - 1;
-    else if (mode == CM)
+    else if (mode == CM) {
+      printf("why herel");
       block[i] = 0;
+    }
   }
 }
 
@@ -311,6 +314,10 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
   uint8_t counter[16];
   for (int j = 0; j < data_encrytion_itration; j++) {
 
+    g_debug("block\n");
+    print_hex(block, 16);
+    g_debug("IV\n");
+    print_hex(ctx->IV, 16);
     transpose_matrix(block);
 
     if (ctx->mode == CBC) {

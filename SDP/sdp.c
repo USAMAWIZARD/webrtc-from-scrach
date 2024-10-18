@@ -93,19 +93,19 @@ JsonObject *get_test_ofer() {
               "a=setup:active\n"
 
               "a=mid:0\n"
-              "a=sendrecv\n"
+              "a=sendonly\n"
               "a=msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n"
               "a=rtcp-mux\n"
               "a=rtcp-rsize\n"
 
               "a=rtpmap:102 H264/90000\n"
               "a=fmtp:102 "
-              "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id="
+              "level-asymmetry-allowed=1;packetization-mode=0;profile-level-id="
               "42001f\n"
               "a=rtpmap:103 rtx/90000\n"
               "a=fmtp:103 apt=102\n"
-              "a=ssrc:0 cname:Dp9Bc6LU+k7YLLrs\n"
-              "a=ssrc:0 msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n";
+              "a=ssrc:3735928559 cname:Dp9Bc6LU+k7YLLrs\n"
+              "a=ssrc:3735928559 msid:- 665d1bfb-1759-44c8-92d4-c1b6aaad5892\n";
 
   JsonObject *sdp_object = json_object_new();
 

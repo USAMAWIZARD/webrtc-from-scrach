@@ -41,7 +41,7 @@ bool add_track(struct RTCPeerConnection *peer, struct MediaStreamTrack *track) {
     peer->media_tracks = track;
     printf("New Track Added to WebRTC Session id:%s Kind: %s Label: %s\n",
            track->id, track->kind, track->label);
-    track->rtp_stream = create_rtp_stream(NULL, track, 0, 102);
+    track->rtp_stream = create_rtp_stream(NULL, track, 0xdeadbeef, 102);
 
     add_transceivers(peer, peer->media_tracks);
   } else {

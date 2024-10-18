@@ -1,4 +1,5 @@
 #include "gst/gstelement.h"
+#include "gst/gstelementfactory.h"
 #include "gst/gstpad.h"
 #include "gst/gstpromise.h"
 #include <stdbool.h>
@@ -166,7 +167,7 @@ static void handle_media_stream(GstPad *pad, GstElement *gst_pipe,
   g_assert_cmphex(ret, ==, GST_PAD_LINK_OK);
 }
 void on_incoming_stream(GstElement *webrtc, GstPad *pad) {
-  GstElement *decode, *depay, *parse, *rtpjitterbuffer;
+  GstElement *decode, *depay, *parse, *rtpjitterbuffer, *queue;
   GstPad *sinkpad, *srcpad, *decoded_pad;
   GstCaps *caps;
   const gchar *mediatype;
@@ -183,6 +184,7 @@ void on_incoming_stream(GstElement *webrtc, GstPad *pad) {
 
   if (g_str_has_prefix(mediatype, "video")) {
     depay = gst_element_factory_make("rtph264depay", NULL);
+    queue = gst_element_factory_make("queue", NULL);
     decode = gst_element_factory_make("avdec_h264", NULL);
     parse = gst_element_factory_make("h264parse", NULL);
     convert_name = "videoconvert";
@@ -198,18 +200,24 @@ void on_incoming_stream(GstElement *webrtc, GstPad *pad) {
   }
 
   rtpjitterbuffer = gst_element_factory_make("rtpjitterbuffer", NULL);
-  gst_bin_add_many(GST_BIN(gst_pipe), rtpjitterbuffer, depay, parse, decode,
-                   NULL);
-  g_assert(gst_element_link_many(depay, parse, decode, NULL));
+  // GstElement *filesink = gst_element_factory_make("filesink", NULL);
+  // g_object_set(filesink, "location", "newtest.h264", NULL);
+
+  gst_bin_add_many(GST_BIN(gst_pipe), rtpjitterbuffer, depay, parse, queue,
+                   decode, NULL);
+  g_assert(gst_element_link_many(depay, decode, NULL));
   sinkpad = gst_element_get_static_pad(depay, "sink");
   g_assert(gst_pad_link(pad, sinkpad) == GST_PAD_LINK_OK);
 
   decoded_pad = gst_element_get_static_pad(decode, "src");
   gst_element_sync_state_with_parent(depay);
   gst_element_sync_state_with_parent(parse);
+  gst_element_sync_state_with_parent(queue);
   gst_element_sync_state_with_parent(decode);
+  // gst_element_sync_state_with_parent(filesink);
   gst_element_sync_state_with_parent(rtpjitterbuffer);
-  GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(gst_pipe), 1, "testing");
+  GST_DEBUG_BIN_TO_DOT_FILE(GST_BIN(gst_pipe), GST_DEBUG_GRAPH_SHOW_VERBOSE,
+                            "testing");
   handle_media_stream(decoded_pad, gst_pipe, convert_name, sink_name);
 }
 static void on_offer_created(GstPromise *promise, const gchar *stream_id) {
@@ -259,11 +267,11 @@ static void on_negotiation_needed(GstElement *webrtc, gpointer user_data) {
 static void on_key_set(GstElement *element, gpointer *udata) {}
 static void dtls_element_added(GstBin *webrtcbin, GstBin subbin,
                                GstElement *element, gpointer *data) {
-  // gchar *element_name = gst_element_get_name(element);
-  // printf("\nelement Name -----%s\n", element_name);
-  //
-  // if (strncmp(element_name, "dtlssrt", 6) == 0) {
-  // }
+  gchar *element_name = gst_element_get_name(element);
+  printf("\nelement Name -----%s\n", element_name);
+
+  if (strncmp(element_name, "dtlssrtpdec", 11) == 0) {
+  }
 }
 
 static void create_webrtc(const gchar *webrtcbin_id, gboolean send_offer) {

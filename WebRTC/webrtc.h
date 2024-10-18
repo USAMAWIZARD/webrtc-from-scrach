@@ -105,5 +105,7 @@ bool set_remote_discription(struct RTCPeerConnection *peer,
 
 void add_ice_candidate(struct RTCPeerConnection *peer,
                        struct RTCIecCandidates *candidate);
-
+struct MediaStreamTrack *NEW_MediaTrack(char *kind, char *label,
+                                        void *get_data_callback,
+                                        void *userdata);
 #endif

@@ -695,51 +695,15 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
     dtls_packet = dtls_packet->next_record;
   }
 }
-bool set_cipher_suite_info(struct RTCDtlsTransport *transport,
-                           uint16_t selected_cipher_suite) {
-  struct cipher_suite_info *cipher_info =
-      calloc(1, sizeof(struct cipher_suite_info));
 
-  cipher_info->selected_cipher_suite = selected_cipher_suite;
-
-  switch (cipher_info->selected_cipher_suite) {
-  case TLS_RSA_WITH_AES_128_CBC_SHA:
-    cipher_info->hmac_algo = G_CHECKSUM_SHA1;
-    cipher_info->hmac_len = g_checksum_type_get_length(cipher_info->hmac_algo);
-    cipher_info->hmac_key_len = 20;
-    cipher_info->key_size = 16;
-    cipher_info->iv_size = 16;
-    cipher_info->symitric_algo = AES;
-    cipher_info->mode = CBC;
-    transport->dtls_cipher_suite = cipher_info;
-
-    break;
-  case SRTP_AES128_CM_HMAC_SHA1_80:
-    cipher_info->hmac_algo = G_CHECKSUM_SHA1;
-    cipher_info->hmac_len = 10;
-    cipher_info->hmac_key_len = 20;
-    cipher_info->key_size = 16;
-    cipher_info->salt_key_len = 14;
-    cipher_info->iv_size = 16;
-    cipher_info->symitric_algo = AES;
-    cipher_info->mode = CM;
-
-    transport->srtp_cipher_suite = cipher_info;
-
-    break;
-  default:
-    printf("cipher sute not supported %x \n", transport->selected_cipher_suite);
-    exit(0);
-  }
-  return true;
-}
 void handle_server_hello(struct RTCDtlsTransport *transport,
                          struct DtlsServerHello *hello, struct llTVL *lltvl) {
   transport->current_flight_no = 1;
   transport->epoch = 0;
 
   transport->selected_cipher_suite = ntohs(hello->cipher_suite);
-  set_cipher_suite_info(transport, transport->selected_cipher_suite);
+  set_cipher_suite_info(&transport->dtls_cipher_suite,
+                        transport->selected_cipher_suite);
 
   BIGNUM *r2 = BN_new();
   BN_bin2bn(&hello->random[0], 32, r2);
@@ -751,7 +715,8 @@ void handle_server_hello(struct RTCDtlsTransport *transport,
     case SRTP_EXT:
       struct srtp_ext ext = parse_srtp_ext(lltvl->value, lltvl->len);
       printf("%x\n", ext.encryption_profile);
-      set_cipher_suite_info(transport, htons(ext.encryption_profile));
+      set_cipher_suite_info(&transport->srtp_cipher_suite,
+                            htons(ext.encryption_profile));
       break;
     case 0:
       break;
@@ -1011,20 +976,20 @@ const gchar *compute_all_message_hash(struct RTCDtlsTransport *transport,
       g_checksum_update(checksum,
                         (guchar *)all_handshake_msgs->handshake_header,
                         sizeof(struct HandshakeHeader));
-      printf("appeding handshake header of type :%d\n",
-             all_handshake_msgs->handshake_header->type);
+      g_debug("appeding handshake header of type :%d\n",
+              all_handshake_msgs->handshake_header->type);
       print_hex(all_handshake_msgs->handshake_header,
                 sizeof(struct HandshakeHeader));
     }
 
     uint32_t payload_len = all_handshake_msgs->payload_len;
-    printf("appending paylaod of type %d len %d\n",
-           all_handshake_msgs->handshake_header->type, payload_len);
+    g_debug("appending paylaod of type %d len %d\n",
+            all_handshake_msgs->handshake_header->type, payload_len);
 
     if (payload_len) {
       g_checksum_update(checksum, (guchar *)all_handshake_msgs->payload,
                         payload_len);
-      print_hex(all_handshake_msgs->payload, payload_len);
+      // print_hex(all_handshake_msgs->payload, payload_len);
     }
 
   next_handshake_message:

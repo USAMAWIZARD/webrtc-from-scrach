@@ -38,9 +38,9 @@ struct SrtpEncryptionCtx {
 };
 
 struct srtp_ext parse_srtp_ext(guchar *value, uint16_t len);
-guchar *compute_srtp_iv(guchar **pp_iv, guchar *salting_key,
-                        uint32_t salting_key_len, guchar *ssrc,
-                        uint64_t packet_index);
+void compute_srtp_iv(guchar *pp_iv, guchar *salting_key,
+                     uint32_t salting_key_len, guchar *ssrc,
+                     guchar *packet_index);
 
 void srtp_key_derivation(struct SrtpEncryptionCtx *srtp_encrption_ctx,
                          struct cipher_suite_info *cipher_suite_info);

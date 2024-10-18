@@ -8,6 +8,7 @@
 #include <openssl/bn.h>
 #include <openssl/types.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -78,17 +79,16 @@ void aes_test() {
 
   /////
   printf("Test AES Mode : CM");
-  hexstr_to_char_2(&ctx->client->IV, "cc681eaa679a4d70bd2e6a1099eb6a6d");
-  block_hex = "1400000c000500000000000c4366e450";
+  len = hexstr_to_char_2(&ctx->client->IV, "3511c3d9d5fc86619febd91467380000");
+  block_hex = "1400000c000500000000000c4366e450f4d5828d2e5341a6";
   ctx->client->mode = CM;
 
   len = hexstr_to_char_2(&block, block_hex);
-  block = realloc(block, len + 300);
 
   len = encrypt_aes(ctx->client, block, 0, len);
 
   encrypted_bloc = block;
-  printf("after encryption \n");
+  printf("after encryption %d\n", len);
 
   print_hex(encrypted_bloc, len);
 
@@ -131,16 +131,22 @@ void key_generate_keystream(guchar *counter) {}
 void test_srtp_iv() {
   printf("testing srtp iv generateiton \n");
 
-  guchar *iv;
-  uint32_t ssrc = 0x1133231;
-  gchar *salt_key = "f0f1f2f3f4f5f6f7f8f9fafbfcfd";
+  guchar iv[16];
+  uint64_t ssrc = 0xdeadbeef;
+  gchar *salt_key = "9e94cabcc69ccae5b2f7da076b1b";
   guchar *salt_key_bin;
   uint32_t key_len = hexstr_to_char_2(&salt_key_bin, salt_key);
 
-  compute_srtp_iv(&iv, salt_key_bin, key_len, &ssrc, 0);
-  //  compute_srtp_iv(&iv, salt_key_bin, key_len, &ssrc, 0);
+  uint64_t packet_index = 17767;
+  compute_srtp_iv(iv, salt_key_bin, key_len, &ssrc, (guchar *)&packet_index);
 
   print_hex(iv, 16);
+
+  guchar *expected;
+  hexstr_to_char_2(&expected, "9e94cabc1831740ab2f7da072e7c0000");
+  memcmp(iv, expected, 16);
+
+  printf("iv derivation test successful");
 }
 
 void test_srtp_key_derivation() {
@@ -225,10 +231,10 @@ void test_srtp_encryption() {
   init_aes(&srtp_encryption_ctx->aes, srtp_encryption_ctx->k_e,
            cipher_info->key_size, NULL, 0, NULL, CM);
 
-  struct Rtp *rtp = malloc(sizeof(struct Rtp) + 32);
+  uint32_t len = 32;
+  struct Rtp *rtp = malloc(sizeof(struct Rtp) + len);
 
-  uint32_t len = 24;
-  memset(rtp->payload, 0x11, len);
+  memset(rtp->payload, 0x0, len);
   print_hex(rtp->payload, len);
 
   rtp->ssrc = ssrc;
@@ -238,18 +244,68 @@ void test_srtp_encryption() {
 
   guchar *expected;
   hexstr_to_char_2(&expected, "E03EAD0935C95E80E166B16DD92B4EB4"
-                              "D23513162B02D0F72A43A2FE4A5F97AB");
-  print_hex(rtp->payload, 32);
+                              "D23513162B02D0F72A43A2FE4A5F97AB"
+                              "41E95B3BB0A2E8DD477901E4FCA894C0");
+  print_hex(rtp->payload, len);
   assert(memcmp(expected, rtp->payload, 32) == 0);
   printf("srtp encryption successful \n");
 }
 void test_srtp_mac() {}
 
+void test_srtp() {
+
+  struct srtp_ctx *srtp;
+
+  struct encryption_keys *encryption_keys =
+      calloc(1, sizeof(struct encryption_keys));
+
+  struct cipher_suite_info *cipher_info;
+  set_cipher_suite_info(&cipher_info, SRTP_AES128_CM_HMAC_SHA1_80);
+  encryption_keys->cipher_suite_info = cipher_info;
+
+  encryption_keys->client_write_key = malloc(cipher_info->key_size);
+  encryption_keys->client_write_SRTP_salt = malloc(cipher_info->salt_key_len);
+
+  guchar *key_block;
+  hexstr_to_char_2(&key_block,
+                   "E1F97A0D3E018BE0D64FA32C06DE4139" // master encrytion key
+                   "0EC675AD498AFEEBB6960B3AABE6");   // master salt
+
+  copy_key_block(key_block, &encryption_keys->client_write_key,
+                 cipher_info->key_size,
+                 &encryption_keys->client_write_SRTP_salt,
+                 cipher_info->salt_key_len, NULL);
+
+  init_srtp(&srtp, encryption_keys);
+
+  struct Rtp *rtp_packet = malloc(sizeof(struct Rtp) + 400);
+  hexstr_to_char_2(&rtp_packet, "a1664567507ed7abdeadbeef01000000");
+
+  guchar *rtp_payload;
+  uint32_t rtp_payload_size = hexstr_to_char_2(
+      &rtp_payload,
+      "6742c01fd9005005bb016a020202800001f480007530078c1924000000000006000000");
+  memcpy(rtp_packet->payload, rtp_payload, rtp_payload_size);
+
+  printf("to encrypt rtp packet\n");
+  printf("header\n");
+  print_hex(rtp_packet, sizeof(struct Rtp));
+  printf("payload\n");
+  print_hex(rtp_packet->payload, rtp_payload_size);
+
+  encrypt_srtp(srtp->client, rtp_packet, &rtp_payload_size);
+
+  printf("srtp encrypted payload\n");
+  print_hex(rtp_packet->payload, rtp_payload_size);
+}
 int main() {
-  //  test_srtp_mac();
-  test_srtp_encryption();
+
+  // test_srtp_mac();
+  // test_srtp_encryption();
   // test_srtp_key_derivation();
   // test_srtp_iv();
-  //      aes_test();
-  //       prf_test();
+  // test_srtp();
+  //  aes_test();
+  // prf_test();
 }
+// 24 d5 a4 de 5f 55 84 b2 77 f7 ae 50 c2 8e 69 4c

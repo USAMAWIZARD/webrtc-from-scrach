@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 static gchar *get_string_from_json_object(JsonObject *object) {
   JsonNode *root;
   JsonGenerator *generator;
@@ -57,24 +58,6 @@ void get_random_string(gchar **data_pointer, uint32_t length, uint8_t type) {
 
   close(f_random);
 }
-void print_hex(const unsigned char *data, size_t length) {
-  for (size_t i = 0; i < length; i++) {
-    printf("%02x ", data[i]);
-  }
-  printf("\n");
-}
-
-uint32_t hexstr_to_char_2(guchar **p_str, gchar *str) {
-  BIGNUM *bignum = BN_new();
-  BN_hex2bn(&bignum, str);
-  uint32_t byte_required = BN_num_bytes(bignum);
-  guchar *converted_str = malloc(byte_required);
-  BN_bn2bin(bignum, converted_str);
-  *p_str = converted_str;
-
-  return byte_required;
-}
-
 guchar *hexstr_to_char(const char *hexstr) {
   size_t len = strlen(hexstr);
   if (len % 2 != 0)
@@ -113,4 +96,40 @@ void increment_binary_number(unsigned char *number, size_t length) {
     }
   }
 }
+void print_hex(const unsigned char *data, size_t length) {
+  return;
+  for (size_t i = 0; i < length; i++) {
+    printf("%02x ", data[i]);
+  }
+  printf("\n");
+}
 
+uint32_t hexstr_to_char_2(guchar **p_str, gchar *str) {
+  BIGNUM *bignum = BN_new();
+  BN_hex2bn(&bignum, str);
+  uint32_t byte_required = BN_num_bytes(bignum);
+  guchar *converted_str = malloc(byte_required);
+  BN_bn2bin(bignum, converted_str);
+  *p_str = converted_str;
+
+  return byte_required;
+}
+
+bool copy_key_block(guchar *key_block, ...) {
+
+  va_list arg_list;
+  va_start(arg_list, key_block);
+
+  guchar **data_ptr;
+
+  while ((data_ptr = va_arg(arg_list, guchar **)) != NULL) {
+
+    int size = va_arg(arg_list, int);
+    memcpy(*data_ptr, key_block, size);
+
+    printf(" size %d\n", size);
+    key_block += size;
+  }
+  va_end(arg_list);
+  return true;
+}

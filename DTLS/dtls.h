@@ -27,10 +27,6 @@ enum dtls_extentions {
   EXTEND_MASTER_SEC_EXT = 0x0017
 };
 
-enum cipher_suite {
-  TLS_RSA_WITH_AES_128_CBC_SHA = 0x2f00,
-  SRTP_AES128_CM_HMAC_SHA1_80 = 0x0100
-};
 enum key_exchange { RSA_KEY_EXCHANGE };
 enum cipher { AES_128_CBC = 128 };
 

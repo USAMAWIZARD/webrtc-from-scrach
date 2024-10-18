@@ -38,6 +38,7 @@ static gchar *get_string_from_json_object(JsonObject *object) {
   return text;
 }
 
+extern FILE *fptr;
 void user_defined_read_data(char *file_name,
                             void(send_rtp_packet)(struct RtpStream *,
                                                   unsigned char *, int),
@@ -60,10 +61,13 @@ void user_defined_read_data(char *file_name,
 
   AVPacket *pkt = av_packet_alloc();
 
+  fptr = fopen("test2.h264", "rb");
+  g_assert(fptr);
+
   while (av_read_frame(ctx, pkt) >= 0) {
     static int i = 1;
-    rtpStream->timestamp += 3000;
     h264_parser_get_nal_unit(pkt->data, pkt->size, send_rtp_packet, rtpStream);
+    rtpStream->timestamp += 3000;
 
     // if(i==4)
     // exit(0);

@@ -59,7 +59,7 @@ struct __attribute__((packed)) Rtp {
   unsigned int timestamp : 32;
   unsigned int ssrc : 32;
   unsigned int csrc : 32;
-  char payload[];
+  guchar payload[];
 };
 struct RtpSession *create_rtp_session();
 void init_rtp_stream(struct RtpStream *stream, struct CandidataPair *pair,

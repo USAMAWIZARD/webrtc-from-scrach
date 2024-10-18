@@ -59,7 +59,7 @@ struct Rtp *init_rtp_packet(struct RtpStream *rtpStream) {
   rtp_packet_packet->seq_no = htons(rtpStream->seq_no); // htons(rand());
   rtp_packet_packet->csrc_count = 1;
   rtp_packet_packet->ssrc = htonl(rtpStream->ssrc);
-  rtp_packet_packet->csrc = 1;
+  rtp_packet_packet->csrc = 0xffffffff;
   rtp_packet_packet->timestamp = 0;
 
   return rtp_packet_packet;
@@ -71,12 +71,15 @@ struct RtpStream *create_rtp_stream(struct RtpSession *rtp_session,
   // set src and remote ip port
   struct RtpStream *newRtpStream;
   newRtpStream = malloc(sizeof(struct RtpStream));
-  newRtpStream->media_data_callback = track->get_data_callback;
+  if (track) {
+    newRtpStream->media_data_callback = track->get_data_callback;
+    newRtpStream->callback_data = track->userdata;
+  }
 
   newRtpStream->ssrc = ssrc;
   newRtpStream->payload_type = payload_type;
-  newRtpStream->callback_data = track->userdata;
-  newRtpStream->seq_no = rand();
+  newRtpStream->seq_no = 100;
+  newRtpStream->timestamp = 100;
 
   return newRtpStream;
 }
@@ -84,7 +87,6 @@ void init_rtp_stream(struct RtpStream *stream, struct CandidataPair *pair,
                      struct SrtpEncryptionCtx *srtp_encryption_ctx) {
 
   stream->socket_len = sizeof(struct sockaddr_in);
-  stream->timestamp = rand();
   stream->pair = pair;
   stream->rtp_packet = init_rtp_packet(stream);
   stream->srtp_encryption_ctx = srtp_encryption_ctx;
@@ -102,19 +104,19 @@ void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
   memcpy(rtpStream->rtp_packet->payload, payload, payload_size);
 
   if (true) { // padding in case of block cipher
-    // uint8_t padding_size = 16 - (payload_size % 16);
-    // if (padding_size != 16) {
-    //   rtpStream->rtp_packet->padding = 1;
-    //   rtpStream->rtp_packet->payload[payload_size + padding_size - 1] =
-    //       padding_size;
-    //   payload_size += padding_size;
-    // } else
-    //   rtpStream->rtp_packet->padding = 0;
+    uint8_t padding_size = 16 - (payload_size % 16);
+    if (padding_size != 16) {
+      rtpStream->rtp_packet->padding = 1;
+      rtpStream->rtp_packet->payload[payload_size + padding_size - 1] =
+          padding_size;
+      payload_size += padding_size;
+    } else
+      rtpStream->rtp_packet->padding = 0;
   }
 
   if (rtpStream->srtp_encryption_ctx) {
-    // encrypt_srtp(rtpStream->srtp_encryption_ctx, rtpStream->rtp_packet,
-    //              &payload_size);
+    encrypt_srtp(rtpStream->srtp_encryption_ctx, rtpStream->rtp_packet,
+                 &payload_size);
   }
 
   int bytes =
@@ -123,6 +125,7 @@ void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
              (struct sockaddr *)(rtpStream->pair->p1->src_socket), socket_len);
 
   usleep(15000);
+
   if (bytes == -1) {
     printf("\n failed to send the data %s  %d  socket_len %d desc %d\n",
            strerror(errno), payload_size, socket_len,

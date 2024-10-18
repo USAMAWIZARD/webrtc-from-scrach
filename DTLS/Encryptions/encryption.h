@@ -20,6 +20,11 @@ struct RTCDtlsTransport;
 struct encryption_keys;
 struct cipher_suite_info;
 
+enum cipher_suite {
+  TLS_RSA_WITH_AES_128_CBC_SHA = 0x2f00,
+  SRTP_AES128_CM_HMAC_SHA1_80 = 0x0100
+};
+
 enum mode { CBC, CM };
 enum symitric_encrypt_algo { AES };
 
@@ -99,8 +104,6 @@ gchar *generate_encryption_key_block(BIGNUM *master_secret, BIGNUM *seed,
                                      guint16 selected_cipher_suite);
 bool parse_encryption_key_block(struct RTCDtlsTransport *transport,
                                 gchar *key_block);
-bool get_cipher_suite_info(enum cipher_suite cs, int *key_size, int *iv_size,
-                           int *hash_size);
 
 bool init_symitric_encryption(struct RTCDtlsTransport *transport);
 
@@ -128,4 +131,7 @@ void transpose_matrix(uint8_t (*round_key)[4]);
 bool init_client_server_encryption_ctx(union symmetric_encrypt *encryption_ctx,
                                        struct encryption_keys *encryption_keys,
                                        struct cipher_suite_info *cipher_info);
+
+bool set_cipher_suite_info(struct cipher_suite_info **pp_cipher_suite_info,
+                           uint16_t selected_cipher_suite);
 #endif // !_ENRYPTIONH_
