@@ -229,7 +229,8 @@ void on_dtls_packet(struct NetworkPacket *dtls_packet,
 void handle_server_hello(struct RTCDtlsTransport *transport,
                          struct DtlsServerHello *hello, struct llTVL *tvl);
 void handle_certificate(struct RTCDtlsTransport *transport,
-                        struct Certificate *certificate);
+                        struct Certificate *certificate, gchar *expected_hash,
+                        gchar *fingerprint_type);
 void handle_certificate_request(struct RTCDtlsTransport *transport,
                                 struct CertificateRequest *certificate_request);
 

@@ -9,11 +9,13 @@
 #include "json-glib/json-glib.h"
 #include <bits/pthreadtypes.h>
 #include <bits/types/struct_iovec.h>
+#include <ctype.h>
 #include <errno.h>
 #include <glib.h>
 #include <malloc.h>
 #include <math.h>
 #include <netinet/in.h>
+#include <openssl/asn1.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
 #include <openssl/ec.h>
@@ -214,8 +216,7 @@ void send_dtls_client_hello(struct RTCPeerConnection *peer, bool with_cookie) {
                    sizeof(struct DtlsClientHello) +
                        ntohs(dtls_client_hello->extention_len));
 
-  printf("DTLS hello sent\n");
-  // exit(0);
+  printf("--------------------- DTLS Client Hello  -------------------->\n");
 }
 uint8_t get_content_type(uint8_t handshake_type) {
 
@@ -352,13 +353,6 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
     iov[iov_len].iov_base = client_Ectx->recordIV;
     iov[iov_len].iov_len = 16;
     iov_len++;
-
-    printf("------------IV \n");
-    print_hex(encryption_ctx->client->IV, encryption_ctx->client->row_size * 4);
-
-    printf("-------------initial key \n");
-    print_hex(encryption_ctx->client->initial_key,
-              encryption_ctx->client->row_size * 4);
 
     // calculate mac of the packet
 
@@ -552,14 +546,14 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
 
       handshake_payload = last_similar_packet->all_fragmented_payload;
 
-      printf("all fragments aseembedled \n");
+      g_debug("all fragments aseembedled \n");
 
     } else {
-      printf("non fragmented \n");
+      g_debug("non fragmented \n");
     }
     switch (dtls_packet->handshake_type) {
     case handshake_type_server_hello:
-      printf("server hello \n");
+      printf("---------------------- Server Hello ------------------------\n");
       uint16_t dtls_hello_size = fragment_length;
 
       struct llTVL *tvl;
@@ -600,7 +594,9 @@ void on_dtls_packet(struct NetworkPacket *netowrk_packet,
 
       dtls_packet->parsed_handshake_payload.certificate = certificate;
 
-      handle_certificate(peer->dtls_transport, certificate);
+      handle_certificate(peer->dtls_transport, certificate,
+                         peer->parsed_remote_desc->fingerprint,
+                         peer->parsed_remote_desc->fingerprint_type);
 
       break;
     case handshake_type_server_key_exchange:
@@ -710,7 +706,6 @@ void handle_server_hello(struct RTCDtlsTransport *transport,
   transport->peer_random = r2;
 
   do {
-    printf("type %x \n", lltvl->type);
     switch (lltvl->type) {
     case SRTP_EXT:
       struct srtp_ext ext = parse_srtp_ext(lltvl->value, lltvl->len);
@@ -726,8 +721,45 @@ void handle_server_hello(struct RTCDtlsTransport *transport,
     lltvl = lltvl->next_tvl;
   } while (lltvl != NULL);
 }
+
+gboolean compare_certificate_fingerprint(guchar *certificate,
+                                         uint16_t certificate_len,
+                                         gchar *expected_fingerprint,
+                                         gchar *fingerprint_type) {
+  GChecksumType type;
+  if (strncmp(fingerprint_type, "sha-256", 7) == 0) {
+    type = G_CHECKSUM_SHA256;
+  }
+
+  uint16_t checksum_len = g_checksum_type_get_length(type);
+  GChecksum *checksum = g_checksum_new(type);
+  g_checksum_update(checksum, certificate, certificate_len);
+  const gchar *calculated_fingerprint = g_checksum_get_string(checksum);
+  printf("calculated fingerpring from peer certificate %s\n",
+         calculated_fingerprint);
+
+  while (!(expected_fingerprint == '\0' || checksum_len == 0)) {
+    if (expected_fingerprint[0] == ':') {
+      expected_fingerprint++;
+      continue;
+    }
+    if (tolower(calculated_fingerprint[0]) != tolower(expected_fingerprint[0]))
+      return false;
+
+    calculated_fingerprint++;
+    expected_fingerprint++;
+    checksum_len--;
+  }
+
+  if (checksum_len == 0)
+    return true;
+  else
+    return false;
+}
+
 void handle_certificate(struct RTCDtlsTransport *transport,
-                        struct Certificate *certificate) {
+                        struct Certificate *certificate,
+                        gchar *expected_fingerprint, gchar *fingerprint_type) {
   X509 *cert;
   printf("%d\n", certificate->certificate_len);
   const guchar *ptr_certificate = certificate->certificate;
@@ -735,6 +767,16 @@ void handle_certificate(struct RTCDtlsTransport *transport,
 
   if (!cert) {
     printf("unable to parse certificate\n");
+    exit(0);
+    return;
+  }
+
+  if (!compare_certificate_fingerprint(
+          certificate->certificate, certificate->certificate_len,
+          expected_fingerprint, fingerprint_type)) {
+    printf("certificate in the SDP does not match the dtls certificate "
+           "fingerprint "
+           "exiting...\n");
     exit(0);
     return;
   }
@@ -1033,7 +1075,7 @@ bool do_certificate_verify(struct RTCDtlsTransport *transport) {
 
     return true;
   } else {
-    printf("signature algo not supported \n");
+    printf("signature algorithm not supported \n");
   }
 
   return false;
@@ -1054,7 +1096,7 @@ bool do_client_finished(struct RTCDtlsTransport *transport) {
       PRF(transport->encryption_keys->master_secret, "client finished",
           all_message_hash_bn, G_CHECKSUM_SHA256, 12);
 
-  printf("verify data finish ");
+  printf("prf dtls finish message verify data  \n");
   print_hex(verify_data, 12);
   send_dtls_packet(transport, handshake_type_finished, verify_data, 12);
 

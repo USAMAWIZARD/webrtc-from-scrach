@@ -1,12 +1,18 @@
+#pragma once
 #include "../WebRTC/webrtc.h"
 #include <json-glib/json-glib.h>
+#include <stdbool.h>
 #ifndef _SDPH_
 #define _SDPH_
+
 struct RTCSessionDescription {
   char *type;
   char *sdp;
 };
-
+struct ParsedRemoteDescription {
+  gchar *fingerprint;
+  gchar *fingerprint_type;
+};
 JsonObject *get_test_ofer();
 char *get_sdp_constants();
 char *generate_unmached_desc(struct RTCRtpTransceivers *transceiver);

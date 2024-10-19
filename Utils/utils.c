@@ -126,8 +126,6 @@ bool copy_key_block(guchar *key_block, ...) {
 
     int size = va_arg(arg_list, int);
     memcpy(*data_ptr, key_block, size);
-
-    printf(" size %d\n", size);
     key_block += size;
   }
   va_end(arg_list);

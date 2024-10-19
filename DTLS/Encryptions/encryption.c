@@ -62,8 +62,6 @@ guchar *PRF(BIGNUM *secret, guchar *label, BIGNUM *seed,
   return ALL_hmac;
 }
 
-struct encryption_keys new_encrytion_keys() {}
-
 struct encryption_keys *
 get_srtp_enryption_keys(struct RTCDtlsTransport *transport, guchar *key_block) {
 
@@ -93,10 +91,11 @@ get_srtp_enryption_keys(struct RTCDtlsTransport *transport, guchar *key_block) {
                  &encryption_keys->server_write_key, srtp_key_size,
                  &encryption_keys->client_write_SRTP_salt, salt_key_len,
                  &encryption_keys->server_write_SRTP_salt, salt_key_len, NULL);
-  printf("master client write key\n");
+  printf("------DTLS EXPORTER ------\n");
+  printf("Master Srtp Client write key: \n");
   print_hex(encryption_keys->client_write_key, cipher_info->key_size);
 
-  printf("master salt key \n");
+  printf("Master Srtp Client write salt key \n");
   print_hex(encryption_keys->client_write_SRTP_salt, cipher_info->salt_key_len);
 
   return encryption_keys;
@@ -166,7 +165,7 @@ bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
   case SRTP_AES128_CM_HMAC_SHA1_80:
     init_srtp(&symitric_encrypt->srtp,
               encryption_keys); // srtp ctx containes an aes context
- 
+
     break;
   default:
     printf("no  such cipher sute supported \n");

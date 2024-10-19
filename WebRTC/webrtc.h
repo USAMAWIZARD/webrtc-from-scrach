@@ -3,6 +3,7 @@
 #define _WEBRTCH_
 
 #include "../DTLS/dtls.h"
+#include "../SDP/sdp.h"
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -29,11 +30,13 @@ enum RTC_SIGNALLING_STATE {
   HAVE_REMOTE_OFFER,
   HAVE_REMOTE_ANSWER
 };
+
 struct RTCPeerConnection {
   char *connection_state;
   pthread_t *listener_thread_id;
   struct RTCSessionDescription *current_local_desc;
   struct RTCSessionDescription *current_remote_desc;
+  struct ParsedRemoteDescription *parsed_remote_desc;
   char *ice_connection_state;
   enum RTC_SIGNALLING_STATE signalling_state;
   struct MediaStreamTrack *media_tracks;

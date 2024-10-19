@@ -48,7 +48,6 @@ void user_defined_read_data(char *file_name,
   if (avformat_open_input(&ctx, file_name, NULL, NULL)) {
     exit(0);
   }
-  printf("testing\n");
   avformat_find_stream_info(ctx, NULL);
 
   AVCodecParameters *codec_par = ctx->streams[0]->codecpar;
@@ -61,7 +60,7 @@ void user_defined_read_data(char *file_name,
 
   AVPacket *pkt = av_packet_alloc();
 
-  fptr = fopen("test2.h264", "rb");
+  fptr = fopen("sample.h264", "rb");
   g_assert(fptr);
 
   while (av_read_frame(ctx, pkt) >= 0) {
@@ -197,3 +196,5 @@ gint main(gint argc, gchar **argv) {
   g_main_loop_run(main_loop);
   g_main_loop_unref(main_loop);
 }
+
+

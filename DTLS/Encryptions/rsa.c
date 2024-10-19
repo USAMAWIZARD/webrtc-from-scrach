@@ -102,7 +102,7 @@ uint16_t encrypt_rsa(guchar **p_enrypted_data, EVP_PKEY *pub_key, guchar *data,
 
   RSA *rsa = EVP_PKEY_get1_RSA(pub_key);
   if (!rsa) {
-    printf("cannot get public key frmo rsa certificate \n");
+    printf("cannot get public key from rsa certificate \n");
     exit(0);
   }
 
@@ -114,11 +114,11 @@ uint16_t encrypt_rsa(guchar **p_enrypted_data, EVP_PKEY *pub_key, guchar *data,
 
   if (RSA_get0_d(rsa)) {
     xponent = RSA_get0_d(rsa);
-    printf("using private key fro signing \n");
+    printf("using private key for signing \n");
     paddedmsg = get_padded_message(data, data_len, key_size, hash);
   } else if (RSA_get0_e(rsa)) {
     xponent = RSA_get0_e(rsa);
-    printf("using publick key fro encryption \n");
+    printf("using public key for encryption \n");
     paddedmsg = get_padded_message(data, data_len, key_size, -1);
   }
   modulus = RSA_get0_n(rsa);
@@ -140,14 +140,12 @@ uint16_t encrypt_rsa(guchar **p_enrypted_data, EVP_PKEY *pub_key, guchar *data,
   guchar *encrypted_premaster_secret_bin =
       malloc(encrypted_premaster_secret_bin_len);
 
-  printf("unencrypted padded premaster key %s\n\n", BN_bn2hex(paddedmsg_bn));
+  printf("unencrypted padded data %s\n\n", BN_bn2hex(paddedmsg_bn));
   print_hex(paddedmsg, BN_num_bytes(paddedmsg_bn));
-  printf("encrypted premaster premaster key %s\n",
-         BN_bn2hex(encrypted_premaster_secret));
+  printf("encrypted data %s\n", BN_bn2hex(encrypted_premaster_secret));
   BN_bn2bin(encrypted_premaster_secret, encrypted_premaster_secret_bin);
 
-  //  print_hex(encrypted_premaster_secret_bin,
-  //  encrypted_premaster_secret_bin_len);
+  print_hex(encrypted_premaster_secret_bin, encrypted_premaster_secret_bin_len);
 
   *p_enrypted_data = encrypted_premaster_secret_bin;
 
@@ -176,6 +174,6 @@ BIGNUM *get_dtls_rand_appended(BIGNUM *r1, BIGNUM *r2) {
 
   BN_hex2bn(&r, appended);
 
-  printf("apppended random %s\n", BN_bn2hex(r));
+  g_debug("apppended random %s\n", BN_bn2hex(r));
   return r;
 }

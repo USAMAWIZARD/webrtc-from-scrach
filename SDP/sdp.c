@@ -4,6 +4,7 @@
 #include "glib.h"
 #include <json-glib/json-glib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 char *get_sdp_constants() {
   char *sdp_header = g_strdup_printf("v=0\n"
@@ -124,6 +125,7 @@ bool parse_sdp_string(struct RTCPeerConnection *peer,
   rest_lines = sdp->sdp;
   char *mid = NULL;
   // todo also accept only \n to be rfc complient
+  peer->parsed_remote_desc = calloc(1, sizeof(struct ParsedRemoteDescription));
   while ((sdp_line = strtok_r(rest_lines, "\r\n", &rest_lines))) {
     char *rem = sdp_line;
     char *attribute = strtok_r(rem, "=", &rem);
@@ -151,6 +153,13 @@ bool parse_sdp_string(struct RTCPeerConnection *peer,
         strtok_r(ice_ufrag, ":", &ice_ufrag);
         peer->transceiver->remote_ice_ufrag = ice_ufrag;
         printf(" %s \n", ice_ufrag);
+      } else if (strncmp(rem, "fingerprint", 10) == 0) {
+        char *fingerprint = rem;
+        strtok_r(fingerprint, ":", &fingerprint);
+        char *type;
+        type = strtok_r(fingerprint, " ", &fingerprint);
+        peer->parsed_remote_desc->fingerprint = fingerprint;
+        peer->parsed_remote_desc->fingerprint_type = type;
       }
 
       break;

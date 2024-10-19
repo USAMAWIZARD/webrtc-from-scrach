@@ -134,7 +134,7 @@ void *packet_listner_thread(void *peer_v) {
       packet->total_bytes_recvied = bytes;
 
       if (packet->protocol == STUN) {
-        printf("stun packet \n");
+        printf("recived stun packet \n");
         on_stun_packet(packet, peer);
       } else if (packet->protocol == DTLS) {
 
@@ -342,8 +342,6 @@ int get_candidates_fd_array(struct RTCPeerConnection *peer,
   }
   *candidate_fd = fd_array;
 
-  // printf("%d %d %d \n", i, fd_array, i - fd_array);
-  // printf("testong\n");
   return i - fd_array;
 }
 

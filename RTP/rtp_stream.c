@@ -44,7 +44,6 @@ RTP payload header.
 #include <sys/socket.h>
 #include <unistd.h>
 
-void getdata(void *data);
 void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
                      uint32_t payload_size);
 
@@ -117,6 +116,8 @@ void send_rtp_packet(struct RtpStream *rtpStream, char *payload,
   if (rtpStream->srtp_encryption_ctx) {
     encrypt_srtp(rtpStream->srtp_encryption_ctx, rtpStream->rtp_packet,
                  &payload_size);
+  } else {
+    printf("no srtp context found");
   }
 
   int bytes =

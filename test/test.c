@@ -302,10 +302,9 @@ int main() {
 
   // test_srtp_mac();
   // test_srtp_encryption();
-  // test_srtp_key_derivation();
+  //  test_srtp_key_derivation();
   // test_srtp_iv();
   // test_srtp();
-  //  aes_test();
-  // prf_test();
+  aes_test();
+  //  prf_test();
 }
-// 24 d5 a4 de 5f 55 84 b2 77 f7 ae 50 c2 8e 69 4c
