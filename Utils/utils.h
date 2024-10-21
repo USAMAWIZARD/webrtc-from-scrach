@@ -19,3 +19,6 @@ void print_aes_matrix(uint8_t (*ptr)[4], uint8_t numrow);
 
 bool copy_key_block(guchar *key_block, ...);
 void increment_binary_number(unsigned char *number, size_t length);
+
+void increment_counter(unsigned char (*number)[4]);
+void print_aes_matrix2(uint8_t (*ptr)[4], uint8_t numrow);

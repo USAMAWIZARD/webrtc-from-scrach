@@ -70,6 +70,16 @@ guchar *hexstr_to_char(const char *hexstr) {
   chrs[final_len] = '\0';
   return chrs;
 }
+void print_aes_matrix2(uint8_t (*ptr)[4], uint8_t numrow) {
+  printf("\n\n");
+
+  for (int i = 0; i < numrow; i++) {
+    for (int j = 0; j < numrow; j++) {
+      printf(" %x ", ptr[i][j]);
+    }
+    printf("\n");
+  }
+}
 void print_aes_matrix(uint8_t (*ptr)[4], uint8_t numrow) {
   return;
   printf("\n\n");
@@ -95,7 +105,10 @@ void increment_binary_number(unsigned char *number, size_t length) {
       break;
     }
   }
+
+  print_aes_matrix2(number, 4);
 }
+
 void print_hex(const unsigned char *data, size_t length) {
   return;
   for (size_t i = 0; i < length; i++) {
@@ -130,4 +143,32 @@ bool copy_key_block(guchar *key_block, ...) {
   }
   va_end(arg_list);
   return true;
+}
+
+void increment_counter(unsigned char (*number)[4]) {
+
+  guchar char_num[2];
+  char_num[0] = number[2][3];
+  char_num[1] = number[3][3];
+
+  print_aes_matrix2(number, 4);
+
+  int carry = 1;
+
+  for (int i = 2 - 1; i >= 0; i--) {
+    unsigned int result = char_num[i] + carry;
+
+    if (result > 0xFF) {
+      char_num[i] = 0x00;
+    } else {
+      char_num[i] = (unsigned char)result;
+      carry = 0;
+      break;
+    }
+  }
+
+  number[2][3] = char_num[0];
+  number[3][3] = char_num[1];
+
+  print_aes_matrix2(number, 4);
 }

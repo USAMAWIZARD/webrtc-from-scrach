@@ -183,7 +183,7 @@ void encrypt_srtp(struct SrtpEncryptionCtx *srtp_context,
 
   GHmac *srtp_hmac = g_hmac_new(G_CHECKSUM_SHA1, srtp_context->k_a,
                                 srtp_context->cipher_suite_info->hmac_key_len);
-  g_hmac_update(srtp_hmac, (guchar *)rtp_packet, sizeof(*rtp_packet));
+  g_hmac_update(srtp_hmac, (guchar *)rtp_packet, sizeof(struct Rtp));
   g_hmac_update(srtp_hmac, rtp_packet->payload, *payloadlen);
   g_hmac_update(srtp_hmac, (guchar *)&srtp_context->roc, 4);
   g_hmac_get_digest(srtp_hmac, computed_mac, &hmac_len);

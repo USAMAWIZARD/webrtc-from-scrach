@@ -13,7 +13,36 @@
 #include <string.h>
 #include <strings.h>
 struct Rtp;
+struct aes_ctx *get_test_aes_ctx(gchar *key, gchar *iv, enum mode mode) {
+  guchar *bin_iv, *bin_key;
 
+  uint16_t key_size = hexstr_to_char_2(&bin_key, key);
+  uint16_t iv_size = hexstr_to_char_2(&bin_iv, iv);
+  struct encryption_keys encryption_key;
+  struct cipher_suite_info *cipher_info =
+      malloc(sizeof(struct cipher_suite_info));
+  cipher_info->symitric_algo = AES;
+  cipher_info->mode = mode;
+
+  encryption_key.client_write_key = bin_key;
+  encryption_key.client_write_IV = bin_iv;
+  encryption_key.client_write_mac_key = bin_iv;
+
+  cipher_info->key_size = key_size;
+  cipher_info->iv_size = iv_size;
+  cipher_info->hmac_key_len = 14;
+
+  encryption_key.server_write_IV = bin_key;
+  encryption_key.server_write_key = bin_iv;
+  encryption_key.server_write_mac_key = bin_iv;
+
+  union symmetric_encrypt symmetric_encrypt;
+  init_client_server_encryption_ctx(&symmetric_encrypt, &encryption_key,
+                                    cipher_info);
+
+  struct aes_ctx *ctx = symmetric_encrypt.aes;
+  return ctx;
+}
 void aes_test() {
 
   // to encrypt
@@ -80,10 +109,11 @@ void aes_test() {
   /////
   printf("Test AES Mode : CM");
   len = hexstr_to_char_2(&ctx->client->IV, "3511c3d9d5fc86619febd91467380000");
-  block_hex = "1400000c000500000000000c4366e450f4d5828d2e5341a6";
+  block_hex = "1400000c000500000000000c4366e450f4d528d2e5341a6";
   ctx->client->mode = CM;
 
   len = hexstr_to_char_2(&block, block_hex);
+  block = realloc(block, len + 300);
 
   len = encrypt_aes(ctx->client, block, 0, len);
 
@@ -298,6 +328,76 @@ void test_srtp() {
   printf("srtp encrypted payload\n");
   print_hex(rtp_packet->payload, rtp_payload_size);
 }
+
+void test_aes_decrypt() {
+
+  printf("testing AES decryption\n");
+  printf("test AES Mode :CBC \n");
+
+  struct aes_ctx *aes_ctx =
+      get_test_aes_ctx("aaf5f65767682a3c62ca89863926f24d",
+                       "3511c3d9d5fc86619febd91467380000", CBC);
+
+  uint8_t *block_hex = "8625B940519AF8AA776FD094120D19C7"; // encryption
+
+  uint8_t *block; // encrypted
+
+  uint32_t len = hexstr_to_char_2(&block, block_hex);
+
+  len = decrypt_aes(aes_ctx->client, block, 0, len);
+
+  printf("after decryption \n");
+
+  print_hex(block, len);
+
+  guchar *bin_test_encrypted;
+  hexstr_to_char_2(&bin_test_encrypted, "1400000c000500000000000c4366e450");
+
+  assert(memcmp(block, bin_test_encrypted, len) == 0);
+  printf("decryption with AES CBC TEST successfull \n");
+}
+
+// void increment_counter(unsigned char (*number)[4]) {
+//
+//   guchar char_num[4];
+//   char_num[0] = number[0][3];
+//   char_num[1] = number[1][3];
+//   char_num[2] = number[2][3];
+//   char_num[3] = number[3][3];
+//
+//   print_aes_matrix(number, 4);
+//
+//   int carry = 1;
+//
+//   for (int i = 4 - 1; i >= 0; i--) {
+//     unsigned int result = char_num[i] + carry;
+//
+//     if (result > 0xFF) {
+//       char_num[i] = 0x00;
+//     } else {
+//       char_num[i] = (unsigned char)result;
+//       carry = 0;
+//       break;
+//     }
+//   }
+//
+//   number[0][3] = char_num[0];
+//   number[1][3] = char_num[1];
+//   number[2][3] = char_num[2];
+//   number[3][3] = char_num[3];
+//
+//   print_aes_matrix(number, 4);
+// }
+
+void test_inverse_matrix_incr() {
+
+  uint8_t add[4][4] = {{0x02, 0x03, 0x01, 0xff},
+                       {0x01, 0x02, 0x03, 0xff},
+                       {0x01, 0x01, 0x02, 0x00},
+                       {0x03, 0x01, 0x01, 0x01}};
+
+  increment_counter(add);
+}
 int main() {
 
   // test_srtp_mac();
@@ -305,6 +405,8 @@ int main() {
   //  test_srtp_key_derivation();
   // test_srtp_iv();
   // test_srtp();
-  aes_test();
+  //  aes_test();
+  // test_aes_decrypt();
   //  prf_test();
+  test_inverse_matrix_incr();
 }

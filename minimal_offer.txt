@@ -137,7 +137,7 @@ Datagram Transport Layer Security
 
 
 
-certificate compare 
+signal passing for callbacks
 dtls decrypt 
 ice dtls and webrtc state changes
 refactor all code 
