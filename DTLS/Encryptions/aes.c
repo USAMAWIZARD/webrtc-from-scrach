@@ -377,7 +377,7 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
 
   add_aes_padding((uint8_t *)block, block_len, padding_size, ctx->mode);
 
-  memcpy(ctx->recordIV, ctx->IV, ctx->iv_size);
+  memcpy(ctx->recordIV, ctx->IV, AES_BLOCK_SIZE);
 
   transpose_matrix(ctx->IV);
 
@@ -414,7 +414,7 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
   }
 
   if (ctx->mode == CBC)
-    get_random_string((gchar **)&ctx->IV, ctx->iv_size, 1);
+    get_random_string((gchar **)&ctx->IV, AES_BLOCK_SIZE, 1);
 
   return total_packet_len + padding_size;
 }
@@ -499,7 +499,7 @@ struct AesEnryptionCtx *init_aes(struct AesEnryptionCtx **encryption_ctx,
   aes_encryption_ctx->mac_key_size = mac_key_size;
   aes_encryption_ctx->iv_size = AES_BLOCK_SIZE;
   aes_encryption_ctx->key_size = write_key_size;
-  aes_encryption_ctx->recordIV = calloc(1, aes_encryption_ctx->iv_size);
+  aes_encryption_ctx->recordIV = calloc(1, AES_BLOCK_SIZE);
 
   aes_expand_key(aes_encryption_ctx);
   *encryption_ctx = aes_encryption_ctx;

@@ -12,10 +12,9 @@ sending a basic video from webrtc scrach implementation to a Gstreamer WebRTC Cl
 2. Run the following command to build the program:
 
 Build Scrach WebRTC implementation <br>
-   ```sh
-   make
-    ```
+   ` make`
 Build Gstreamer Client WebRTC <br>
+
 ```
 cd GstreamerClient
 make 
@@ -23,6 +22,7 @@ make
 
 
 ## Start Signalling Server
+
 ```
 cd SignallingServer/
 npm i 

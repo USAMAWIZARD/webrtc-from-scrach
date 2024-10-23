@@ -110,6 +110,7 @@ void increment_binary_number(unsigned char *number, size_t length) {
 }
 
 void print_hex(const unsigned char *data, size_t length) {
+  return;
   for (size_t i = 0; i < length; i++) {
     printf("%02x ", data[i]);
   }

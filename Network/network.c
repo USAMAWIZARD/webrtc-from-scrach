@@ -73,11 +73,11 @@ char *get_ip_str(const struct sockaddr *sa, char *s_ip, uint16_t *port,
 //
 void *packet_listner_thread(void *peer_v) {
   struct RTCPeerConnection *peer = (struct RTCPeerConnection *)peer_v;
-  uint16_t *sport = malloc(sizeof(uint16_t));
-  uint16_t *rport = malloc(sizeof(uint16_t));
-  char *sender_ip = malloc(20);
-  char *recv_ip = malloc(20);
-  guchar *udp_packet = malloc(1000);
+  uint16_t sport;
+  uint16_t rport;
+  char sender_ip[20];
+  char recv_ip[20];
+  guchar udp_packet[1000];
   socklen_t socklen = sizeof(struct sockaddr_in);
 
   struct sockaddr *sender_addr = malloc(sizeof(struct sockaddr));
@@ -119,13 +119,13 @@ void *packet_listner_thread(void *peer_v) {
       getsockname(sock_desc, receiver_addr, &socklen);
       packet->receiver_sock = receiver_addr;
 
-      get_ip_str(sender_addr, sender_ip, sport, socklen);
-      get_ip_str((struct sockaddr *)receiver_addr, recv_ip, rport, socklen);
+      get_ip_str(sender_addr, sender_ip, &sport, socklen);
+      get_ip_str((struct sockaddr *)receiver_addr, recv_ip, &rport, socklen);
 
       packet->sender_ip = sender_ip;
       packet->receiver_ip = recv_ip;
-      packet->sender_port = sport;
-      packet->receiver_port = rport;
+      packet->sender_port = &sport;
+      packet->receiver_port = &rport;
       packet->sock_desc = sock_desc;
       packet->sock_len = socklen;
 
