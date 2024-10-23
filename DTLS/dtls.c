@@ -318,6 +318,24 @@ bool send_dtls_packet(struct RTCDtlsTransport *dtls_transport,
 
   return true;
 }
+
+void dtls_symitric_encrypt(struct RTCDtlsTransport *transport) {
+  switch (transport->dtls_cipher_suite->symitric_algo) {
+  case AES:
+    switch (transport->dtls_cipher_suite->mode) {
+    case CBC:
+
+      break;
+    case CM:
+      printf("Coutnter mode is not supported");
+      exit(0);
+      break;
+    default:
+      printf("unsupported symitric algorithm for dtls \n");
+      exit(0);
+    }
+  }
+}
 uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
                          struct DtlsHeader *dtls_header,
                          struct HandshakeHeader *handshake,
@@ -347,8 +365,9 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
   ptr = ptr + payload_len;
 
   if (encrypt_packet) {
-    struct aes_ctx *encryption_ctx = transport->dtls_symitric_encrypt.dtls;
-    struct AesEnryptionCtx *client_Ectx = encryption_ctx->client;
+    struct dtls_ctx *encryption_ctx = transport->dtls_symitric_encrypt.dtls;
+    struct AesEnryptionCtx *client_Ectx =
+        encryption_ctx->client->encryption_ctx;
 
     iov[iov_len].iov_base = client_Ectx->recordIV;
     iov[iov_len].iov_len = 16;

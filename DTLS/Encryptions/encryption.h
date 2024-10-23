@@ -46,9 +46,12 @@ struct AesEnryptionCtx {
   uint8_t (*roundkeys[14])[4];
 };
 
-struct aes_ctx {
-  struct AesEnryptionCtx *client;
-  struct AesEnryptionCtx *server;
+struct dtls_ctx {
+  struct DtlsEncryptionCtx *client;
+  struct DtlsEncryptionCtx *server;
+  void (*encrypt_func)(void *encryption_ctx, uint8_t *block_data,
+                       uint16_t block_encrypt_offset,
+                       uint32_t total_packet_len);
 };
 
 struct srtp_ctx {
@@ -60,7 +63,7 @@ struct srtp_ctx {
 };
 
 union symmetric_encrypt {
-  struct aes_ctx *dtls;
+  struct dtls_ctx *dtls;
   struct srtp_ctx *srtp;
 };
 struct cipher_suite_info {
@@ -134,9 +137,9 @@ uint32_t decrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
 
 void transpose_matrix(uint8_t (*round_key)[4]);
 
-bool init_client_server_encryption_ctx(union symmetric_encrypt *encryption_ctx,
-                                       struct encryption_keys *encryption_keys,
-                                       struct cipher_suite_info *cipher_info);
+bool init_dtls_ctx(union symmetric_encrypt *encryption_ctx,
+                   struct encryption_keys *encryption_keys,
+                   struct cipher_suite_info *cipher_info);
 
 bool set_cipher_suite_info(struct cipher_suite_info **pp_cipher_suite_info,
                            uint16_t selected_cipher_suite);

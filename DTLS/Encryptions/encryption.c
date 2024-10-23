@@ -129,24 +129,33 @@ get_dtls_encryption_keys(struct RTCDtlsTransport *transport,
 
   return encryption_keys;
 }
-bool init_client_server_encryption_ctx(union symmetric_encrypt *encryption_ctx,
-                                       struct encryption_keys *encryption_keys,
-                                       struct cipher_suite_info *cipher_info) {
+
+bool init_dtls(union symmetric_encrypt *encryption_ctx,
+               struct encryption_keys *encryption_keys,
+               struct cipher_suite_info *cipher_info) {
+
+  struct dtls_ctx *dtls_encrytion_ctx = malloc(sizeof(struct dtls_ctx));
+  dtls_encrytion_ctx->client = calloc(1, sizeof(struct DtlsEncryptionCtx));
+  dtls_encrytion_ctx->server = calloc(1, sizeof(struct DtlsEncryptionCtx));
 
   switch (cipher_info->symitric_algo) {
   case AES:
-    struct aes_ctx *client_server_aes_ctx = malloc(sizeof(struct aes_ctx));
-    init_aes(&client_server_aes_ctx->client, encryption_keys->client_write_key,
-             cipher_info->key_size, encryption_keys->client_write_mac_key,
-             cipher_info->hmac_len, encryption_keys->client_write_IV,
-             cipher_info->mode);
 
-    init_aes(&client_server_aes_ctx->server, encryption_keys->server_write_key,
-             cipher_info->key_size, encryption_keys->server_write_mac_key,
-             cipher_info->hmac_len, encryption_keys->server_write_IV,
-             cipher_info->mode);
+    if (encryption_keys->client_write_key) {
+      init_aes(&dtls_encrytion_ctx->client->encryption_ctx,
+               encryption_keys->client_write_key, cipher_info->key_size,
+               encryption_keys->client_write_mac_key, cipher_info->hmac_len,
+               encryption_keys->client_write_IV, cipher_info->mode);
+    }
 
-    encryption_ctx->dtls = client_server_aes_ctx;
+    if (encryption_keys->server_write_key) {
+      init_aes(&dtls_encrytion_ctx->server->encryption_ctx,
+               encryption_keys->server_write_key, cipher_info->key_size,
+               encryption_keys->server_write_mac_key, cipher_info->hmac_len,
+               encryption_keys->server_write_IV, cipher_info->mode);
+    }
+
+    encryption_ctx->dtls = dtls_encrytion_ctx;
     break;
   }
   return true;
@@ -158,8 +167,7 @@ bool init_enryption_ctx(union symmetric_encrypt *symitric_encrypt,
 
   switch (cipher_info->selected_cipher_suite) {
   case TLS_RSA_WITH_AES_128_CBC_SHA:
-    init_client_server_encryption_ctx(symitric_encrypt, encryption_keys,
-                                      cipher_info);
+    init_dtls(symitric_encrypt, encryption_keys, cipher_info);
 
     break;
   case SRTP_AES128_CM_HMAC_SHA1_80:
