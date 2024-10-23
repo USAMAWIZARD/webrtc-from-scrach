@@ -19,7 +19,6 @@ Build Scrach WebRTC implementation <br>
 make
  ```
 
->>>>>>> ed99395e89f4e7cbb098d983debeb8768cf7c129
 Build Gstreamer Client WebRTC <br>
 
 ```
