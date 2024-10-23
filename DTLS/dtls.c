@@ -348,7 +348,7 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
   if (handshake != NULL)
     Hheader_payload_len += sizeof(struct HandshakeHeader);
 
-  guchar *packet = malloc(Hheader_payload_len + 64 + +400 +
+  guchar *packet = malloc(Hheader_payload_len + 64 + 400 +
                           16); //  length max hmac size max paddign size
   guchar *ptr = packet;
 
@@ -374,7 +374,6 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
     iov_len++;
 
     // calculate mac of the packet
-
     gsize hmac_len = transport->dtls_cipher_suite->hmac_len;
     GHmac *hmac = g_hmac_new(transport->dtls_cipher_suite->hmac_algo,
                              client_Ectx->mac_key, client_Ectx->mac_key_size);
@@ -385,6 +384,7 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
     g_hmac_update(hmac, (guchar *)&dtls_header->length, 2);
     g_hmac_update(hmac, (guchar *)handshake, sizeof(struct HandshakeHeader));
     g_hmac_update(hmac, dtls_payload, payload_len);
+    //
 
     guchar *dtls_packet_mac = malloc(hmac_len);
     g_hmac_get_digest(hmac, dtls_packet_mac, &hmac_len);
