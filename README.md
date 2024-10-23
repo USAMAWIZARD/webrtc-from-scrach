@@ -1,7 +1,10 @@
 
-This project tries to implement a very minamal webrtc implementation without considering any security details in RFC just to learn and understand in depth how WebRTC works  <br>
+This project tries to implement a very minamal webrtc implementation without considering much about to learn and understand in depth how WebRTC works  <br>
 
-this will just try to make a WebRTC connection from another peer and send a stream in the simplest way possible <br>
+It will make a WebRTC connection from another peer and send a stream in the simplest way possible <br>
+
+https://github.com/user-attachments/assets/f8e3003f-2fb2-470a-aa16-a6fb0e0c798b
+
 
 # WebRTC Streaming from Scrach implementtion to Gstreamer Client 
 sending a basic video from webrtc scrach implementation to a Gstreamer WebRTC Client.
@@ -12,7 +15,11 @@ sending a basic video from webrtc scrach implementation to a Gstreamer WebRTC Cl
 2. Run the following command to build the program:
 
 Build Scrach WebRTC implementation <br>
-   ` make`
+``` 
+make
+ ```
+
+>>>>>>> ed99395e89f4e7cbb098d983debeb8768cf7c129
 Build Gstreamer Client WebRTC <br>
 
 ```
@@ -48,3 +55,8 @@ cd ./GstreamerClient
 
 now WebRTC Scrach implementation Will send a video to Gstreamer Client.
 
+## TODO 
+make it browser compatible <br>
+add basic security checks <br>
+refactor implementation <br>
+update ICE DTLS WebRTC connection states <br>
