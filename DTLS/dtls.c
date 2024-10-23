@@ -347,7 +347,7 @@ uint8_t make_dtls_packet(struct RTCDtlsTransport *transport, struct iovec *iov,
   ptr = ptr + payload_len;
 
   if (encrypt_packet) {
-    struct aes_ctx *encryption_ctx = transport->dtls_symitric_encrypt.aes;
+    struct aes_ctx *encryption_ctx = transport->dtls_symitric_encrypt.dtls;
     struct AesEnryptionCtx *client_Ectx = encryption_ctx->client;
 
     iov[iov_len].iov_base = client_Ectx->recordIV;

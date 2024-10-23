@@ -93,6 +93,7 @@ struct AesEnryptionCtx *srtp_prf(struct SrtpEncryptionCtx *srtp_encrption_ctx,
     memcpy(i_data, toencrypt, 16);
     i -= 16;
     i_data += 16;
+    transpose_matrix(aes->IV);
   }
 
   return aes;
@@ -112,6 +113,8 @@ void srtp_key_derivation(struct SrtpEncryptionCtx *srtp_encrption_ctx,
            cipher_suite_info->salt_key_len);
 
   printf("----- SRTP KEY DERIVATION ------ \n");
+
+  printf("authentication key\n");
   print_hex(srtp_encrption_ctx->k_a,
             srtp_encrption_ctx->cipher_suite_info->hmac_key_len);
   printf("salt key\n");
@@ -155,7 +158,7 @@ void encrypt_srtp(struct SrtpEncryptionCtx *srtp_context,
 
   uint64_t index = (0) + ntohs(rtp_packet->seq_no);
 
-  guchar *iv = malloc(16);
+  guchar iv[16];
   uint32_t ssrc = ntohl(rtp_packet->ssrc);
 
   compute_srtp_iv(iv, srtp_context->k_s,

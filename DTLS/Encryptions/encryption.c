@@ -146,7 +146,7 @@ bool init_client_server_encryption_ctx(union symmetric_encrypt *encryption_ctx,
              cipher_info->hmac_len, encryption_keys->server_write_IV,
              cipher_info->mode);
 
-    encryption_ctx->aes = client_server_aes_ctx;
+    encryption_ctx->dtls = client_server_aes_ctx;
     break;
   }
   return true;

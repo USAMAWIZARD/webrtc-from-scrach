@@ -83,15 +83,16 @@ struct RTCDtlsTransport {
   uint16_t selected_signatuire_hash_algo;
   X509 *server_certificate;
   X509 *client_certificate;
+  struct ALLDtlsMessages *all_previous_handshake_msgs;
+  EVP_PKEY *pub_key;
+  EVP_PKEY *my_private_key;
+  EVP_PKEY *my_public_key;
   struct encryption_keys *encryption_keys;
   struct cipher_suite_info *dtls_cipher_suite;
   struct cipher_suite_info *srtp_cipher_suite;
   union symmetric_encrypt dtls_symitric_encrypt;
   union symmetric_encrypt srtp_symitric_encrypt;
-  struct ALLDtlsMessages *all_previous_handshake_msgs;
-  EVP_PKEY *pub_key;
-  EVP_PKEY *my_private_key;
-  EVP_PKEY *my_public_key;
+
 };
 struct __attribute__((packed)) DtlsHeader {
   uint8_t type;

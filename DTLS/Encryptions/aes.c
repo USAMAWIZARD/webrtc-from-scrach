@@ -379,8 +379,7 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
 
   memcpy(ctx->recordIV, ctx->IV, ctx->iv_size);
 
-  if (ctx->mode == CBC)
-    transpose_matrix(ctx->IV);
+  transpose_matrix(ctx->IV);
 
   uint8_t counter[16];
   for (int j = 0; j < data_encrytion_itration; j++) {
@@ -399,10 +398,9 @@ uint32_t encrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
 
     if (ctx->mode == CM) {
       memcpy(counter, ctx->IV, AES_BLOCK_SIZE);
-      transpose_matrix(counter);
       aes_enc_opp(ctx, counter);
       add_vector(block, counter);
-      increment_binary_number(ctx->IV, 16);
+      increment_counter(ctx->IV);
     }
 
     block = block + 4;
@@ -446,11 +444,19 @@ uint32_t decrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
 
   transpose_matrix(ctx->IV);
 
+  uint8_t counter[16];
   for (int i = 0; i < data_dencrytion_itration; i++) {
 
     transpose_matrix(block);
-    aes_dec_opp(ctx, block);
-    add_vector(block, ctx->IV);
+    if (ctx->mode == CBC) {
+      aes_dec_opp(ctx, block);
+      add_vector(block, ctx->IV);
+    } else if (ctx->mode == CM) {
+      memcpy(counter, ctx->IV, AES_BLOCK_SIZE);
+      aes_enc_opp(ctx, counter);
+      add_vector(block, counter);
+      increment_counter(ctx->IV);
+    }
     block = block + 4;
   }
 
@@ -463,6 +469,7 @@ uint32_t decrypt_aes(struct AesEnryptionCtx *ctx, uint8_t *block_data,
 
   return data_len;
 }
+
 struct AesEnryptionCtx *init_aes(struct AesEnryptionCtx **encryption_ctx,
                                  guchar *write_key, uint16_t write_key_size,
                                  guchar *write_mac_key, uint16_t mac_key_size,
@@ -482,7 +489,7 @@ struct AesEnryptionCtx *init_aes(struct AesEnryptionCtx **encryption_ctx,
   aes_encryption_ctx->mode = mode;
   aes_encryption_ctx->initial_key = write_key;
 
-  aes_encryption_ctx->IV = write_IV;
+  aes_encryption_ctx->IV = g_memdup(write_IV, 16);
 
   aes_encryption_ctx->mac_key = write_mac_key;
 

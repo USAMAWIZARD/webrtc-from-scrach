@@ -110,7 +110,6 @@ void increment_binary_number(unsigned char *number, size_t length) {
 }
 
 void print_hex(const unsigned char *data, size_t length) {
-  return;
   for (size_t i = 0; i < length; i++) {
     printf("%02x ", data[i]);
   }
@@ -151,8 +150,6 @@ void increment_counter(unsigned char (*number)[4]) {
   char_num[0] = number[2][3];
   char_num[1] = number[3][3];
 
-  print_aes_matrix2(number, 4);
-
   int carry = 1;
 
   for (int i = 2 - 1; i >= 0; i--) {
@@ -169,6 +166,4 @@ void increment_counter(unsigned char (*number)[4]) {
 
   number[2][3] = char_num[0];
   number[3][3] = char_num[1];
-
-  print_aes_matrix2(number, 4);
 }

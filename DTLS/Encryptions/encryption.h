@@ -54,10 +54,13 @@ struct aes_ctx {
 struct srtp_ctx {
   struct SrtpEncryptionCtx *client;
   struct SrtpEncryptionCtx *server;
+  void (*encrypt_func)(void *encryption_ctx, uint8_t *block_data,
+                       uint16_t block_encrypt_offset,
+                       uint32_t total_packet_len);
 };
 
 union symmetric_encrypt {
-  struct aes_ctx *aes;
+  struct aes_ctx *dtls;
   struct srtp_ctx *srtp;
 };
 struct cipher_suite_info {
