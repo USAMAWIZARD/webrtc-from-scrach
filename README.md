@@ -50,3 +50,7 @@ cd ./GstreamerClient
 
 now WebRTC Scrach implementation Will send a video to Gstreamer Client.
 
+## TODO 
+add basic security checks
+refactor implementation
+update ICE DTLS WebRTC connection states
